@@ -2,14 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const CATEGORIES = ['매출고민', '직원관리', '운영노하우', '멘탈관리', '마케팅질문', '염광사'];
-
 export default function WritePage() {
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isNotice, setIsNotice] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [categories, setCategories] = useState(['매출고민', '직원관리', '운영노하우', '멘탈관리', '마케팅질문']);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -18,7 +17,10 @@ export default function WritePage() {
       if (r.ok) return r.json();
       return null;
     }).then(data => {
-      if (data && data.user && data.user.role === 'admin') setIsAdmin(true);
+      if (data && data.user && data.user.role === 'admin') {
+        setIsAdmin(true);
+        setCategories(['매출고민', '직원관리', '운영노하우', '멘탈관리', '마케팅질문', '염광사']);
+      }
     });
   }, []);
 
@@ -60,7 +62,7 @@ export default function WritePage() {
           onChange={(e) => setCategory(e.target.value)}
         >
           <option value=''>-- 말머리 선택 --</option>
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>

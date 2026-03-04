@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '../components/Header.jsx';
 import CategoryFilter from '../components/CategoryFilter.jsx';
@@ -16,12 +16,12 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
 
-  async function fetchPosts(p, cat, s, reset) {
+  const fetchPosts = useCallback(async (p, cat, s, reset) => {
     setLoading(true);
     try {
       let url = '/api/posts?page=' + p + '&sort=' + s;
       if (cat) url += '&category=' + encodeURIComponent(cat);
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: 'no-store' });
       const data = await res.json();
       if (reset) {
         setPosts(data.posts || []);
@@ -33,26 +33,48 @@ export default function Home() {
       console.error(err);
     }
     setLoading(false);
-  }
+  }, []);
 
-  async function fetchBest() {
+  const fetchBest = useCallback(async () => {
     try {
-      const res = await fetch('/api/posts/best');
+      const res = await fetch('/api/posts/best', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setBestPosts(data.posts || []);
       }
     } catch (e) {}
-  }
+  }, []);
 
   useEffect(() => {
     fetchBest();
-  }, []);
+  }, [fetchBest]);
 
   useEffect(() => {
     setPage(1);
     fetchPosts(1, category, sort, true);
-  }, [category, sort]);
+  }, [category, sort, fetchPosts]);
+
+  useEffect(() => {
+    function handleFocus() {
+      setPage(1);
+      fetchPosts(1, category, sort, true);
+      fetchBest();
+    }
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [category, sort, fetchPosts, fetchBest]);
+
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') {
+        setPage(1);
+        fetchPosts(1, category, sort, true);
+        fetchBest();
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [category, sort, fetchPosts, fetchBest]);
 
   function loadMore() {
     const next = page + 1;
@@ -76,7 +98,6 @@ export default function Home() {
     <div>
       <Header />
 
-      {/* 공지 배너 영역 */}
       <div style={{ padding: '12px 16px', display: 'flex', gap: '10px', overflowX: 'auto' }}>
         <div onClick={() => router.push('/notice')} style={{
           minWidth: '200px',
@@ -105,7 +126,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 바로가기 아이콘 영역 */}
       <div style={{ display: 'flex', gap: '12px', padding: '8px 16px 16px', overflowX: 'auto' }}>
         {[
           { icon: '🏠', label: '염광사 홈', url: '#' },
@@ -142,7 +162,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* 인기글 베스트 */}
       {bestPosts.length > 0 && (
         <div style={{ padding: '0 16px 12px' }}>
           <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '10px', color: '#333' }}>🔥 이번 주 베스트</div>
@@ -165,10 +184,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* 구분선 */}
       <div style={{ height: '8px', background: '#f0f1f3' }}></div>
 
-      {/* 정렬 + 카테고리 필터 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 0' }}>
         <CategoryFilter current={category} onChange={setCategory} />
         <select value={sort} onChange={(e) => setSort(e.target.value)} style={{
@@ -186,7 +203,6 @@ export default function Home() {
         </select>
       </div>
 
-      {/* 글 목록 */}
       <div className='post-list'>
         {posts.map(post => (
           <PostCard key={post.id} post={post} />
