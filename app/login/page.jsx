@@ -1,0 +1,57 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function LoginPage() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      router.push('/');
+      router.refresh();
+    } else {
+      setError(data.error || '로그인 실패');
+    }
+  }
+
+  return (
+    <div className='auth-page'>
+      <div className='auth-logo'>라운지</div>
+      <form className='auth-form' onSubmit={handleSubmit}>
+        {error && <div className='auth-error'>{error}</div>}
+        <input
+          className='auth-input'
+          type='text'
+          placeholder='닉네임'
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          className='auth-input'
+          type='password'
+          placeholder='비밀번호'
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button className='auth-btn' type='submit'>로그인</button>
+        <div className='auth-link'>
+          <a href='/register'>회원가입</a>
+        </div>
+      </form>
+    </div>
+  );
+}
