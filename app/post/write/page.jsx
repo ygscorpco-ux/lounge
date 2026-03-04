@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const CATEGORIES = ['매출고민', '직원관리', '운영노하우', '멘탈관리', '마케팅질문', '염광사'];
@@ -8,12 +8,22 @@ export default function WritePage() {
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [isNotice, setIsNotice] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
+  useEffect(() => {
+    fetch('/api/auth/me').then(r => {
+      if (r.ok) return r.json();
+      return null;
+    }).then(data => {
+      if (data && data.user && data.user.role === 'admin') setIsAdmin(true);
+    });
+  }, []);
+
   async function handleSubmit() {
     setError('');
-
     if (!category || !title || !content) {
       setError('말머리, 제목, 내용을 모두 입력해주세요');
       return;
@@ -22,11 +32,10 @@ export default function WritePage() {
     const res = await fetch('/api/posts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category, title, content })
+      body: JSON.stringify({ category, title, content, isNotice: isAdmin ? isNotice : false })
     });
 
     const data = await res.json();
-
     if (res.ok) {
       router.push('/');
     } else {
@@ -55,6 +64,19 @@ export default function WritePage() {
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
+
+        {isAdmin && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', fontSize: '14px', color: '#333' }}>
+            <input
+              type="checkbox"
+              checked={isNotice}
+              onChange={(e) => setIsNotice(e.target.checked)}
+              style={{ width: '18px', height: '18px' }}
+            />
+            공지로 등록 (게시판 맨 위 고정)
+          </label>
+        )}
+
         <input
           className='write-title-input'
           type='text'

@@ -6,7 +6,7 @@ export async function GET() {
     const [rows] = await pool.query(
       `SELECT p.id, p.user_id, p.category, p.title, p.content, p.like_count, p.comment_count, p.created_at, u.role
        FROM posts p JOIN users u ON p.user_id = u.id
-       WHERE p.is_hidden = FALSE AND p.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+       WHERE p.is_hidden = FALSE AND p.is_notice = FALSE AND p.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
        ORDER BY p.like_count DESC, p.comment_count DESC
        LIMIT 5`
     );

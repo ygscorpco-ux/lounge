@@ -19,7 +19,9 @@ export async function GET(request) {
       blockedIds = blocks.map(b => b.blocked_user_id);
     }
 
-    let query = 'SELECT p.id, p.user_id, p.category, p.title, p.content, p.is_notice, p.like_count, p.comment_count, p.created_at, u.role FROM posts p JOIN users u ON p.user_id = u.id WHERE p.is_hidden = FALSE';
+    let query = `SELECT p.id, p.user_id, p.category, p.title, p.content, p.is_notice, p.like_count, p.comment_count, p.created_at, u.role 
+    FROM posts p JOIN users u ON p.user_id = u.id 
+    WHERE p.is_hidden = FALSE`;
     const params = [];
 
     if (blockedIds.length > 0) {
@@ -72,7 +74,7 @@ export async function POST(request) {
     const [banned] = await pool.query('SELECT is_banned FROM users WHERE id = ?', [user.id]);
     if (banned.length > 0 && banned[0].is_banned) return NextResponse.json({ error: 'Account restricted' }, { status: 403 });
 
-    const { category, title, content } = await request.json();
+    const { category, title, content, isNotice } = await request.json();
     if (!category || !title || !content) return NextResponse.json({ error: 'All fields required' }, { status: 400 });
 
     const hasBanned = await containsBannedWord(title + ' ' + content);
@@ -80,9 +82,11 @@ export async function POST(request) {
 
     if (category === '염광사' && user.role !== 'admin') return NextResponse.json({ error: 'Admin only category' }, { status: 403 });
 
+    const notice = (isNotice && user.role === 'admin') ? true : false;
+
     const [result] = await pool.query(
-      'INSERT INTO posts (user_id, category, title, content) VALUES (?, ?, ?, ?)',
-      [user.id, category, title, content]
+      'INSERT INTO posts (user_id, category, title, content, is_notice) VALUES (?, ?, ?, ?, ?)',
+      [user.id, category, title, content, notice]
     );
 
     return NextResponse.json({ message: 'Posted', postId: result.insertId }, { status: 201 });

@@ -60,7 +60,10 @@ export default function PostDetail() {
 
   async function handleLikePost() {
     const res = await fetch('/api/posts/' + id + '/like', { method: 'POST' });
-    if (res.ok) fetchPost();
+    if (res.ok) {
+      const data = await res.json();
+      setPost(prev => prev ? { ...prev, alreadyLiked: data.liked, likeCount: data.likeCount } : prev);
+    }
   }
 
   async function handleDeletePost() {
@@ -127,7 +130,7 @@ export default function PostDetail() {
       setCommentText('');
       setReplyTo(null);
       fetchComments();
-      fetchPost();
+      setPost(prev => prev ? { ...prev, commentCount: prev.commentCount + 1 } : prev);
     }
   }
 
@@ -150,7 +153,7 @@ export default function PostDetail() {
     const res = await fetch('/api/comments?id=' + commentId, { method: 'DELETE' });
     if (res.ok) {
       fetchComments();
-      fetchPost();
+      setPost(prev => prev ? { ...prev, commentCount: Math.max(prev.commentCount - 1, 0) } : prev);
     }
   }
 
@@ -209,6 +212,7 @@ export default function PostDetail() {
       </div>
 
       <div className='post-detail-header'>
+        {post.isNotice && <div style={{ display: 'inline-block', background: '#ff3b30', color: 'white', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', marginBottom: '6px' }}>공지</div>}
         <div className='post-detail-category'>{post.category}</div>
         <div className='post-detail-title'>{post.title}</div>
         <div className='post-detail-meta'>

@@ -14,12 +14,14 @@ export async function POST(request, { params }) {
     if (existing.length > 0) {
       await pool.query('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?', [id, user.id]);
       await pool.query('UPDATE posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?', [id]);
-      return NextResponse.json({ liked: false });
+
+      const [updated] = await pool.query('SELECT like_count FROM posts WHERE id = ?', [id]);
+      return NextResponse.json({ liked: false, likeCount: updated[0].like_count });
     } else {
       await pool.query('INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)', [id, user.id]);
       await pool.query('UPDATE posts SET like_count = like_count + 1 WHERE id = ?', [id]);
 
-      const [postRows] = await pool.query('SELECT user_id FROM posts WHERE id = ?', [id]);
+      const [postRows] = await pool.query('SELECT user_id, like_count FROM posts WHERE id = ?', [id]);
       if (postRows.length > 0 && postRows[0].user_id !== user.id) {
         await pool.query(
           'INSERT INTO notifications (user_id, type, target_type, target_id, from_user_id) VALUES (?, ?, ?, ?, ?)',
@@ -27,7 +29,7 @@ export async function POST(request, { params }) {
         );
       }
 
-      return NextResponse.json({ liked: true });
+      return NextResponse.json({ liked: true, likeCount: postRows[0].like_count });
     }
   } catch (error) {
     console.error('like error:', error);
