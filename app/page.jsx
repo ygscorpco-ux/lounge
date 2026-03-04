@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Header from '../components/Header.jsx';
 import CategoryFilter from '../components/CategoryFilter.jsx';
 import PostCard from '../components/PostCard.jsx';
@@ -14,14 +14,16 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const router = useRouter();
+  const pathname = usePathname();
 
   const fetchPosts = useCallback(async (p, cat, s, reset) => {
     setLoading(true);
     try {
-      let url = '/api/posts?page=' + p + '&sort=' + s;
+      let url = '/api/posts?page=' + p + '&sort=' + s + '&t=' + Date.now();
       if (cat) url += '&category=' + encodeURIComponent(cat);
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url);
       const data = await res.json();
       if (reset) {
         setPosts(data.posts || []);
@@ -37,7 +39,7 @@ export default function Home() {
 
   const fetchBest = useCallback(async () => {
     try {
-      const res = await fetch('/api/posts/best', { cache: 'no-store' });
+      const res = await fetch('/api/posts/best?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
         setBestPosts(data.posts || []);
@@ -46,35 +48,26 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetchBest();
-  }, [fetchBest]);
-
-  useEffect(() => {
     setPage(1);
     fetchPosts(1, category, sort, true);
-  }, [category, sort, fetchPosts]);
+    fetchBest();
+  }, [category, sort, refreshKey, fetchPosts, fetchBest]);
 
   useEffect(() => {
     function handleFocus() {
-      setPage(1);
-      fetchPosts(1, category, sort, true);
-      fetchBest();
+      setRefreshKey(prev => prev + 1);
     }
     window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [category, sort, fetchPosts, fetchBest]);
+    window.addEventListener('pageshow', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handleFocus);
+    };
+  }, []);
 
   useEffect(() => {
-    function handleVisibility() {
-      if (document.visibilityState === 'visible') {
-        setPage(1);
-        fetchPosts(1, category, sort, true);
-        fetchBest();
-      }
-    }
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [category, sort, fetchPosts, fetchBest]);
+    setRefreshKey(prev => prev + 1);
+  }, [pathname]);
 
   function loadMore() {
     const next = page + 1;
