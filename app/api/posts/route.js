@@ -1,4 +1,6 @@
-﻿import pool from '../../../lib/db.js';
+﻿export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+import pool from '../../../lib/db.js';
 import { getCurrentUser } from '../../../lib/auth.js';
 import { containsBannedWord } from '../../../lib/utils.js';
 import { PAGE_SIZE } from '../../../lib/constants.js';

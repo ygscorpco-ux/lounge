@@ -1,6 +1,9 @@
 import pool from '../../../../lib/db.js';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const [rows] = await pool.query(
@@ -22,7 +25,9 @@ export async function GET() {
       createdAt: row.created_at
     }));
 
-    return NextResponse.json({ posts });
+    return NextResponse.json({ posts }, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
+    });
   } catch (error) {
     console.error('best error:', error);
     return NextResponse.json({ error: 'server error' }, { status: 500 });
