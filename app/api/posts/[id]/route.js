@@ -44,7 +44,8 @@ export async function GET(request, { params }) {
       createdAt: row.created_at,
       isAuthor,
       isAdmin: isUserAdmin,
-      alreadyLiked
+      alreadyLiked,
+      userId: row.user_id
     };
 
     return NextResponse.json({ post });

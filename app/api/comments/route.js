@@ -1,77 +1,73 @@
 ﻿import pool from '../../../lib/db.js';
 import { getCurrentUser } from '../../../lib/auth.js';
 import { containsBannedWord } from '../../../lib/utils.js';
+import { ROLE_ADMIN } from '../../../lib/constants.js';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get('postId');
-
-    if (!postId) {
-      return NextResponse.json({ error: 'postId가 필요합니다' }, { status: 400 });
-    }
-
-    const [rows] = await pool.query(
-      'SELECT c.id, c.user_id, c.parent_id, c.content, c.like_count, c.created_at, u.role FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? AND c.is_hidden = FALSE ORDER BY c.created_at ASC',
-      [postId]
-    );
+    if (!postId) return NextResponse.json({ error: 'postId required' }, { status: 400 });
 
     const user = await getCurrentUser();
+    let blockedIds = [];
+    if (user) {
+      const [blocks] = await pool.query('SELECT blocked_user_id FROM user_blocks WHERE user_id = ?', [user.id]);
+      blockedIds = blocks.map(b => b.blocked_user_id);
+    }
+
+    let query = 'SELECT c.id, c.post_id, c.user_id, c.parent_id, c.content, c.like_count, c.created_at, u.role FROM comments c JOIN users u ON c.user_id = u.id WHERE c.post_id = ? AND c.is_hidden = FALSE';
+    const params = [postId];
+
+    if (blockedIds.length > 0) {
+      query += ' AND c.user_id NOT IN (' + blockedIds.map(() => '?').join(',') + ')';
+      params.push(...blockedIds);
+    }
+
+    query += ' ORDER BY c.created_at ASC';
+
+    const [rows] = await pool.query(query, params);
 
     const comments = [];
     for (const row of rows) {
       let alreadyLiked = false;
       if (user) {
-        const [likeRows] = await pool.query(
-          'SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?',
-          [row.id, user.id]
-        );
+        const [likeRows] = await pool.query('SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?', [row.id, user.id]);
         alreadyLiked = likeRows.length > 0;
       }
-
       comments.push({
         id: row.id,
+        postId: row.post_id,
+        userId: row.user_id,
         parentId: row.parent_id,
         content: row.content,
         author: row.role === 'admin' ? '염광사' : '익명',
-        isAuthor: user && user.id === row.user_id,
         likeCount: row.like_count,
         alreadyLiked,
+        isAuthor: user && user.id === row.user_id,
+        isAdmin: user && user.role === ROLE_ADMIN,
         createdAt: row.created_at
       });
     }
 
     return NextResponse.json({ comments });
-
   } catch (error) {
-    console.error('댓글 목록 에러:', error);
-    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
+    console.error('comments error:', error);
+    return NextResponse.json({ error: 'server error' }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 });
-    }
-
-    const [banned] = await pool.query('SELECT is_banned FROM users WHERE id = ?', [user.id]);
-    if (banned.length > 0 && banned[0].is_banned) {
-      return NextResponse.json({ error: '이용이 제한된 계정입니다' }, { status: 403 });
-    }
+    if (!user) return NextResponse.json({ error: 'Login required' }, { status: 401 });
 
     const { postId, parentId, content } = await request.json();
-
-    if (!postId || !content) {
-      return NextResponse.json({ error: '내용을 입력해주세요' }, { status: 400 });
-    }
+    if (!postId || !content) return NextResponse.json({ error: 'Fields required' }, { status: 400 });
 
     const hasBanned = await containsBannedWord(content);
-    if (hasBanned) {
-      return NextResponse.json({ error: '부적절한 표현이 포함되어 있습니다' }, { status: 400 });
-    }
+    if (hasBanned) return NextResponse.json({ error: 'Inappropriate content' }, { status: 400 });
 
     await pool.query(
       'INSERT INTO comments (post_id, user_id, parent_id, content) VALUES (?, ?, ?, ?)',
@@ -80,10 +76,56 @@ export async function POST(request) {
 
     await pool.query('UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?', [postId]);
 
-    return NextResponse.json({ message: '댓글 작성 완료' }, { status: 201 });
+    const [postRows] = await pool.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
+    if (postRows.length > 0 && postRows[0].user_id !== user.id) {
+      await pool.query(
+        'INSERT INTO notifications (user_id, type, target_type, target_id, from_user_id) VALUES (?, ?, ?, ?, ?)',
+        [postRows[0].user_id, parentId ? 'reply' : 'comment', 'post', postId, user.id]
+      );
+    }
 
+    if (parentId) {
+      const [parentRows] = await pool.query('SELECT user_id FROM comments WHERE id = ?', [parentId]);
+      if (parentRows.length > 0 && parentRows[0].user_id !== user.id) {
+        await pool.query(
+          'INSERT INTO notifications (user_id, type, target_type, target_id, from_user_id) VALUES (?, ?, ?, ?, ?)',
+          [parentRows[0].user_id, 'reply', 'comment', parentId, user.id]
+        );
+      }
+    }
+
+    return NextResponse.json({ message: 'Comment added' }, { status: 201 });
   } catch (error) {
-    console.error('댓글 작성 에러:', error);
-    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
+    console.error('create comment error:', error);
+    return NextResponse.json({ error: 'server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Login required' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const commentId = searchParams.get('id');
+    if (!commentId) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+    const [rows] = await pool.query('SELECT user_id, post_id FROM comments WHERE id = ?', [commentId]);
+    if (rows.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    const isAuthor = user.id === rows[0].user_id;
+    const isAdmin = user.role === ROLE_ADMIN;
+    if (!isAuthor && !isAdmin) return NextResponse.json({ error: 'No permission' }, { status: 403 });
+
+    await pool.query('DELETE FROM comment_likes WHERE comment_id = ?', [commentId]);
+    await pool.query('DELETE FROM reports WHERE target_type = ? AND target_id = ?', ['comment', commentId]);
+    await pool.query('DELETE FROM comments WHERE parent_id = ?', [commentId]);
+    await pool.query('DELETE FROM comments WHERE id = ?', [commentId]);
+    await pool.query('UPDATE posts SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [rows[0].post_id]);
+
+    return NextResponse.json({ message: 'Deleted' });
+  } catch (error) {
+    console.error('delete comment error:', error);
+    return NextResponse.json({ error: 'server error' }, { status: 500 });
   }
 }

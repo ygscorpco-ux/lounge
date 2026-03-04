@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const CATEGORIES = ['매출고민', '직원관리', '운영노하우', '멘탈관리', '마케팅질문'];
+const CATEGORIES = ['매출고민', '직원관리', '운영노하우', '멘탈관리', '마케팅질문', '염광사'];
 
 export default function WritePage() {
   const [category, setCategory] = useState('');

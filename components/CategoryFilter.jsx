@@ -12,12 +12,13 @@ const CATEGORIES = [
 
 export default function CategoryFilter({ current, onChange }) {
   return (
-    <div className='category-filter'>
+    <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', flex: 1 }}>
       {CATEGORIES.map((cat) => (
         <button
           key={cat.label}
           className={'category-tab' + (current === cat.value ? ' active' : '')}
           onClick={() => onChange(cat.value)}
+          style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           {cat.label}
         </button>

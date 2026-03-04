@@ -1,11 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import PostCard from '../../components/PostCard.jsx';
 
 export default function MyPage() {
   const [user, setUser] = useState(null);
-  const [messages, setMessages] = useState([]);
   const [tab, setTab] = useState('menu');
+  const [myPosts, setMyPosts] = useState([]);
+  const [myComments, setMyComments] = useState([]);
+  const [bookmarks, setBookmarks] = useState([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -18,13 +22,31 @@ export default function MyPage() {
     });
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetch('/api/messages').then(r => r.json()).then(data => {
-        setMessages(data.messages || []);
-      });
+  async function loadMyPosts() {
+    setLoading(true);
+    const res = await fetch('/api/posts?page=1');
+    if (res.ok) {
+      const data = await res.json();
+      setMyPosts((data.posts || []).filter(p => p.author === user.username || (user.role === 'admin' && p.author === '염광사')));
     }
-  }, [user]);
+    setLoading(false);
+  }
+
+  async function loadBookmarks() {
+    setLoading(true);
+    const res = await fetch('/api/bookmarks');
+    if (res.ok) {
+      const data = await res.json();
+      setBookmarks(data.posts || []);
+    }
+    setLoading(false);
+  }
+
+  function handleTab(t) {
+    setTab(t);
+    if (t === 'posts') loadMyPosts();
+    if (t === 'bookmarks') loadBookmarks();
+  }
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -41,34 +63,58 @@ export default function MyPage() {
         <span style={{ color: 'white', fontWeight: 600 }}>마이페이지</span>
       </div>
 
-      <div className='mypage-header'>
-        <div className='mypage-username'>{user.username}</div>
-        <div className='mypage-role'>{user.role === 'admin' ? '관리자' : '회원'}</div>
+      <div style={{ padding: '20px 16px', borderBottom: '8px solid #f0f1f3' }}>
+        <div style={{ fontSize: '20px', fontWeight: 700 }}>{user.username}</div>
+        <div style={{ fontSize: '13px', color: '#999', marginTop: '4px' }}>{user.role === 'admin' ? '관리자' : '회원'}</div>
       </div>
 
-      <div className='mypage-menu'>
-        {user.role === 'admin' && (
-          <div className='mypage-menu-item' onClick={() => router.push('/admin')}>
-            관리자 대시보드 &#x2192;
+      <div style={{ display: 'flex', borderBottom: '1px solid #eee' }}>
+        {[
+          { key: 'menu', label: '메뉴' },
+          { key: 'posts', label: '내 글' },
+          { key: 'bookmarks', label: '스크랩' }
+        ].map(t => (
+          <button key={t.key} onClick={() => handleTab(t.key)} style={{
+            flex: 1, padding: '12px', background: 'none', border: 'none',
+            borderBottom: tab === t.key ? '2px solid #1b4797' : '2px solid transparent',
+            color: tab === t.key ? '#1b4797' : '#999',
+            fontWeight: tab === t.key ? 700 : 400,
+            fontSize: '14px', cursor: 'pointer'
+          }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'menu' && (
+        <div>
+          <div onClick={() => router.push('/profile')} style={{ padding: '16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer', fontSize: '15px' }}>
+            프로필 수정 →
           </div>
-        )}
-        <div className='mypage-menu-item' onClick={() => setTab('messages')}>
-          쪽지 ({messages.filter(m => !m.is_read).length}개 안 읽음) &#x2192;
-        </div>
-        <div className='mypage-menu-item' onClick={handleLogout}>
-          로그아웃 &#x2192;
-        </div>
-      </div>
-
-      {tab === 'messages' && (
-        <div className='message-list'>
-          {messages.length === 0 && <div className='empty'>쪽지가 없습니다</div>}
-          {messages.map(msg => (
-            <div key={msg.id} className={'message-item' + (!msg.is_read ? ' message-unread' : '')}>
-              <div className='message-content'>{msg.content}</div>
-              <div className='message-time'>{new Date(msg.created_at).toLocaleString()}</div>
+          {user.role === 'admin' && (
+            <div onClick={() => router.push('/admin')} style={{ padding: '16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer', fontSize: '15px' }}>
+              관리자 대시보드 →
             </div>
-          ))}
+          )}
+          <div onClick={handleLogout} style={{ padding: '16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer', fontSize: '15px', color: '#ff3b30' }}>
+            로그아웃
+          </div>
+        </div>
+      )}
+
+      {tab === 'posts' && (
+        <div>
+          {loading && <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>로딩 중...</div>}
+          {!loading && myPosts.length === 0 && <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>작성한 글이 없습니다</div>}
+          {myPosts.map(post => <PostCard key={post.id} post={post} />)}
+        </div>
+      )}
+
+      {tab === 'bookmarks' && (
+        <div>
+          {loading && <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>로딩 중...</div>}
+          {!loading && bookmarks.length === 0 && <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>스크랩한 글이 없습니다</div>}
+          {bookmarks.map(post => <PostCard key={post.id} post={post} />)}
         </div>
       )}
     </div>
