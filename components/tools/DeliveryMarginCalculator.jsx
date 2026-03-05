@@ -1,6 +1,18 @@
 'use client';
 import { useState, useMemo } from 'react';
 
+// 공유 텍스트 생성 (Web Share API / 클립보드 공유용)
+function buildShareText({ appName, price, margin, marginRate, dailyOrders, monthlyMargin }) {
+  const status = marginRate >= 30 ? '😊 양호' : marginRate >= 10 ? '🤔 보통' : '😨 위험';
+  return `📊 실마진 계산 결과 (${appName})
+━━━━━━━━━━━━━
+💰 판매가: ${price.toLocaleString()}원
+✅ 실마진: ${margin.toLocaleString()}원 (${marginRate.toFixed(1)}%) ${status}
+${dailyOrders ? `📦 하루 ${dailyOrders}건 기준 월 마진: ${monthlyMargin.toLocaleString()}원` : ''}
+━━━━━━━━━━━━━
+[LOUNGE 실마진 계산기]`;
+}
+
 // 배달앱별 수수료 설정
 const APPS = [
   { id: 'baemin',  name: '배달의민족', color: '#2AC1BC', fee: 6.8  },
@@ -94,6 +106,10 @@ export default function DeliveryMarginCalculator() {
   const [deliveryFee, setDeliveryFee] = useState('');
   const [cardFeeOn, setCardFeeOn] = useState(true);
   const [vatOn, setVatOn] = useState(false);
+  // 월 매출 시뮬레이션 — 하루 주문 건수
+  const [dailyOrders, setDailyOrders] = useState('');
+  // 공유 버튼 피드백 상태
+  const [shareMsg, setShareMsg] = useState('');
 
   // 현재 선택된 앱 객체
   const currentApp = APPS.find(a => a.id === selectedApp);
@@ -122,6 +138,43 @@ export default function DeliveryMarginCalculator() {
 
     return { price, appFee, cardFee, vatAmount, delivery, cost, margin, marginRate, costRatio, feeRatio, otherRatio, marginRatio };
   }, [menuPrice, menuCost, deliveryFee, feeRate, cardFeeOn, vatOn]);
+
+  // 월 시뮬레이션 계산
+  const simulation = useMemo(() => {
+    if (!calc || !dailyOrders) return null;
+    const orders = parseInt(dailyOrders) || 0;
+    if (!orders) return null;
+    const dailyMargin   = calc.margin * orders;
+    const weeklyMargin  = dailyMargin * 7;
+    const monthlyMargin = dailyMargin * 30;
+    const monthlyRevenue = calc.price * orders * 30;
+    return { orders, dailyMargin, weeklyMargin, monthlyMargin, monthlyRevenue };
+  }, [calc, dailyOrders]);
+
+  // 공유 기능 — Web Share API 지원 시 네이티브 공유, 아니면 클립보드 복사
+  async function handleShare() {
+    if (!calc) return;
+    const appName = APPS.find(a => a.id === selectedApp)?.name || '직접입력';
+    const text = buildShareText({
+      appName, price: calc.price, margin: calc.margin, marginRate: calc.marginRate,
+      dailyOrders: parseInt(dailyOrders) || 0,
+      monthlyMargin: simulation?.monthlyMargin || 0,
+    });
+    try {
+      if (navigator.share) {
+        // 모바일 네이티브 공유 (카카오톡, 문자 등)
+        await navigator.share({ title: '실마진 계산 결과', text });
+        setShareMsg('공유 완료!');
+      } else {
+        // 데스크톱 — 클립보드 복사
+        await navigator.clipboard.writeText(text);
+        setShareMsg('클립보드에 복사됐어요!');
+      }
+    } catch {
+      setShareMsg('공유를 취소했습니다');
+    }
+    setTimeout(() => setShareMsg(''), 2500);
+  }
 
   // 입력 핸들러 — 자동 천단위 콤마
   function handleNumInput(setter) {
@@ -359,7 +412,7 @@ export default function DeliveryMarginCalculator() {
               <div style={{ width: `${calc.marginRatio}%`, background: '#2ecc71', transition: 'width 0.3s ease' }} />
             </div>
             {/* 범례 */}
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
               {[
                 { color: '#e74c3c', label: '원가' },
                 { color: '#f39c12', label: '수수료' },
@@ -373,6 +426,119 @@ export default function DeliveryMarginCalculator() {
               ))}
             </div>
           </div>
+
+          {/* ⑤ 공유 버튼 */}
+          <button
+            onClick={handleShare}
+            style={{
+              width: '100%', padding: '13px', borderRadius: '12px',
+              background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.35)',
+              color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+              transition: 'background 0.15s',
+            }}
+          >
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="15" cy="4" r="2"/><circle cx="5" cy="10" r="2"/><circle cx="15" cy="16" r="2"/>
+              <path d="M7 9l6-4M7 11l6 4"/>
+            </svg>
+            {shareMsg || '결과 공유하기'}
+          </button>
+        </div>
+      )}
+
+      {/* ── 월 매출 시뮬레이션 카드 (결과 있을 때만 표시) ── */}
+      {calc && (
+        <div style={{
+          background: '#fff', borderRadius: '20px', padding: '24px',
+          boxShadow: '0 4px 20px rgba(27,71,151,0.08)', marginTop: '16px',
+          animation: 'fadeSlideUp 0.3s ease',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <span style={{ fontSize: '20px' }}>📈</span>
+            <div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-900)' }}>월 매출 시뮬레이션</div>
+              <div style={{ fontSize: '12px', color: 'var(--color-gray-500)', marginTop: '2px' }}>하루 몇 건 팔면 얼마 남을까요?</div>
+            </div>
+          </div>
+
+          {/* 하루 주문 건수 입력 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-gray-700)', flexShrink: 0 }}>하루 평균</span>
+            <input
+              type="number" inputMode="numeric"
+              placeholder="0"
+              value={dailyOrders}
+              onChange={e => setDailyOrders(e.target.value.replace(/[^0-9]/g, ''))}
+              style={{
+                width: '80px', padding: '10px 12px', textAlign: 'center',
+                fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)',
+                border: '2px solid var(--color-primary-bg)', borderRadius: '10px',
+                outline: 'none', fontFamily: 'inherit', background: 'var(--color-primary-bg)',
+              }}
+            />
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-gray-700)', flexShrink: 0 }}>건 주문 시</span>
+          </div>
+
+          {/* 시뮬레이션 결과 */}
+          {simulation ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                { label: '하루 마진',  value: simulation.dailyMargin,   icon: '📅', highlight: false },
+                { label: '주간 마진',  value: simulation.weeklyMargin,  icon: '📆', highlight: false },
+                { label: '월 매출액', value: simulation.monthlyRevenue, icon: '💵', highlight: false },
+              ].map((row, i) => (
+                <div key={i} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '12px 14px', borderRadius: '10px', background: 'var(--color-gray-100)',
+                }}>
+                  <span style={{ fontSize: '14px', color: 'var(--color-gray-700)' }}>{row.icon} {row.label}</span>
+                  <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-gray-900)' }}>
+                    {Math.round(row.value).toLocaleString()}원
+                  </span>
+                </div>
+              ))}
+
+              {/* 월 마진 — 강조 표시 */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '16px 18px', borderRadius: '14px',
+                background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+                marginTop: '4px',
+              }}>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)', marginBottom: '2px' }}>
+                    월 실마진 (30일 기준)
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                    하루 {simulation.orders}건 × {calc.margin.toLocaleString()}원
+                  </div>
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>
+                  {Math.round(simulation.monthlyMargin).toLocaleString()}원
+                </div>
+              </div>
+
+              {/* 손익분기점 안내 */}
+              {calc.margin > 0 && (
+                <div style={{
+                  padding: '12px 14px', borderRadius: '10px',
+                  background: 'var(--color-primary-bg)', fontSize: '13px',
+                  color: 'var(--color-primary)', lineHeight: 1.6,
+                }}>
+                  💡 월 200만원 마진을 내려면 하루{' '}
+                  <strong>{Math.ceil(2000000 / calc.margin)}건</strong> 이상 팔아야 해요
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{
+              textAlign: 'center', padding: '20px',
+              color: 'var(--color-gray-500)', fontSize: '14px',
+            }}>
+              하루 주문 건수를 입력해 주세요
+            </div>
+          )}
         </div>
       )}
 
