@@ -156,39 +156,39 @@ function Toggle({ on, onChange }) {
 }
 
 // 배달앱 로고 — Google favicon 우선, 실패하면 브랜드 컬러 원으로 fallback
-function PlatformLogo({ faviconUrl, color, name, size = 36 }) {
+// 1:1 로고 버튼 — 별도 컴포넌트로 분리해야 useState를 map 안에서 써도 규칙 위반 없음
+function PlatformIconButton({ p, active, logoUrl, onSelect }) {
   const [failed, setFailed] = useState(false);
-  const initial   = name ? name.charAt(0) : '?';
-  const boxRadius = Math.round(size * 0.27); // 크기에 비례한 radius
-
-  if (!faviconUrl || failed) {
-    return (
-      <div style={{
-        width: `${size}px`, height: `${size}px`, borderRadius: `${boxRadius}px`,
-        flexShrink: 0, background: color,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <span style={{ color: '#fff', fontSize: `${Math.round(size * 0.38)}px`, fontWeight: 800 }}>
-          {initial}
-        </span>
-      </div>
-    );
-  }
   return (
-    <div style={{
-      width: `${size}px`, height: `${size}px`, borderRadius: `${boxRadius}px`,
-      flexShrink: 0, background: '#fff', border: '1px solid #eee',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      overflow: 'hidden',
-    }}>
-      <img
-        src={faviconUrl}
-        alt={name}
-        width={size - 4}
-        height={size - 4}
-        onError={() => setFailed(true)}
-        style={{ objectFit: 'contain', display: 'block' }}
-      />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
+      <button
+        onClick={onSelect}
+        style={{
+          width: "100%", aspectRatio: "1",
+          borderRadius: "16px", cursor: "pointer", padding: 0,
+          border: active ? `3px solid ${p.color}` : "2px solid #e8eaf0",
+          overflow: "hidden",
+          transition: "all 0.15s ease",
+          boxShadow: active ? `0 4px 16px ${p.color}40` : "0 1px 5px rgba(0,0,0,0.06)",
+          background: "#fff",
+        }}
+      >
+        {logoUrl && !failed ? (
+          <img
+            src={logoUrl}
+            alt={p.name}
+            onError={() => setFailed(true)}
+            style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+          />
+        ) : (
+          <div style={{ width: "100%", height: "100%", background: p.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ color: "#fff", fontSize: "22px", fontWeight: 800 }}>{p.name.charAt(0)}</span>
+          </div>
+        )}
+      </button>
+      <span style={{ fontSize: "11px", fontWeight: active ? 700 : 500, color: active ? p.color : "#555" }}>
+        {p.name}
+      </span>
     </div>
   );
 }
@@ -605,10 +605,10 @@ export default function DeliveryMarginCalculator() {
 
   // 플랫폼별 로컬 로고 경로 (public/logos/ 폴더)
   const FAVICON_DOMAINS = {
-    baemin:  '/logos/baemin.png',
-    coupang: '/logos/coupang.png',
-    yogiyo:  '/logos/yogiyo.png',
-    ddangyo: '/logos/ddangyo.png',
+    baemin: "/logos/baemin.png",
+    coupang: "/logos/coupang.png",
+    yogiyo: "/logos/yogiyo.png",
+    ddangyo: "/logos/ddangyo.png",
   };
 
   // 티어 선택이 필요한 플랫폼 (구간이 2개 이상)
@@ -676,50 +676,60 @@ export default function DeliveryMarginCalculator() {
               ))}
             </div>
           ) : (
-            <div style={{ marginBottom: hasTiers ? '12px' : '20px' }}>
-              {/* 앱 아이콘 스타일 — 로고 크게, 이름만 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
-                {platforms.map((p) => {
-                  const active     = selectedPlatformId === p.platform_id;
-                  const faviconUrl = FAVICON_DOMAINS[p.platform_id] || null;
-                  return (
-                    <button
-                      key={p.platform_id}
-                      onClick={() => { setSelectedPlatformId(p.platform_id); setSelectedTierId(null); }}
-                      style={{
-                        padding: '16px 10px 12px',
-                        borderRadius: '16px',
-                        cursor: 'pointer',
-                        border: active ? `2.5px solid ${p.color}` : '1.5px solid #e8eaf0',
-                        background: active ? `${p.color}10` : '#fafafa',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-                        transition: 'all 0.15s ease',
-                        boxShadow: active ? `0 4px 14px ${p.color}35` : '0 1px 4px rgba(0,0,0,0.05)',
-                      }}
-                    >
-                      <PlatformLogo faviconUrl={faviconUrl} color={p.color} name={p.name} size={48} />
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: active ? p.color : '#222', letterSpacing: '-0.2px' }}>
-                        {p.name}
-                      </span>
-                    </button>
-                  );
-                })}
+            <div style={{ marginBottom: hasTiers ? "12px" : "20px" }}>
+              {/* 1:1 로고 버튼 그리드 */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "8px" }}>
+                {platforms.map((p) => (
+                  <PlatformIconButton
+                    key={p.platform_id}
+                    p={p}
+                    active={selectedPlatformId === p.platform_id}
+                    logoUrl={FAVICON_DOMAINS[p.platform_id] || null}
+                    onSelect={() => { setSelectedPlatformId(p.platform_id); setSelectedTierId(null); }}
+                  />
+                ))}
               </div>
               {/* 직접입력 — 아래 한 줄 전체 너비 */}
               <button
-                onClick={() => { setSelectedPlatformId('custom'); setSelectedTierId(null); }}
+                onClick={() => {
+                  setSelectedPlatformId("custom");
+                  setSelectedTierId(null);
+                }}
                 style={{
-                  width: '100%', padding: '11px', borderRadius: '12px', cursor: 'pointer',
-                  border: selectedPlatformId === 'custom' ? '2px solid #1b4797' : '1.5px solid #e8eaf0',
-                  background: selectedPlatformId === 'custom' ? '#eef2fb' : '#fafafa',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                  transition: 'all 0.15s ease',
+                  width: "100%",
+                  padding: "11px",
+                  borderRadius: "12px",
+                  cursor: "pointer",
+                  border:
+                    selectedPlatformId === "custom"
+                      ? "2px solid #1b4797"
+                      : "1.5px solid #e8eaf0",
+                  background:
+                    selectedPlatformId === "custom" ? "#eef2fb" : "#fafafa",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  transition: "all 0.15s ease",
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M9.5 1.5L12.5 4.5L5 12H2V9L9.5 1.5Z" stroke={selectedPlatformId === 'custom' ? '#1b4797' : '#888'} strokeWidth="1.4" strokeLinejoin="round"/>
+                  <path
+                    d="M9.5 1.5L12.5 4.5L5 12H2V9L9.5 1.5Z"
+                    stroke={
+                      selectedPlatformId === "custom" ? "#1b4797" : "#888"
+                    }
+                    strokeWidth="1.4"
+                    strokeLinejoin="round"
+                  />
                 </svg>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: selectedPlatformId === 'custom' ? '#1b4797' : '#555' }}>
+                <span
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: selectedPlatformId === "custom" ? "#1b4797" : "#555",
+                  }}
+                >
                   직접입력
                 </span>
               </button>
@@ -1008,7 +1018,11 @@ export default function DeliveryMarginCalculator() {
               fontSize: "14px",
             }}
           >
-            <div style={{ fontSize: '48px', marginBottom: '8px', lineHeight: 1 }}>💰</div>
+            <div
+              style={{ fontSize: "48px", marginBottom: "8px", lineHeight: 1 }}
+            >
+              💰
+            </div>
             메뉴 판매가를 입력하면 마진이 계산됩니다
           </div>
         ) : (
