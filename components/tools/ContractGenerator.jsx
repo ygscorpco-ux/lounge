@@ -145,6 +145,128 @@ function ContractPreview({ data, type }) {
   );
 }
 
+// ── AI 특약 검토 컴포넌트 ──────────────────────────────────────────────
+function ContractSpecialTermsAI({ specialTerms }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult]   = useState(null);
+  const [error, setError]     = useState('');
+
+  async function handleAnalyze() {
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/tools/contract-special-terms', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ specialTerms }),
+      });
+      const data = await res.json();
+      if (data.success) setResult(data.data);
+      else setError(data.error || '검토 실패');
+    } catch { setError('네트워크 오류'); }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{ marginTop: '12px' }}>
+      <button onClick={handleAnalyze} disabled={loading} style={{
+        width: '100%', padding: '12px', borderRadius: '10px', border: 'none',
+        background: loading ? '#ccc' : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+        color: '#fff', fontSize: '14px', fontWeight: 700, cursor: loading ? 'default' : 'pointer',
+      }}>
+        {loading ? 'AI 검토 중...' : '🤖 AI 특약 위험 분석'}
+      </button>
+      {error && <div style={{ marginTop: '8px', padding: '8px 12px', background: '#fff0f0', color: '#e74c3c', borderRadius: '8px', fontSize: '12px' }}>⚠️ {error}</div>}
+      {result?.riskItems?.length > 0 && (
+        <div style={{ marginTop: '10px' }}>
+          {result.riskItems.map((item, i) => (
+            <div key={i} style={{ padding: '12px', borderRadius: '10px', marginBottom: '8px', background: '#fff0f0', border: '1.5px solid #e74c3c20' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#e74c3c', marginBottom: '4px' }}>⚠️ 위험 조항</div>
+              <div style={{ fontSize: '13px', color: '#333', marginBottom: '6px', fontStyle: 'italic' }}>"{item.original}"</div>
+              <div style={{ fontSize: '12px', color: '#555', marginBottom: '6px' }}>사유: {item.risk}</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#27ae60' }}>✅ 합법적 대안: {item.alternative}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {result?.riskItems?.length === 0 && result && (
+        <div style={{ marginTop: '8px', padding: '10px 12px', background: '#f0faf4', color: '#27ae60', borderRadius: '8px', fontSize: '13px', fontWeight: 600 }}>
+          ✅ 특약 내용에서 법적 문제가 발견되지 않았습니다
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── AI 계약서 전체 법적 검토 컴포넌트 ────────────────────────────────
+function ContractReviewAI({ contractData: d, contractPeriod }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult]   = useState(null);
+  const [error, setError]     = useState('');
+
+  async function handleReview() {
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/tools/contract-review', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName: d.businessName, ceoName: d.ceoName,
+          workerName: d.workerName, employmentType: d.contractType,
+          startDate: d.contractStart, endDate: d.contractEnd,
+          hourlyWage: parseInt(d.wage), hoursPerDay: null,
+          workDays: d.workDays, specialTerms: d.specialTerms,
+          taskDescription: d.taskContent,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) setResult(data.data);
+      else setError(data.error || '검토 실패');
+    } catch { setError('네트워크 오류'); }
+    setLoading(false);
+  }
+
+  const riskColors = { '낮음': '#27ae60', '보통': '#f39c12', '높음': '#e74c3c' };
+
+  return (
+    <div style={{ marginTop: '14px', background: '#fff', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 8px rgba(27,71,151,0.08)', border: '1px solid #eee' }}>
+      <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '4px' }}>⚖️ AI 법적 검토</div>
+      <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>근로기준법 기준으로 계약서 전체를 검토합니다</div>
+      <button onClick={handleReview} disabled={loading} style={{
+        width: '100%', padding: '13px', borderRadius: '10px', border: 'none',
+        background: loading ? '#ccc' : 'linear-gradient(135deg, #1b4797 0%, #4f80e1 100%)',
+        color: '#fff', fontSize: '14px', fontWeight: 700, cursor: loading ? 'default' : 'pointer',
+      }}>
+        {loading ? '검토 중...' : '⚖️ AI 법적 검토 받기'}
+      </button>
+      {error && <div style={{ marginTop: '8px', padding: '8px', background: '#fff0f0', color: '#e74c3c', borderRadius: '8px', fontSize: '12px' }}>⚠️ {error}</div>}
+      {result && (
+        <div style={{ marginTop: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#555' }}>리스크 등급</span>
+            <span style={{
+              padding: '3px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700,
+              background: riskColors[result.riskLevel] + '20',
+              color: riskColors[result.riskLevel],
+            }}>
+              {result.riskLevel}
+            </span>
+          </div>
+          {result.issues?.map((issue, i) => (
+            <div key={i} style={{ padding: '10px', borderRadius: '8px', marginBottom: '8px', background: '#f8f9fa', borderLeft: '3px solid #f39c12' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#333' }}>{issue.field}</div>
+              <div style={{ fontSize: '12px', color: '#555', margin: '3px 0' }}>{issue.issue}</div>
+              <div style={{ fontSize: '12px', color: '#27ae60', fontWeight: 600 }}>→ {issue.suggestion}</div>
+            </div>
+          ))}
+          {result.overallComment && (
+            <div style={{ padding: '10px 12px', background: '#eef2fb', borderRadius: '8px', fontSize: '13px', color: '#1b4797', fontWeight: 600 }}>
+              💬 {result.overallComment}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────────
 export default function ContractGenerator() {
   const router       = useRouter();
@@ -416,6 +538,11 @@ export default function ContractGenerator() {
                   placeholder="예) 수습기간 3개월 시급 90% 적용..." rows={3}
                   style={{ ...inp(), resize: 'vertical' }} />
               </div>
+
+              {/* AI 특약 검토 */}
+              {d.specialTerms && d.specialTerms.length > 5 && (
+                <ContractSpecialTermsAI specialTerms={d.specialTerms} />
+              )}
             </div>
           </div>
         )}
@@ -425,6 +552,8 @@ export default function ContractGenerator() {
           <div style={{ display: step === 3 ? 'block' : 'none' }}>
             <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>계약서 미리보기</div>
             <ContractPreview data={{ ...d, contractPeriod, endDate: d.payday }} type={d.contractType} />
+            {/* AI 법적 검토 */}
+            <ContractReviewAI contractData={d} contractPeriod={contractPeriod} />
           </div>
         )}
 

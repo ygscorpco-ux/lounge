@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
+import FeeMonitorHeader from './FeeMonitorHeader.jsx';
 
 // 공유 텍스트 생성 (Web Share API / 클립보드 공유용)
 function buildShareText({ appName, price, margin, marginRate, dailyOrders, monthlyMargin }) {
@@ -101,6 +102,113 @@ function Toggle({ on, onChange }) {
         background: '#fff', transition: 'left 0.2s ease',
         boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
       }} />
+    </div>
+  );
+}
+
+// AI 분석 섹션 — 마진 계산 결과를 GPT에 전달해 개선 조언 받기
+function AiAnalysisSection({ calc, selectedApp, feeRate }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult]   = useState(null);
+  const [error, setError]     = useState('');
+  const [industry, setIndustry] = useState('');
+
+  const INDUSTRIES = ['카페', '치킨', '피자', '한식', '분식', '중식'];
+  const appName = { baemin: '배달의민족', coupang: '쿠팡이츠', yogiyo: '요기요', custom: '직접입력' };
+
+  async function handleAnalyze() {
+    if (!calc) return;
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/tools/margin-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform: appName[selectedApp] || '직접입력',
+          feeRate,
+          menuPrice: calc.price,
+          menuCost: calc.cost,
+          deliveryFee: calc.delivery,
+          marginRate: calc.marginRate,
+          margin: calc.margin,
+          industry,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) setResult(data.data);
+      else setError(data.error || 'AI 분석 실패');
+    } catch {
+      setError('네트워크 오류가 발생했습니다');
+    }
+    setLoading(false);
+  }
+
+  if (!calc) return null;
+  return (
+    <div style={{ marginTop: '12px' }}>
+      {/* 업종 선택 */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+        {INDUSTRIES.map(ind => (
+          <button key={ind} onClick={() => setIndustry(ind === industry ? '' : ind)} style={{
+            padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+            border: industry === ind ? '1.5px solid #7c3aed' : '1.5px solid #ddd',
+            background: industry === ind ? '#7c3aed' : '#fff',
+            color: industry === ind ? '#fff' : '#666', cursor: 'pointer',
+          }}>
+            {ind}
+          </button>
+        ))}
+      </div>
+
+      {/* AI 분석 버튼 */}
+      <button
+        onClick={handleAnalyze} disabled={loading}
+        style={{
+          width: '100%', padding: '14px', borderRadius: '14px', border: 'none',
+          background: loading ? '#ccc' : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+          color: '#fff', fontSize: '15px', fontWeight: 700, cursor: loading ? 'default' : 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          transition: 'opacity 0.2s',
+        }}
+      >
+        {loading ? (
+          <>
+            <span className="fee-typing-dot" />
+            <span className="fee-typing-dot" style={{ animationDelay: '0.2s' }} />
+            <span className="fee-typing-dot" style={{ animationDelay: '0.4s' }} />
+            <span style={{ marginLeft: '4px' }}>AI 분석 중...</span>
+          </>
+        ) : '🤖 AI 분석 받기'}
+      </button>
+
+      {error && (
+        <div style={{ marginTop: '10px', padding: '10px 14px', background: '#fff0f0', color: '#e74c3c', borderRadius: '10px', fontSize: '13px' }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {result && (
+        <div style={{
+          marginTop: '12px', background: '#1a1a2e', borderRadius: '16px',
+          padding: '20px', animation: 'fadeSlideUp 0.3s ease',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '18px' }}>🤖</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#a78bfa' }}>AI 수익성 분석</span>
+            {result.cached && (
+              <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(167,139,250,0.2)', color: '#a78bfa', marginLeft: 'auto' }}>
+                캐시됨
+              </span>
+            )}
+          </div>
+          <p style={{ fontSize: '14px', color: '#e0e0e0', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>
+            {result.text}
+          </p>
+          <p style={{ fontSize: '11px', color: '#556', marginTop: '10px', marginBottom: 0 }}>
+            * AI 분석은 참고용입니다. 실제 경영 결정은 전문가와 상의하세요.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -219,8 +327,12 @@ export default function DeliveryMarginCalculator() {
   };
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '16px 16px 40px', background: 'var(--color-bg)', minHeight: '100%' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '0 0 40px', background: 'var(--color-bg)', minHeight: '100%' }}>
 
+      {/* ── HTS 수수료 모니터 헤더 ── */}
+      <FeeMonitorHeader />
+
+      <div style={{ padding: '16px 16px 0' }}>
       {/* ── 입력 카드 ── */}
       <div style={{
         background: '#fff', borderRadius: '20px', padding: '24px',
@@ -622,7 +734,15 @@ export default function DeliveryMarginCalculator() {
         </>
       )}
 
-      {/* 애니메이션 스타일 */}
+      {/* ── AI 분석 섹션 ── */}
+      <div style={{ background: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(27,71,151,0.08)', marginTop: '12px' }}>
+        <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '4px' }}>🤖 AI 수익성 분석</div>
+        <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>업종을 선택하면 동종업계 평균과 비교해 드려요</div>
+        <AiAnalysisSection calc={calc} selectedApp={selectedApp} feeRate={feeRate} />
+      </div>
+
+      </div>{/* padding wrapper end */}
+
       <style>{`
         @keyframes fadeSlideUp {
           from { opacity: 0; transform: translateY(12px); }

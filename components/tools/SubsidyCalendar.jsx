@@ -169,6 +169,142 @@ function saveBookmarks(ids) {
   localStorage.setItem('subsidyBookmarks', JSON.stringify(ids));
 }
 
+// AI 지원금 맞춤 추천 섹션
+function SubsidyAiSection({ onRecommend }) {
+  const [form, setForm] = useState({ industry: '', region: '', businessYears: '', employeeCount: '', monthlyRevenueRange: '' });
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const INDUSTRIES = ['카페', '치킨', '피자', '한식', '분식', '중식', '기타'];
+  const REVENUES = ['500만원 미만', '500~1000만원', '1000~3000만원', '3000만원 이상'];
+
+  async function handleRecommend() {
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/tools/subsidy-recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          industry: form.industry,
+          region: form.region,
+          businessYears: parseInt(form.businessYears) || 0,
+          employeeCount: parseInt(form.employeeCount) || 0,
+          monthlyRevenueRange: form.monthlyRevenueRange,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) setResult(data.data);
+      else setError(data.error || '추천 실패');
+    } catch {
+      setError('네트워크 오류');
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: '16px', padding: '16px', marginBottom: '16px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)' }}>
+      <button onClick={() => setOpen(v => !v)} style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '18px' }}>🎯</span>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a' }}>AI 맞춤 지원금 추천</div>
+            <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>프로필 입력 → 내게 맞는 TOP 3 추천</div>
+          </div>
+        </div>
+        <span style={{ fontSize: '16px', color: '#888', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: '14px', animation: 'slideUp 0.2s ease' }}>
+          {/* 업종 선택 */}
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#495057', marginBottom: '8px' }}>업종</div>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            {INDUSTRIES.map(ind => (
+              <button key={ind} onClick={() => setForm(f => ({ ...f, industry: ind === f.industry ? '' : ind }))} style={{
+                padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+                border: form.industry === ind ? '1.5px solid var(--color-primary)' : '1.5px solid #ddd',
+                background: form.industry === ind ? 'var(--color-primary)' : '#fff',
+                color: form.industry === ind ? '#fff' : '#666', cursor: 'pointer',
+              }}>{ind}</button>
+            ))}
+          </div>
+
+          {/* 지역 + 업력 */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            <div style={{ flex: 2 }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#495057', marginBottom: '5px' }}>지역</div>
+              <input value={form.region} onChange={e => setForm(f => ({ ...f, region: e.target.value }))}
+                placeholder="예) 서울 강남구" style={{ width: '100%', padding: '8px 10px', fontSize: '13px', border: '1.5px solid #ddd', borderRadius: '8px', outline: 'none', fontFamily: 'inherit' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#495057', marginBottom: '5px' }}>업력(년)</div>
+              <input value={form.businessYears} onChange={e => setForm(f => ({ ...f, businessYears: e.target.value }))}
+                type="number" placeholder="3" style={{ width: '100%', padding: '8px 10px', fontSize: '13px', border: '1.5px solid #ddd', borderRadius: '8px', outline: 'none', fontFamily: 'inherit' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: '#495057', marginBottom: '5px' }}>직원수</div>
+              <input value={form.employeeCount} onChange={e => setForm(f => ({ ...f, employeeCount: e.target.value }))}
+                type="number" placeholder="2" style={{ width: '100%', padding: '8px 10px', fontSize: '13px', border: '1.5px solid #ddd', borderRadius: '8px', outline: 'none', fontFamily: 'inherit' }} />
+            </div>
+          </div>
+
+          {/* 월매출 */}
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#495057', marginBottom: '6px' }}>월 매출</div>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+            {REVENUES.map(r => (
+              <button key={r} onClick={() => setForm(f => ({ ...f, monthlyRevenueRange: r === f.monthlyRevenueRange ? '' : r }))} style={{
+                padding: '5px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600,
+                border: form.monthlyRevenueRange === r ? '1.5px solid var(--color-primary)' : '1.5px solid #ddd',
+                background: form.monthlyRevenueRange === r ? 'var(--color-primary)' : '#fff',
+                color: form.monthlyRevenueRange === r ? '#fff' : '#666', cursor: 'pointer',
+              }}>{r}</button>
+            ))}
+          </div>
+
+          <button onClick={handleRecommend} disabled={loading} style={{
+            width: '100%', padding: '13px', borderRadius: '12px', border: 'none',
+            background: loading ? '#ccc' : 'linear-gradient(135deg, #1b4797 0%, #4f80e1 100%)',
+            color: '#fff', fontSize: '14px', fontWeight: 700, cursor: loading ? 'default' : 'pointer',
+          }}>
+            {loading ? 'AI 분석 중...' : '🎯 맞춤 지원금 추천받기'}
+          </button>
+
+          {error && <div style={{ marginTop: '10px', padding: '10px', background: '#fff0f0', color: '#e74c3c', borderRadius: '8px', fontSize: '13px' }}>⚠️ {error}</div>}
+
+          {result?.recommendations?.length > 0 && (
+            <div style={{ marginTop: '14px' }}>
+              {result.recommendations.map((rec, i) => (
+                <div key={i} style={{
+                  padding: '14px', borderRadius: '12px', marginBottom: '8px',
+                  background: i === 0 ? '#eef2fb' : '#f8f9fa',
+                  border: `1.5px solid ${i === 0 ? 'var(--color-primary)' : '#ddd'}`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: i === 0 ? 'var(--color-primary)' : '#555' }}>
+                      {['🥇', '🥈', '🥉'][i]} {rec.title}
+                    </span>
+                    {rec.urgency && <span style={{
+                      fontSize: '10px', padding: '2px 6px', borderRadius: '8px', marginLeft: 'auto', fontWeight: 700,
+                      background: rec.urgency === '높음' ? '#fff0f0' : '#f0f8ff',
+                      color: rec.urgency === '높음' ? '#e74c3c' : '#1b4797',
+                    }}>긴급도: {rec.urgency}</span>}
+                  </div>
+                  <p style={{ fontSize: '13px', color: '#555', margin: 0, lineHeight: 1.5 }}>{rec.reason}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SubsidyCalendar() {
   const today = new Date();
   const [view, setView] = useState('calendar'); // 'calendar' | 'list'
@@ -280,6 +416,9 @@ export default function SubsidyCalendar() {
           {year}년 {month}월
         </div>
       </div>
+
+      {/* ── AI 맞춤 추천 ── */}
+      <SubsidyAiSection />
 
       {/* ── 에러 배너 ── */}
       {fetchError && (

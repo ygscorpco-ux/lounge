@@ -75,6 +75,71 @@ function StepBadge({ n, light = false }) {
   );
 }
 
+// AI 인건비 절감 제안 섹션
+function LaborAiSection({ calc, hourlyWage, hoursPerDay, selectedDays, employmentType, insuranceOn, numWorkers }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult]   = useState(null);
+  const [error, setError]     = useState('');
+
+  async function handleAnalyze() {
+    setLoading(true); setError(''); setResult(null);
+    try {
+      const res = await fetch('/api/tools/labor-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hourlyWage,
+          hoursPerDay,
+          daysPerWeek: selectedDays.length,
+          employmentType,
+          insuranceOn,
+          bossTotal: calc.bossTotal,
+          netWage: calc.netWage,
+          numWorkers,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) setResult(data.data);
+      else setError(data.error || 'AI 분석 실패');
+    } catch {
+      setError('네트워크 오류가 발생했습니다');
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(27,71,151,0.08)', marginTop: '14px' }}>
+      <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '4px' }}>💡 AI 인건비 절감 제안</div>
+      <div style={{ fontSize: '12px', color: '#888', marginBottom: '14px' }}>합법적인 인건비 효율화 방법을 알려드려요</div>
+
+      <button
+        onClick={handleAnalyze} disabled={loading}
+        style={{
+          width: '100%', padding: '14px', borderRadius: '14px', border: 'none',
+          background: loading ? '#ccc' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          color: '#fff', fontSize: '15px', fontWeight: 700, cursor: loading ? 'default' : 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+        }}
+      >
+        {loading ? 'AI 분석 중...' : '💡 AI 절감 제안 받기'}
+      </button>
+
+      {error && <div style={{ marginTop: '10px', padding: '10px 14px', background: '#fff0f0', color: '#e74c3c', borderRadius: '10px', fontSize: '13px' }}>⚠️ {error}</div>}
+
+      {result && (
+        <div style={{ marginTop: '12px', background: '#1a1a2e', borderRadius: '14px', padding: '18px', animation: 'fadeSlideUp 0.3s ease' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#f093fb' }}>💡 AI 제안</span>
+            {result.cached && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(240,147,251,0.15)', color: '#f093fb', marginLeft: 'auto' }}>캐시됨</span>}
+          </div>
+          <p style={{ fontSize: '14px', color: '#e0e0e0', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{result.text}</p>
+          <p style={{ fontSize: '11px', color: '#556', marginTop: '8px', marginBottom: 0 }}>* AI 제안은 참고용이며, 실제 적용 전 전문가 상담을 권장합니다.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LaborCostCalculator() {
   const [hourlyWage, setHourlyWage] = useState(MIN_WAGE.toLocaleString());
   const [hoursPerDay, setHoursPerDay] = useState(8);
@@ -482,6 +547,9 @@ export default function LaborCostCalculator() {
           <div style={{ marginTop: '10px' }}>위 정보를 입력하면 인건비가 계산됩니다</div>
         </div>
       )}
+
+      {/* ── AI 절감 제안 ── */}
+      {calc && <LaborAiSection calc={calc} hourlyWage={wage} hoursPerDay={hoursPerDay} selectedDays={selectedDays} employmentType={employmentType} insuranceOn={insuranceOn} numWorkers={numWorkers} />}
 
       <style>{`
         @keyframes fadeSlideUp {
