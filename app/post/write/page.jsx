@@ -179,7 +179,8 @@ export default function WritePage() {
           flex: 1,
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
-          overscrollBehavior: "contain", /* Android Chrome용 pull-to-refresh 차단 */
+          overscrollBehavior:
+            "contain" /* Android Chrome용 pull-to-refresh 차단 */,
         }}
       >
         {/* 관리자 공지 옵션 */}
@@ -262,7 +263,7 @@ export default function WritePage() {
                 marginBottom: "10px",
               }}
             >
-              커뮤니티 이용규칙에 의해 정해진 게시물 게재 제한을 위반할 경우,
+              라운지 이용규칙에 의해 정해진 게시물 게재 제한을 위반할 경우,
               게시물이 삭제되고 서비스 이용이 일정 기간 제한될 수 있습니다.
             </p>
             <p style={{ fontSize: "11px", color: "#ccc", lineHeight: 1.7 }}>
@@ -288,7 +289,7 @@ export default function WritePage() {
                 textDecoration: "underline",
               }}
             >
-              커뮤니티 이용규칙 전체 보기
+              라운지 이용규칙 전체 보기
             </button>
           </div>
         </div>
