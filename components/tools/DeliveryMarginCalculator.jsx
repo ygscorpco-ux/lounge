@@ -1064,7 +1064,7 @@ export default function DeliveryMarginCalculator() {
             }}
           >
             <div
-              style={{ fontSize: "28px", marginBottom: "6px", lineHeight: 1 }}
+              style={{ fontSize: "18px", marginBottom: "4px", lineHeight: 1 }}
             >
               💰
             </div>
