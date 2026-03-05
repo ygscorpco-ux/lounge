@@ -1,8 +1,9 @@
 'use client';
+import { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import WorkerScheduler from '../../../components/tools/WorkerScheduler';
+import ContractGenerator from '../../../components/tools/ContractGenerator';
 
-export default function WorkerSchedulerPage() {
+function ContractPage() {
   const router = useRouter();
   return (
     <div style={{ background: 'var(--color-bg)', minHeight: '100dvh' }}>
@@ -12,9 +13,17 @@ export default function WorkerSchedulerPage() {
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
-        <span className="top-bar-title">알바 관리</span>
+        <span className="top-bar-title">근로계약서 작성</span>
       </div>
-      <WorkerScheduler />
+      <ContractGenerator />
     </div>
+  );
+}
+
+export default function ContractPageWrapper() {
+  return (
+    <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>로딩 중...</div>}>
+      <ContractPage />
+    </Suspense>
   );
 }
