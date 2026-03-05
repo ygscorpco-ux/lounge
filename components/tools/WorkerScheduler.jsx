@@ -16,7 +16,7 @@ const EMP_BADGE = {
   단기: { color: '#f39c12', bg: '#fff8e1' },
   일용: { color: '#e74c3c', bg: '#fff0f0' },
 };
-const MIN_WAGE = 10030;
+const MIN_WAGE = 10320; // 2026년 최저시급
 
 // ── 유틸 ─────────────────────────────────────────────────────────────
 const pad2 = n => String(n).padStart(2, '0');
@@ -1024,7 +1024,7 @@ function PayslipModal({ item, year, month, onClose }) {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span style={{ color: 'var(--color-gray-500)' }}>시급</span>
-                <span style={{ fontWeight: 700 }}>{(item.worker.hourly_wage || 10030).toLocaleString()}원</span>
+                <span style={{ fontWeight: 700 }}>{(item.worker.hourly_wage || MIN_WAGE).toLocaleString()}원</span>
               </div>
             </div>
 

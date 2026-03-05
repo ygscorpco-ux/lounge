@@ -1,19 +1,19 @@
 'use client';
 import { useState, useMemo, useEffect, useRef } from 'react';
 
-const MIN_WAGE = 10030; // 2025년 기준 (2026년: 10,320원 — 연초 업데이트 필요)
+const MIN_WAGE = 10320; // 2026년 최저시급 (전년 10,030원 → 2.9% 인상)
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 const WEEKS_PER_MONTH = 52 / 12; // 4.333...주
 
-// 4대보험 요율 (근로자 부담)
+// 4대보험 요율 (2026년 기준 — 국민연금·건강보험 인상)
 const EMPLOYEE_RATES = [
-  { label: '국민연금', rate: 0.045 },
-  { label: '건강보험', rate: 0.03545 },
-  { label: '고용보험', rate: 0.009 },
+  { label: '국민연금', rate: 0.0475 },  // 2026년 4.75% (전년 4.5%→+0.25%p, 2033년까지 매년 0.5%p 인상)
+  { label: '건강보험', rate: 0.03595 }, // 2026년 3.595% (전년 3.545%→+0.05%p)
+  { label: '고용보험', rate: 0.009 },   // 0.9% 동결
 ];
-// 사업주 추가 부담 (국민연금 4.5% + 건강보험 3.545% + 고용보험 1.15% + 산재 0.7%)
-const EMPLOYER_EXTRA_RATE = 0.045 + 0.03545 + 0.0115 + 0.007;
-const EMPLOYEE_TOTAL_RATE = 0.045 + 0.03545 + 0.009;
+// 사업주 추가 부담 (국민연금 4.75% + 건강보험 3.595% + 고용보험 1.15% + 산재 0.7%)
+const EMPLOYER_EXTRA_RATE = 0.0475 + 0.03595 + 0.0115 + 0.007;
+const EMPLOYEE_TOTAL_RATE = 0.0475 + 0.03595 + 0.009;
 
 // 카운트업 애니메이션 훅
 function useCountUp(target) {

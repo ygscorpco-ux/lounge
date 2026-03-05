@@ -17,7 +17,7 @@ export async function GET() {
         phone            VARCHAR(20),
         birth_date       DATE,
         employment_type  ENUM('정규','단기','일용') DEFAULT '정규',
-        hourly_wage      INT NOT NULL DEFAULT 10030,
+        hourly_wage      INT NOT NULL DEFAULT 10320,
         work_days        VARCHAR(50) DEFAULT '월,화,수,목,금',
         start_time       VARCHAR(10) DEFAULT '09:00',
         end_time         VARCHAR(10) DEFAULT '18:00',

@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 const STEPS = ['사업장', '근로자', '근무조건', '미리보기', '완료'];
 const DAY_ORDER = ['월', '화', '수', '목', '금', '토', '일'];
-const MIN_WAGE  = 10030;
+const MIN_WAGE  = 10320; // 2026년 최저시급
 
 // ── 공통 스타일 헬퍼 ──────────────────────────────────────────────────
 const inp = (extra = {}) => ({

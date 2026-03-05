@@ -52,7 +52,7 @@ export async function POST(request) {
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         user.id, name, phone || null, birth_date || null,
-        employment_type || '정규', hourly_wage || 10030,
+        employment_type || '정규', hourly_wage || 10320,
         Array.isArray(work_days) ? work_days.join(',') : (work_days || '월,화,수,목,금'),
         start_time || '09:00', end_time || '18:00',
         contract_start || null, contract_end || null,
