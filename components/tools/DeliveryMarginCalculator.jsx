@@ -160,16 +160,28 @@ function Toggle({ on, onChange }) {
 function PlatformIconButton({ p, active, logoUrl, onSelect }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "5px",
+      }}
+    >
       <button
         onClick={onSelect}
         style={{
-          width: "100%", aspectRatio: "1",
-          borderRadius: "16px", cursor: "pointer", padding: 0,
+          width: "100%",
+          aspectRatio: "1",
+          borderRadius: "16px",
+          cursor: "pointer",
+          padding: 0,
           border: active ? `3px solid ${p.color}` : "2px solid #e8eaf0",
           overflow: "hidden",
           transition: "all 0.15s ease",
-          boxShadow: active ? `0 4px 16px ${p.color}40` : "0 1px 5px rgba(0,0,0,0.06)",
+          boxShadow: active
+            ? `0 4px 16px ${p.color}40`
+            : "0 1px 5px rgba(0,0,0,0.06)",
           background: "#fff",
         }}
       >
@@ -178,15 +190,37 @@ function PlatformIconButton({ p, active, logoUrl, onSelect }) {
             src={logoUrl}
             alt={p.name}
             onError={() => setFailed(true)}
-            style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              display: "block",
+            }}
           />
         ) : (
-          <div style={{ width: "100%", height: "100%", background: p.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ color: "#fff", fontSize: "22px", fontWeight: 800 }}>{p.name.charAt(0)}</span>
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              background: p.color,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span style={{ color: "#fff", fontSize: "22px", fontWeight: 800 }}>
+              {p.name.charAt(0)}
+            </span>
           </div>
         )}
       </button>
-      <span style={{ fontSize: "11px", fontWeight: active ? 700 : 500, color: active ? p.color : "#555" }}>
+      <span
+        style={{
+          fontSize: "11px",
+          fontWeight: active ? 700 : 500,
+          color: active ? p.color : "#555",
+        }}
+      >
         {p.name}
       </span>
     </div>
@@ -677,15 +711,26 @@ export default function DeliveryMarginCalculator() {
             </div>
           ) : (
             <div style={{ marginBottom: hasTiers ? "12px" : "20px" }}>
-              {/* 1:1 로고 버튼 그리드 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "8px" }}>
+              {/* 1:1 로고 버튼 그리드 — 고정 크기로 너무 커지지 않게 */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 120px))",
+                  gap: "10px",
+                  marginBottom: "8px",
+                  justifyContent: "center",
+                }}
+              >
                 {platforms.map((p) => (
                   <PlatformIconButton
                     key={p.platform_id}
                     p={p}
                     active={selectedPlatformId === p.platform_id}
                     logoUrl={FAVICON_DOMAINS[p.platform_id] || null}
-                    onSelect={() => { setSelectedPlatformId(p.platform_id); setSelectedTierId(null); }}
+                    onSelect={() => {
+                      setSelectedPlatformId(p.platform_id);
+                      setSelectedTierId(null);
+                    }}
                   />
                 ))}
               </div>
@@ -1018,7 +1063,11 @@ export default function DeliveryMarginCalculator() {
               fontSize: "14px",
             }}
           >
-            <div style={{ fontSize: "28px", marginBottom: "6px", lineHeight: 1 }}>💰</div>
+            <div
+              style={{ fontSize: "28px", marginBottom: "6px", lineHeight: 1 }}
+            >
+              💰
+            </div>
             메뉴 판매가를 입력하면 마진이 계산됩니다
           </div>
         ) : (
