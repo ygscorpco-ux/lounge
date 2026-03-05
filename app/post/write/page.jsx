@@ -45,7 +45,10 @@ export default function WritePage() {
     fetch("/api/auth/me")
       .then((r) => {
         // 로그인 안 된 상태면 로그인 페이지로 이동
-        if (!r.ok) { router.replace("/login"); return null; }
+        if (!r.ok) {
+          router.replace("/login");
+          return null;
+        }
         return r.json();
       })
       .then((data) => {
@@ -71,8 +74,13 @@ export default function WritePage() {
         const MAX = 1200;
         let { width, height } = img;
         if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round((height / width) * MAX); width = MAX; }
-          else { width = Math.round((width / height) * MAX); height = MAX; }
+          if (width > height) {
+            height = Math.round((height / width) * MAX);
+            width = MAX;
+          } else {
+            width = Math.round((width / height) * MAX);
+            height = MAX;
+          }
         }
         const canvas = document.createElement("canvas");
         canvas.width = width;
@@ -80,9 +88,10 @@ export default function WritePage() {
         canvas.getContext("2d").drawImage(img, 0, 0, width, height);
         URL.revokeObjectURL(url);
         canvas.toBlob(
-          (blob) => resolve(new File([blob], "image.jpg", { type: "image/jpeg" })),
+          (blob) =>
+            resolve(new File([blob], "image.jpg", { type: "image/jpeg" })),
           "image/jpeg",
-          0.82 // 화질 82% — 육안 차이 거의 없고 용량 대폭 감소
+          0.82, // 화질 82% — 육안 차이 거의 없고 용량 대폭 감소
         );
       };
       img.src = url;
@@ -93,7 +102,10 @@ export default function WritePage() {
   async function handleImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
-    if (images.length >= 4) { setError("이미지는 최대 4장까지 첨부 가능합니다"); return; }
+    if (images.length >= 4) {
+      setError("이미지는 최대 4장까지 첨부 가능합니다");
+      return;
+    }
 
     setUploading(true);
     setError("");
@@ -101,7 +113,10 @@ export default function WritePage() {
       const compressed = await compressImage(file); // 압축 먼저 처리
       const formData = new FormData();
       formData.append("image", compressed);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       const data = await res.json();
       if (res.ok) {
         setImages((prev) => [...prev, data.url]);
@@ -202,7 +217,8 @@ export default function WritePage() {
         transform: "translateX(-50%)",
         width: "100%",
         maxWidth: "480px",
-        height: "100dvh", /* dvh = 브라우저 바 제외한 실제 보이는 높이 — iOS Safari 대응 */
+        height:
+          "100dvh" /* dvh = 브라우저 바 제외한 실제 보이는 높이 — iOS Safari 대응 */,
         display: "flex",
         flexDirection: "column",
         background: "#fff",
@@ -612,7 +628,8 @@ export default function WritePage() {
           flexShrink: 0,
           borderTop: "1px solid #f0f0f0",
           padding: "10px 16px",
-          paddingBottom: "max(10px, env(safe-area-inset-bottom))", /* 홈 인디케이터 영역 확보 */
+          paddingBottom:
+            "max(10px, env(safe-area-inset-bottom))" /* 홈 인디케이터 영역 확보 */,
           display: "flex",
           alignItems: "center",
           gap: "16px",
@@ -692,8 +709,8 @@ export default function WritePage() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="M9 11l3 3L22 4"/>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            <path d="M9 11l3 3L22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
           </svg>
           {poll && (
             <span
