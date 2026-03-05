@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function WritePage() {
@@ -8,6 +8,7 @@ export default function WritePage() {
   const [isNotice, setIsNotice] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState('');
+  const textareaRef = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -18,6 +19,16 @@ export default function WritePage() {
       if (data && data.user && data.user.role === 'admin') setIsAdmin(true);
     });
   }, []);
+
+  // 내용 입력할 때마다 textarea 높이를 내용에 맞게 자동 확장
+  function handleContentChange(e) {
+    setContent(e.target.value);
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    }
+  }
 
   async function handleSubmit() {
     setError('');
@@ -54,11 +65,12 @@ export default function WritePage() {
       background: '#fff',
       zIndex: 200,
     }}>
-      {/* 고정 상단바 */}
+
+      {/* ✅ 고정 상단바 — 절대 안 움직임 */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 16px', borderBottom: '1px solid #f0f0f0',
-        background: '#fff', flexShrink: 0, zIndex: 10,
+        background: '#fff', flexShrink: 0,
       }}>
         <button onClick={() => router.back()} style={{
           background: 'none', border: 'none', padding: '4px',
@@ -89,15 +101,19 @@ export default function WritePage() {
         </div>
       )}
 
-      {/* 스크롤 영역 — 이제 부모가 fixed+고정높이이므로 정상 동작 */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+      {/* ✅ 스크롤 영역 — 헤더 아래 전체가 스크롤됨 */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+      }}>
 
         {/* 관리자 공지 옵션 */}
         {isAdmin && (
           <label style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '12px 16px', borderBottom: '1px solid #f0f0f0',
-            fontSize: '14px', color: '#333', flexShrink: 0,
+            fontSize: '14px', color: '#333',
           }}>
             <input
               type="checkbox"
@@ -116,28 +132,42 @@ export default function WritePage() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           style={{
-            padding: '18px 16px 14px', border: 'none',
+            display: 'block',
+            width: '100%',
+            padding: '18px 16px 14px',
+            border: 'none',
             borderBottom: '1px solid #f0f0f0',
             fontSize: '18px', fontWeight: 600, color: '#1a1a1a',
-            outline: 'none', background: 'transparent', flexShrink: 0,
+            outline: 'none', background: 'transparent',
+            boxSizing: 'border-box',
           }}
         />
 
-        {/* 내용 */}
+        {/* ✅ 핵심 수정: textarea는 flex:1 없이, 내용 길이만큼 자동으로 키가 늘어남 */}
         <textarea
+          ref={textareaRef}
           placeholder={'염광사 회원님들과 자유롭게 얘기해보세요.\n#매출고민 #직원관리 #운영노하우'}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={handleContentChange}
           style={{
-            flex: 1, padding: '16px', border: 'none',
-            fontSize: '15px', lineHeight: 1.7, color: '#333',
-            outline: 'none', resize: 'none',
-            background: 'transparent', minHeight: '200px',
+            display: 'block',
+            width: '100%',
+            padding: '16px',
+            border: 'none',
+            fontSize: '15px',
+            lineHeight: 1.7,
+            color: '#333',
+            outline: 'none',
+            resize: 'none',
+            overflow: 'hidden',       /* ← textarea 자체 스크롤 완전 제거 */
+            background: 'transparent',
+            minHeight: '240px',       /* ← 최소 높이 확보 */
+            boxSizing: 'border-box',
           }}
         />
 
-        {/* 이용규칙 */}
-        <div style={{ padding: '20px 16px 32px', flexShrink: 0 }}>
+        {/* 이용규칙 — 내용이 길어지면 자연스럽게 아래로 밀려남 */}
+        <div style={{ padding: '20px 16px 32px' }}>
           <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
             <p style={{ fontSize: '12px', color: '#bbb', lineHeight: 1.8, marginBottom: '10px' }}>
               커뮤니티 이용규칙에 의해 정해진 게시물 게재 제한을 위반할 경우,
@@ -159,6 +189,7 @@ export default function WritePage() {
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );
