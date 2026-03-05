@@ -692,6 +692,38 @@ export default function SubsidyCalendar() {
         </div>
       )}
 
+      {/* ── 더 많은 지원사업 찾기 링크 섹션 ── */}
+      <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--color-gray-200)' }}>
+        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-gray-700)', marginBottom: '12px' }}>
+          더 많은 지원사업 찾기
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+          {[
+            { icon: '🏢', name: '기업마당', desc: '중소기업·소상공인 지원사업 통합공고', url: 'https://www.bizinfo.go.kr', color: '#1b4797' },
+            { icon: '🏪', name: '소상공인마당', desc: '소진공 공식 지원사업 신청', url: 'https://www.sbiz.or.kr', color: '#2ecc71' },
+            { icon: '🏛️', name: '중소벤처기업부', desc: '정책자금·창업지원 공고', url: 'https://www.mss.go.kr', color: '#f39c12' },
+            { icon: '📋', name: '고용24', desc: '고용보험·일자리 지원사업', url: 'https://www.work24.go.kr', color: '#e74c3c' },
+          ].map(link => (
+            <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" style={{
+              display: 'flex', alignItems: 'flex-start', gap: '10px',
+              padding: '12px 14px', borderRadius: '14px',
+              background: '#fff', border: '1.5px solid var(--color-gray-200)',
+              textDecoration: 'none', transition: 'border-color 0.15s, box-shadow 0.15s',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+            }}>
+              <span style={{ fontSize: '22px', lineHeight: 1, flexShrink: 0 }}>{link.icon}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: link.color, marginBottom: '2px' }}>{link.name}</div>
+                <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', lineHeight: 1.4 }}>{link.desc}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+        <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', textAlign: 'center', lineHeight: 1.5 }}>
+          위 사이트에서 더 많은 지원사업을 확인하세요 ↗
+        </div>
+      </div>
+
       {/* ── 관리자 플로팅 버튼 ── */}
       {user?.role === 'admin' && (
         <button
