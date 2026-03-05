@@ -60,8 +60,8 @@ export async function POST(request) {
     });
 
     response.cookies.set('token', token, {
-      httpOnly: true,       // JS에서 쿠키 접근 불가 (보안)
-      secure: false,        // 나중에 https 적용하면 true로 변경
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // 프로덕션(Vercel HTTPS)에서는 true
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,  // 7일
       path: '/'

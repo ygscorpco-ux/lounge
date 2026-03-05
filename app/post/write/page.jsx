@@ -44,8 +44,9 @@ export default function WritePage() {
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => {
-        if (r.ok) return r.json();
-        return null;
+        // 로그인 안 된 상태면 로그인 페이지로 이동
+        if (!r.ok) { router.replace("/login"); return null; }
+        return r.json();
       })
       .then((data) => {
         if (data && data.user && data.user.role === "admin") setIsAdmin(true);
