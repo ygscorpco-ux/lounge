@@ -158,36 +158,16 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 바로가기 퀵메뉴 — 가로 스크롤 */}
+      {/* 바로가기 퀵메뉴 — 5개, 한 줄 균등 배치 */}
       <div style={{
-        display: "flex", gap: "16px", padding: "4px 16px 16px",
-        overflowX: "auto", msOverflowStyle: "none", scrollbarWidth: "none",
+        display: "flex", justifyContent: "space-around",
+        padding: "4px 8px 16px",
       }}>
-        {/* 외부 링크 6개 + 사장님 도구 4개 */}
+        {/* 염광사 홈 1개 + 사장님 도구 4개 = 총 5개 */}
         {[
           {
             label: "염광사 홈", url: "http://www.염광사.com", external: true,
             svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 13L14 5l10 8"/><path d="M6 11.5V23h5v-5h6v5h5V11.5"/></svg>
-          },
-          {
-            label: "로드맵", url: "#", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="22" height="18" rx="3"/><path d="M8 5V3M20 5V3M3 11h22"/><path d="M8 16h4M8 20h6"/></svg>
-          },
-          {
-            label: "디자인신청", url: "#", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="14" cy="14" r="4"/><path d="M14 4v4M14 20v4M4 14h4M20 14h4"/><path d="M7 7l2.8 2.8M18.2 18.2L21 21M7 21l2.8-2.8M18.2 9.8L21 7" stroke="#4f80e1"/></svg>
-          },
-          {
-            label: "카드뉴스", url: "#", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="22" height="16" rx="3"/><path d="M8 13h12M8 17h8" stroke="#4f80e1"/></svg>
-          },
-          {
-            label: "주간뉴스", url: "#", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="20" height="18" rx="2"/><path d="M4 11l10 7 10-7"/></svg>
-          },
-          {
-            label: "정부지원", url: "#", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 23h20M6 23V13M22 23V13M2 13l12-8 12 8"/><path d="M11 23v-6h6v6" stroke="#4f80e1"/></svg>
           },
           {
             label: "마진계산기", url: "/tools/delivery-margin", external: false,
