@@ -27,9 +27,19 @@ export default function PostDetail() {
   const [loading, setLoading] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [poll, setPoll] = useState(null);       // 투표 데이터
+  const [voting, setVoting] = useState(false);  // 투표 처리 중
   const router = useRouter();
 
-  async function fetchPost() { const r = await fetch('/api/posts/' + id); if (r.ok) { const d = await r.json(); setPost(d.post); } setLoading(false); }
+  async function fetchPost() {
+    const r = await fetch('/api/posts/' + id);
+    if (r.ok) {
+      const d = await r.json();
+      setPost(d.post);
+      if (d.post.poll) setPoll(d.post.poll); // 투표 데이터 별도 상태로 관리
+    }
+    setLoading(false);
+  }
   async function fetchComments() { const r = await fetch('/api/comments?postId=' + id); if (r.ok) { const d = await r.json(); setComments(d.comments || []); } }
   async function checkBookmark() { try { const r = await fetch('/api/bookmarks'); if (r.ok) { const d = await r.json(); setBookmarked((d.posts || []).some(p => p.id === parseInt(id))); } } catch(e){} }
 
@@ -47,6 +57,27 @@ export default function PostDetail() {
   async function handleCommentReport(cid) { const r = await fetch('/api/comments/' + cid + '/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: '부적절한 내용' }) }); if (r.ok) alert('신고 완료'); }
   async function handleCommentDelete(cid) { if (!confirm('이 댓글을 삭제하시겠습니까?')) return; const r = await fetch('/api/comments?id=' + cid, { method: 'DELETE' }); if (r.ok) { fetchComments(); setPost(p => p ? { ...p, commentCount: Math.max(p.commentCount - 1, 0) } : p); } }
   async function handleCommentBlock(uid) { if (!confirm('이 사용자의 글을 앞으로 숨기시겠습니까?')) return; const r = await fetch('/api/blocks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: uid }) }); if (r.ok) { alert('차단 완료'); fetchComments(); } }
+
+  // 투표 참여 처리
+  async function handleVote(optionId) {
+    if (voting || !poll || poll.votedOptionId) return;
+    setVoting(true);
+    try {
+      const r = await fetch('/api/posts/' + id + '/poll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ optionId }),
+      });
+      const d = await r.json();
+      if (r.ok) {
+        // 투표 결과 즉시 반영 (페이지 새로고침 없이)
+        setPoll((prev) => ({ ...prev, votedOptionId: d.votedOptionId, options: d.options, totalVotes: d.totalVotes }));
+      } else {
+        alert(d.error || '투표 실패');
+      }
+    } catch (e) { alert('투표 중 오류 발생'); }
+    setVoting(false);
+  }
 
   if (loading) return <div className='loading'>로딩 중...</div>;
   if (!post) return <div className='empty'>글을 찾을 수 없습니다</div>;
@@ -96,6 +127,71 @@ export default function PostDetail() {
       </div>
 
       <div className='post-detail-content'>{post.content}</div>
+
+      {/* 이미지 영역 — 이미지가 있을 때만 표시 */}
+      {post.images && post.images.length > 0 && (
+        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {post.images.map((url, idx) => (
+            <img key={idx} src={url} alt="" style={{
+              width: '100%', borderRadius: '10px', display: 'block',
+              border: '1px solid #f0f0f0',
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* 투표 영역 — 투표가 있을 때만 표시 */}
+      {poll && (
+        <div style={{ margin: '0 16px 16px', borderRadius: '12px', border: '1px solid #e8edf5', overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', background: '#f0f4ff' }}>
+            <div style={{ fontSize: '13px', color: '#1b4797', fontWeight: 700, marginBottom: '4px' }}>📊 투표</div>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a' }}>{poll.question}</div>
+            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>{poll.totalVotes}명 참여</div>
+          </div>
+          <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {poll.options.map((option) => {
+              const isVoted = poll.votedOptionId === option.id;
+              const showResult = !!poll.votedOptionId; // 투표한 뒤에만 결과 표시
+              return (
+                <button key={option.id} onClick={() => handleVote(option.id)} disabled={showResult || voting}
+                  style={{
+                    position: 'relative', width: '100%', padding: '10px 14px',
+                    border: isVoted ? '2px solid #1b4797' : '1px solid #e0e0e0',
+                    borderRadius: '8px', background: '#fff',
+                    cursor: showResult ? 'default' : 'pointer',
+                    textAlign: 'left', overflow: 'hidden',
+                  }}
+                >
+                  {/* 투표 결과 바 (투표 후에만 표시) */}
+                  {showResult && (
+                    <div style={{
+                      position: 'absolute', left: 0, top: 0, bottom: 0,
+                      width: option.percent + '%',
+                      background: isVoted ? '#e8edf5' : '#f5f5f5',
+                      transition: 'width 0.4s ease',
+                    }} />
+                  )}
+                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '14px', color: isVoted ? '#1b4797' : '#333', fontWeight: isVoted ? 700 : 400 }}>
+                      {isVoted && '✓ '}{option.text}
+                    </span>
+                    {showResult && (
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: isVoted ? '#1b4797' : '#999' }}>
+                        {option.percent}%
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+            {!poll.votedOptionId && (
+              <p style={{ fontSize: '12px', color: '#bbb', textAlign: 'center', margin: '4px 0 0' }}>
+                항목을 선택해 투표하세요
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className='post-detail-actions'>
         <button className={'action-btn' + (post.alreadyLiked ? ' liked' : '')} onClick={handleLikePost}>

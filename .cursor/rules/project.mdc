@@ -1,0 +1,52 @@
+---
+description: LOUNGE 프로젝트 전용 규칙
+globs: "**/*.jsx, **/*.js"
+alwaysApply: true
+---
+
+# 서비스 개요
+
+- 서비스명: LOUNGE (염광사 회원전용 커뮤니티)
+- 카카오톡 채널 → 라운지 메뉴 클릭 시 연결
+- 에브리타임과 유사한 구조 (공지, 게시글, 댓글, 쪽지, 북마크, 알림, 차단)
+- 관리자(염광사)와 일반회원(사장님들)으로 구분
+
+# 기술 스택
+
+- Next.js 14 (App Router) + React 18
+- JavaScript + JSX (TypeScript 아님)
+- MySQL — mysql2로 직접 쿼리 (ORM 없음)
+- JWT 인증 — jose 라이브러리
+- 비밀번호 암호화 — bcryptjs
+- 스타일 — styles/globals.css 직접 작성 (Tailwind 없음)
+- 배포 — Vercel
+
+# 폴더 구조 규칙
+
+- 페이지: app/[기능명]/page.jsx
+- API: app/api/[기능명]/route.js
+- 공통 컴포넌트: components/
+- DB 연결: lib/db.js 사용 (새로 만들지 말 것)
+- 인증 유틸: lib/auth.js 사용
+- 상수: lib/constants.js 사용
+- 유틸함수: lib/utils.js 사용
+
+# 현재 구현된 기능들
+
+- 인증: 로그인/로그아웃/회원가입/내정보(auth/)
+- 게시글: 목록/작성/상세/베스트/검색(posts/)
+- 댓글: 작성/수정/삭제(comments/)
+- 북마크, 차단, 쪽지, 알림
+- 관리자: 밴/숨김/금지어(admin/)
+- 컴포넌트: Header, PostCard, CommentItem, CategoryFilter, WriteButton, AdminBadge
+
+# 코딩 규칙
+
+- 컴포넌트는 화살표 함수로 작성
+- API route는 반드시 try-catch로 에러 처리
+- DB 쿼리는 반드시 파라미터 바인딩 사용 (SQL 인젝션 방지)
+- 인증 필요한 API는 반드시 lib/auth.js로 토큰 검증
+- 응답 형식 통일: 성공 → { success: true, data: ... } / 실패 → { success: false, error: "메시지" }
+- 환경변수는 .env.local 사용, 절대 하드코딩 금지
+- 새 컴포넌트는 components/ 폴더에 추가
+- 새 API는 app/api/ 하위에 route.js로 추가

@@ -1,4 +1,4 @@
-﻿export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 import pool from '../../../lib/db.js';
 import { getCurrentUser } from '../../../lib/auth.js';
@@ -76,7 +76,7 @@ export async function POST(request) {
     const [banned] = await pool.query('SELECT is_banned FROM users WHERE id = ?', [user.id]);
     if (banned.length > 0 && banned[0].is_banned) return NextResponse.json({ error: 'Account restricted' }, { status: 403 });
 
-    const { category, title, content, isNotice } = await request.json();
+    const { category, title, content, isNotice, images, poll } = await request.json();
     if (!category || !title || !content) return NextResponse.json({ error: 'All fields required' }, { status: 400 });
 
     const hasBanned = await containsBannedWord(title + ' ' + content);
@@ -86,12 +86,37 @@ export async function POST(request) {
 
     const notice = (isNotice && user.role === 'admin') ? true : false;
 
+    // 이미지 URL 배열을 JSON 문자열로 저장 (최대 4장)
+    const imagesJson = (Array.isArray(images) && images.length > 0)
+      ? JSON.stringify(images.slice(0, 4))
+      : null;
+
+    // 투표 유효성 검사 — 질문 + 옵션 2개 이상 있어야 함
+    const validPoll = poll && poll.question && poll.question.trim() &&
+      Array.isArray(poll.options) &&
+      poll.options.filter(o => o && o.trim()).length >= 2;
+
     const [result] = await pool.query(
-      'INSERT INTO posts (user_id, category, title, content, is_notice) VALUES (?, ?, ?, ?, ?)',
-      [user.id, category, title, content, notice]
+      'INSERT INTO posts (user_id, category, title, content, is_notice, images, has_poll) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [user.id, category, title, content, notice, imagesJson, validPoll ? true : false]
     );
 
-    return NextResponse.json({ message: 'Posted', postId: result.insertId }, { status: 201 });
+    const postId = result.insertId;
+
+    // 투표 데이터 저장
+    if (validPoll) {
+      const [pollResult] = await pool.query(
+        'INSERT INTO polls (post_id, question) VALUES (?, ?)',
+        [postId, poll.question.trim()]
+      );
+      const pollId = pollResult.insertId;
+      const validOptions = poll.options.filter(o => o && o.trim());
+      for (const optionText of validOptions) {
+        await pool.query('INSERT INTO poll_options (poll_id, text) VALUES (?, ?)', [pollId, optionText.trim()]);
+      }
+    }
+
+    return NextResponse.json({ message: 'Posted', postId }, { status: 201 });
   } catch (error) {
     console.error('create post error:', error);
     return NextResponse.json({ error: 'server error' }, { status: 500 });
