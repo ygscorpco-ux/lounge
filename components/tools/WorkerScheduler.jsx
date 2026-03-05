@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { getCurrentMinWage } from '../../lib/constants';
 
 // ── 상수 ──────────────────────────────────────────────────────────────
 const DAY_KR   = ['일', '월', '화', '수', '목', '금', '토'];
@@ -16,7 +17,7 @@ const EMP_BADGE = {
   단기: { color: '#f39c12', bg: '#fff8e1' },
   일용: { color: '#e74c3c', bg: '#fff0f0' },
 };
-const MIN_WAGE = 10320; // 2026년 최저시급
+const MIN_WAGE = getCurrentMinWage(); // 연도별 자동 선택
 
 // ── 유틸 ─────────────────────────────────────────────────────────────
 const pad2 = n => String(n).padStart(2, '0');

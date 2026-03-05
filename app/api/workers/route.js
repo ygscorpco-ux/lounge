@@ -1,6 +1,9 @@
 import pool from '../../../lib/db.js';
 import { getCurrentUser } from '../../../lib/auth.js';
+import { getCurrentMinWage } from '../../../lib/constants.js';
 import { NextResponse } from 'next/server';
+
+const MIN_WAGE = getCurrentMinWage();
 
 // 내 직원 목록 조회
 export async function GET() {
@@ -52,7 +55,7 @@ export async function POST(request) {
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         user.id, name, phone || null, birth_date || null,
-        employment_type || '정규', hourly_wage || 10320,
+        employment_type || '정규', hourly_wage || MIN_WAGE,
         Array.isArray(work_days) ? work_days.join(',') : (work_days || '월,화,수,목,금'),
         start_time || '09:00', end_time || '18:00',
         contract_start || null, contract_end || null,

@@ -1,19 +1,22 @@
 'use client';
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { getCurrentMinWage, getCurrentInsuranceRates } from '../../lib/constants';
 
-const MIN_WAGE = 10320; // 2026년 최저시급 (전년 10,030원 → 2.9% 인상)
+// 현재 연도 기준으로 자동 선택
+const MIN_WAGE = getCurrentMinWage();
+const IR = getCurrentInsuranceRates();
+
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
-const WEEKS_PER_MONTH = 52 / 12; // 4.333...주
+const WEEKS_PER_MONTH = 52 / 12;
 
-// 4대보험 요율 (2026년 기준 — 국민연금·건강보험 인상)
+// 컴포넌트에서 쓸 형태로 변환 (lib/constants의 값 참조)
 const EMPLOYEE_RATES = [
-  { label: '국민연금', rate: 0.0475 },  // 2026년 4.75% (전년 4.5%→+0.25%p, 2033년까지 매년 0.5%p 인상)
-  { label: '건강보험', rate: 0.03595 }, // 2026년 3.595% (전년 3.545%→+0.05%p)
-  { label: '고용보험', rate: 0.009 },   // 0.9% 동결
+  { label: '국민연금', rate: IR.nationalPensionEmployee },
+  { label: '건강보험', rate: IR.healthEmployee },
+  { label: '고용보험', rate: IR.employmentEmployee },
 ];
-// 사업주 추가 부담 (국민연금 4.75% + 건강보험 3.595% + 고용보험 1.15% + 산재 0.7%)
-const EMPLOYER_EXTRA_RATE = 0.0475 + 0.03595 + 0.0115 + 0.007;
-const EMPLOYEE_TOTAL_RATE = 0.0475 + 0.03595 + 0.009;
+const EMPLOYER_EXTRA_RATE = IR.nationalPensionEmployer + IR.healthEmployer + IR.employmentEmployer + IR.industrialAccident;
+const EMPLOYEE_TOTAL_RATE = IR.nationalPensionEmployee + IR.healthEmployee + IR.employmentEmployee;
 
 // 카운트업 애니메이션 훅
 function useCountUp(target) {
