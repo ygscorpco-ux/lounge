@@ -1392,46 +1392,27 @@ export default function DeliveryMarginCalculator() {
                 >
                   📈 월 매출 시뮬레이션
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <span
-                    style={{ fontSize: "13px", opacity: 0.8, flexShrink: 0 }}
-                  >
-                    하루 평균
-                  </span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder="0"
-                    value={dailyOrders}
-                    onChange={(e) =>
-                      setDailyOrders(e.target.value.replace(/[^0-9]/g, ""))
-                    }
-                    style={{
-                      width: "68px",
-                      padding: "8px 10px",
-                      textAlign: "center",
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      color: "#1b4797",
-                      border: "none",
-                      borderRadius: "8px",
-                      outline: "none",
-                      fontFamily: "inherit",
-                      background: "#fff",
-                    }}
-                  />
-                  <span
-                    style={{ fontSize: "13px", opacity: 0.8, flexShrink: 0 }}
-                  >
-                    건 주문 시
-                  </span>
+                {/* 하루 평균 주문 수 — +/- 카운터 */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "13px", opacity: 0.8, flexShrink: 0 }}>하루 평균</span>
+                  <div style={{ display: "flex", alignItems: "center", background: "#fff", borderRadius: "10px", overflow: "hidden" }}>
+                    <button
+                      onClick={() => setDailyOrders(v => String(Math.max(0, (parseInt(v) || 0) - 1)))}
+                      style={{ width: "32px", height: "36px", border: "none", background: "transparent", fontSize: "18px", fontWeight: 700, color: "#1b4797", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                    >−</button>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={dailyOrders}
+                      onChange={(e) => setDailyOrders(e.target.value.replace(/[^0-9]/g, ""))}
+                      style={{ width: "44px", textAlign: "center", fontSize: "16px", fontWeight: 700, color: "#1b4797", border: "none", outline: "none", fontFamily: "inherit", background: "transparent" }}
+                    />
+                    <button
+                      onClick={() => setDailyOrders(v => String((parseInt(v) || 0) + 1))}
+                      style={{ width: "32px", height: "36px", border: "none", background: "transparent", fontSize: "18px", fontWeight: 700, color: "#1b4797", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                    >+</button>
+                  </div>
+                  <span style={{ fontSize: "13px", opacity: 0.8, flexShrink: 0 }}>건 주문 시</span>
                 </div>
 
                 {/* 월 고정비 입력 (BEP용) */}
