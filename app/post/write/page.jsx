@@ -179,7 +179,7 @@ export default function WritePage() {
         transform: "translateX(-50%)",
         width: "100%",
         maxWidth: "480px",
-        height: "100vh",
+        height: "100dvh", /* dvh = 브라우저 바 제외한 실제 보이는 높이 — iOS Safari 대응 */
         display: "flex",
         flexDirection: "column",
         background: "#fff",
@@ -589,6 +589,7 @@ export default function WritePage() {
           flexShrink: 0,
           borderTop: "1px solid #f0f0f0",
           padding: "10px 16px",
+          paddingBottom: "max(10px, env(safe-area-inset-bottom))", /* 홈 인디케이터 영역 확보 */
           display: "flex",
           alignItems: "center",
           gap: "16px",
