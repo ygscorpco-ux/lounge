@@ -161,9 +161,18 @@ function BottomSheet({ open, onClose, onSubmit }) {
   );
 }
 
+// 북마크 로드/저장 헬퍼
+function loadBookmarks() {
+  try { return JSON.parse(localStorage.getItem('subsidyBookmarks') || '[]'); } catch { return []; }
+}
+function saveBookmarks(ids) {
+  localStorage.setItem('subsidyBookmarks', JSON.stringify(ids));
+}
+
 export default function SubsidyCalendar() {
   const today = new Date();
   const [view, setView] = useState('calendar'); // 'calendar' | 'list'
+  const [fetchError, setFetchError] = useState('');
   const [category, setCategory] = useState('전체');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -172,6 +181,19 @@ export default function SubsidyCalendar() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [user, setUser] = useState(null);
+  const [bookmarks, setBookmarks] = useState([]); // 북마크 지원금 ID 배열
+  const [showBookmarkOnly, setShowBookmarkOnly] = useState(false);
+
+  // 북마크 초기 로드
+  useEffect(() => { setBookmarks(loadBookmarks()); }, []);
+
+  function toggleBookmark(id) {
+    setBookmarks(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      saveBookmarks(next);
+      return next;
+    });
+  }
 
   // 로그인 유저 확인
   useEffect(() => {
@@ -181,11 +203,15 @@ export default function SubsidyCalendar() {
   // 지원금 데이터 불러오기
   async function loadSubsidies() {
     setLoading(true);
+    setFetchError('');
     try {
       const r = await fetch(`/api/subsidy/list?year=${year}&month=${month}&category=${encodeURIComponent(category)}`);
       const d = await r.json();
       if (d.success) setSubsidies(d.data);
-    } catch {}
+      else setFetchError(d.error || '데이터를 불러오지 못했습니다');
+    } catch (e) {
+      setFetchError('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요');
+    }
     setLoading(false);
   }
 
@@ -255,6 +281,14 @@ export default function SubsidyCalendar() {
         </div>
       </div>
 
+      {/* ── 에러 배너 ── */}
+      {fetchError && (
+        <div style={{ padding: '11px 14px', background: '#fff0f0', color: 'var(--color-danger)', borderRadius: '10px', fontSize: '13px', fontWeight: 600, marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>⚠️ {fetchError}</span>
+          <button onClick={loadSubsidies} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>재시도</button>
+        </div>
+      )}
+
       {/* ── 뷰 탭 ── */}
       <div style={{ display: 'flex', background: 'var(--color-gray-100)', borderRadius: '12px', padding: '4px', marginBottom: '16px' }}>
         {[{ id: 'calendar', label: '📅 캘린더' }, { id: 'list', label: '📋 리스트' }].map(t => (
@@ -272,9 +306,9 @@ export default function SubsidyCalendar() {
       {/* ── 카테고리 필터 ── */}
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: '4px', marginBottom: '16px' }}>
         {CATEGORIES.map(c => {
-          const sel = category === c.id;
+          const sel = category === c.id && !showBookmarkOnly;
           return (
-            <button key={c.id} onClick={() => { setCategory(c.id); setSelectedDate(null); }} style={{
+            <button key={c.id} onClick={() => { setCategory(c.id); setSelectedDate(null); setShowBookmarkOnly(false); }} style={{
               padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', flexShrink: 0,
               fontSize: '13px', fontWeight: sel ? 700 : 500,
               border: sel ? `1.5px solid ${c.color}` : '1.5px solid var(--color-gray-300)',
@@ -286,12 +320,33 @@ export default function SubsidyCalendar() {
             </button>
           );
         })}
+        {/* 북마크 탭 */}
+        <button onClick={() => { setShowBookmarkOnly(v => !v); setCategory('전체'); setSelectedDate(null); }} style={{
+          padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', flexShrink: 0,
+          fontSize: '13px', fontWeight: showBookmarkOnly ? 700 : 500,
+          border: showBookmarkOnly ? '1.5px solid #f39c12' : '1.5px solid var(--color-gray-300)',
+          background: showBookmarkOnly ? '#f39c12' : '#fff',
+          color: showBookmarkOnly ? '#fff' : 'var(--color-gray-700)',
+          transition: 'all 0.15s',
+        }}>
+          ⭐ 관심 {bookmarks.length > 0 ? `(${bookmarks.length})` : ''}
+        </button>
       </div>
 
       {/* ── 캘린더 뷰 ── */}
       {view === 'calendar' && (
         <div>
-          <div style={{ background: '#fff', borderRadius: '20px', padding: '18px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)', marginBottom: '12px' }}>
+          {/* 로딩 스켈레톤 */}
+          {loading && (
+            <div style={{ background: '#fff', borderRadius: '20px', padding: '18px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)', marginBottom: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '4px', marginTop: '46px' }}>
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} style={{ aspectRatio: '1', borderRadius: '8px', animation: 'shimmer 1.2s infinite' }} />
+                ))}
+              </div>
+            </div>
+          )}
+          <div style={{ display: loading ? 'none' : 'block', background: '#fff', borderRadius: '20px', padding: '18px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)', marginBottom: '12px' }}>
             {/* 월 이동 헤더 */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
               <button onClick={prevMonth} style={{ width: '32px', height: '32px', border: 'none', background: 'var(--color-gray-100)', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
@@ -389,31 +444,57 @@ export default function SubsidyCalendar() {
         </div>
       )}
 
+
       {/* ── 리스트 뷰 ── */}
       {view === 'list' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {loading && <div style={{ textAlign: 'center', padding: '30px', color: 'var(--color-gray-500)' }}>불러오는 중...</div>}
-          {!loading && sortedList.length === 0 && (
+          {loading && (
+            // 로딩 스켈레톤
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} style={{ background: '#fff', borderRadius: '16px', padding: '18px', boxShadow: 'var(--shadow-sm)', borderLeft: '4px solid var(--color-gray-200)' }}>
+                <div style={{ height: '14px', width: '80px', borderRadius: '6px', marginBottom: '10px', animation: 'shimmer 1.2s infinite' }} />
+                <div style={{ height: '18px', width: '70%', borderRadius: '6px', marginBottom: '8px', animation: 'shimmer 1.2s infinite' }} />
+                <div style={{ height: '13px', width: '50%', borderRadius: '6px', animation: 'shimmer 1.2s infinite' }} />
+              </div>
+            ))
+          )}
+          {!loading && sortedList.filter(s => !showBookmarkOnly || bookmarks.includes(s.id)).length === 0 && (
             <div style={{ textAlign: 'center', padding: '30px', color: 'var(--color-gray-500)', fontSize: '14px' }}>
-              등록된 지원금이 없습니다
+              {showBookmarkOnly ? '북마크한 지원금이 없습니다 ⭐' : '등록된 지원금이 없습니다'}
             </div>
           )}
-          {sortedList.map(s => {
+          {sortedList.filter(s => !showBookmarkOnly || bookmarks.includes(s.id)).map(s => {
             const cat = CAT_MAP[s.category] || CAT_MAP['자금지원'];
-            const expired = getDday(s.end_date) < 0;
+            const dday = getDday(s.end_date);
+            const expired = dday < 0;
+            const urgent = dday >= 0 && dday <= 7; // D-7 이내 = 긴급
+            const isBookmarked = bookmarks.includes(s.id);
             return (
               <div key={s.id} style={{
                 background: '#fff', borderRadius: '16px', padding: '18px',
-                boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)',
+                boxShadow: urgent ? '0 0 0 2px #e74c3c40' : 'var(--shadow-sm)',
+                border: `1px solid ${urgent ? '#e74c3c40' : 'var(--color-gray-200)'}`,
                 opacity: expired ? 0.45 : 1,
                 borderLeft: `4px solid ${cat.color}`,
+                animation: urgent && !expired ? 'pulseUrgent 2s infinite' : 'none',
+                position: 'relative',
               }}>
                 {/* 뱃지 줄 */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: cat.color, background: cat.bg, padding: '3px 10px', borderRadius: '12px' }}>
                     {s.category}
                   </span>
-                  <DdayBadge endDate={s.end_date} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* 북마크 버튼 */}
+                    <button onClick={() => toggleBookmark(s.id)} style={{
+                      background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px',
+                      padding: '2px', lineHeight: 1, opacity: isBookmarked ? 1 : 0.3,
+                      transition: 'opacity 0.15s, transform 0.15s',
+                    }}>
+                      ⭐
+                    </button>
+                    <DdayBadge endDate={s.end_date} />
+                  </div>
                 </div>
 
                 {/* 제목 */}
@@ -439,17 +520,16 @@ export default function SubsidyCalendar() {
 
                 {/* 버튼 */}
                 <div style={{ display: 'flex', gap: '8px', marginTop: s.description ? '0' : '12px' }}>
-                  {s.url && (
+                  {s.url ? (
                     <a href={s.url} target="_blank" rel="noopener noreferrer" style={{
-                      flex: 1, padding: '10px', borderRadius: '10px', textAlign: 'center',
+                      flex: 1, padding: '12px', borderRadius: '10px', textAlign: 'center',
                       background: 'var(--color-primary)', color: '#fff',
-                      fontSize: '13px', fontWeight: 700, textDecoration: 'none',
+                      fontSize: '14px', fontWeight: 700, textDecoration: 'none', display: 'block',
                     }}>
                       신청하기 ↗
                     </a>
-                  )}
-                  {!s.url && (
-                    <div style={{ flex: 1, padding: '10px', borderRadius: '10px', textAlign: 'center', background: 'var(--color-gray-100)', color: 'var(--color-gray-500)', fontSize: '13px' }}>
+                  ) : (
+                    <div style={{ flex: 1, padding: '12px', borderRadius: '10px', textAlign: 'center', background: 'var(--color-gray-100)', color: 'var(--color-gray-500)', fontSize: '13px' }}>
                       링크 없음
                     </div>
                   )}
@@ -457,9 +537,11 @@ export default function SubsidyCalendar() {
                   {user?.role === 'admin' && (
                     <button onClick={async () => {
                       if (!confirm('삭제하시겠습니까?')) return;
-                      await fetch(`/api/subsidy/${s.id}`, { method: 'DELETE' });
-                      loadSubsidies();
-                    }} style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', background: '#fff0f0', color: 'var(--color-danger)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                      const delRes = await fetch(`/api/subsidy/${s.id}`, { method: 'DELETE' });
+                      const delData = await delRes.json();
+                      if (delData.success) loadSubsidies();
+                      else alert(delData.error || '삭제에 실패했습니다');
+                    }} style={{ padding: '12px 14px', borderRadius: '10px', border: 'none', background: '#fff0f0', color: 'var(--color-danger)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
                       삭제
                     </button>
                   )}
@@ -495,6 +577,15 @@ export default function SubsidyCalendar() {
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+          0%   { background: #f0f0f0; }
+          50%  { background: #e0e0e0; }
+          100% { background: #f0f0f0; }
+        }
+        @keyframes pulseUrgent {
+          0%, 100% { box-shadow: 0 0 0 2px rgba(231,76,60,0.25); }
+          50%       { box-shadow: 0 0 0 5px rgba(231,76,60,0.08); }
         }
       `}</style>
     </div>

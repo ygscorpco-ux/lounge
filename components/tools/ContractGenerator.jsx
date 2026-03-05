@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const STEPS = ['사업장', '근로자', '근무조건', '미리보기', '완료'];
@@ -218,13 +218,17 @@ export default function ContractGenerator() {
   function prev() { setErr(''); setStep(s => s - 1); }
 
   async function handleFinish() {
-    const r = await fetch('/api/contract/generate', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...d, contractPeriod, businessName: d.businessName, workerName: d.workerName, wage: d.wage, endDate: d.payday }),
-    });
-    const res = await r.json();
-    if (res.success) setStep(4);
-    else setErr(res.error || '오류가 발생했습니다');
+    try {
+      const r = await fetch('/api/contract/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...d, contractPeriod, businessName: d.businessName, workerName: d.workerName, wage: d.wage, endDate: d.payday }),
+      });
+      const res = await r.json();
+      if (res.success) setStep(4);
+      else setErr(res.error || '오류가 발생했습니다');
+    } catch {
+      setErr('네트워크 오류가 발생했습니다. 다시 시도해주세요');
+    }
   }
 
   async function handlePDF() {
@@ -416,11 +420,11 @@ export default function ContractGenerator() {
           </div>
         )}
 
-        {/* ── STEP 3: 미리보기 ── */}
-        {step === 3 && (
-          <div>
+        {/* ── STEP 3 & 4: 미리보기 (Step 4에서도 hidden으로 DOM 유지 → PDF 생성 가능) ── */}
+        {step >= 3 && (
+          <div style={{ display: step === 3 ? 'block' : 'none' }}>
             <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>계약서 미리보기</div>
-            <ContractPreview data={{ ...d, contractPeriod }} type={d.contractType} />
+            <ContractPreview data={{ ...d, contractPeriod, endDate: d.payday }} type={d.contractType} />
           </div>
         )}
 

@@ -260,15 +260,22 @@ function AttendanceForm({ workers, initialDate, initialWorkerId, onSave }) {
   });
   const [saving, setSaving] = useState(false);
 
+  const [saveErr, setSaveErr] = useState('');
+
   async function handleSave() {
-    if (!f.worker_id) return alert('직원을 선택해주세요');
+    if (!f.worker_id) { setSaveErr('직원을 선택해주세요'); return; }
     setSaving(true);
-    await fetch('/api/schedule', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...f, break_minutes: parseInt(f.break_minutes) }),
-    });
+    setSaveErr('');
+    try {
+      const res = await fetch('/api/schedule', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...f, break_minutes: parseInt(f.break_minutes) }),
+      });
+      const d = await res.json();
+      if (d.success) { onSave(); }
+      else setSaveErr(d.error || '저장에 실패했습니다');
+    } catch { setSaveErr('네트워크 오류가 발생했습니다'); }
     setSaving(false);
-    onSave();
   }
 
   const hours = calcHours(f.clock_in, f.clock_out, f.break_minutes);
@@ -326,6 +333,8 @@ function AttendanceForm({ workers, initialDate, initialWorkerId, onSave }) {
       <input value={f.memo} onChange={e => setF(p => ({ ...p, memo: e.target.value }))}
         placeholder="메모 (선택)" style={{ width: '100%', padding: '10px 12px', fontSize: '14px', border: '1.5px solid var(--color-gray-300)', borderRadius: '8px', marginBottom: '16px', fontFamily: 'inherit', boxSizing: 'border-box' }} />
 
+      {saveErr && <div style={{ padding: '10px 12px', background: '#fff0f0', color: 'var(--color-danger)', borderRadius: '8px', fontSize: '13px', fontWeight: 600, marginBottom: '10px' }}>{saveErr}</div>}
+
       <button onClick={handleSave} disabled={saving} style={{
         width: '100%', padding: '14px', borderRadius: '12px', border: 'none',
         background: 'var(--color-primary)', color: '#fff', fontSize: '15px', fontWeight: 700, cursor: 'pointer',
@@ -356,9 +365,10 @@ export default function WorkerScheduler() {
   // 모달 상태
   const [showAddWorker, setShowAddWorker] = useState(false);
   const [editWorker,    setEditWorker]    = useState(null);
-  const [showAttend,    setShowAttend]    = useState(false);
-  const [attendDate,    setAttendDate]    = useState('');
-  const [filterWorker,  setFilterWorker]  = useState('all');
+  const [showAttend,      setShowAttend]      = useState(false);
+  const [attendDate,      setAttendDate]      = useState('');
+  const [attendWorkerId,  setAttendWorkerId]  = useState(''); // 주간뷰 셀 클릭 시 직원 자동선택
+  const [filterWorker,    setFilterWorker]    = useState('all');
 
   // 토스트
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(''), 2000); }
@@ -461,10 +471,13 @@ export default function WorkerScheduler() {
         workers.length === 0 ? <EmptyState icon="👥" msg="등록된 직원이 없어요" sub="+ 직원 추가 버튼을 눌러 등록해보세요" /> :
         workers.map(w => {
           const emp = EMP_BADGE[w.employment_type] || EMP_BADGE['정규'];
+          const accentColor = w.color || 'var(--color-primary)';
           return (
             <div key={w.id} style={{
               background: '#fff', borderRadius: '16px', padding: '16px',
-              marginBottom: '10px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)',
+              marginBottom: '10px', boxShadow: 'var(--shadow-sm)',
+              border: '1px solid var(--color-gray-200)',
+              borderLeft: `4px solid ${accentColor}`, // 직원 고유색 accent 라인
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Avatar name={w.name} color={w.color} size={44} />
@@ -495,6 +508,36 @@ export default function WorkerScheduler() {
       }
     </div>
   );
+
+  // ── 이달 스케줄 자동생성 ────────────────────────────────────────────
+  async function autoGenerateSchedule() {
+    if (workers.length === 0) return alert('직원을 먼저 등록해주세요');
+    if (!confirm(`${year}년 ${month}월 스케줄을 자동 생성하시겠어요?\n각 직원의 근무요일 설정을 기반으로 생성됩니다.`)) return;
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    let count = 0;
+    for (const w of workers) {
+      if (!w.work_days) continue;
+      const workDaySet = new Set(w.work_days.split(',').map(d => d.trim()));
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const kr = DAY_KR[new Date(dateStr).getDay()];
+        if (!workDaySet.has(kr)) continue;
+        const res = await fetch('/api/schedule', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            worker_id: w.id, work_date: dateStr,
+            clock_in: w.start_time || '09:00', clock_out: w.end_time || '18:00',
+            break_minutes: 60, status: '정상출근', memo: '자동생성',
+          }),
+        });
+        const data = await res.json();
+        if (data.success) count++;
+      }
+    }
+    showToast(`✅ ${count}건 스케줄이 생성됐습니다`);
+    loadSchedules();
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // TAB 2: 스케줄
@@ -531,6 +574,15 @@ export default function WorkerScheduler() {
             <button onClick={nextMonth} style={navBtn}>›</button>
           </div>
         )}
+
+        {/* 이달 스케줄 자동생성 버튼 */}
+        <button onClick={autoGenerateSchedule} style={{
+          width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px dashed var(--color-primary)',
+          background: 'var(--color-primary-bg)', color: 'var(--color-primary)',
+          fontSize: '13px', fontWeight: 700, cursor: 'pointer', marginBottom: '10px',
+        }}>
+          ⚡ 이달 스케줄 자동생성 ({year}년 {month}월)
+        </button>
 
         {/* 직원 필터 */}
         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
@@ -617,7 +669,7 @@ export default function WorkerScheduler() {
                     const scheduled = isScheduledDay(w, dateStr);
                     const si = rec ? STATUS_INFO[rec.status] : null;
                     return (
-                      <div key={dateStr} onClick={() => { setAttendDate(dateStr); setShowAttend(true); }}
+                      <div key={dateStr} onClick={() => { setAttendDate(dateStr); setAttendWorkerId(String(w.id)); setShowAttend(true); }}
                         style={{
                           borderRadius: '8px', padding: '6px 2px', textAlign: 'center', cursor: 'pointer',
                           background: rec ? si.bg : scheduled ? w.color + '14' : '#f4f6fb',
@@ -626,7 +678,12 @@ export default function WorkerScheduler() {
                         <div style={{ fontSize: '11px', fontWeight: 700, color: rec ? si.color : scheduled ? w.color : '#ccc' }}>
                           {rec ? rec.status.slice(0, 2) : scheduled ? '예정' : '-'}
                         </div>
-                        {rec?.clock_in && <div style={{ fontSize: '10px', color: 'var(--color-gray-500)' }}>{rec.clock_in}</div>}
+                        {/* 출퇴근 시간 미니 표시 */}
+                        {rec?.clock_in && (
+                          <div style={{ fontSize: '9px', color: 'var(--color-gray-500)', lineHeight: 1.3 }}>
+                            {rec.clock_in.slice(0,5)}{rec.clock_out ? `~${rec.clock_out.slice(0,5)}` : ''}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -738,9 +795,9 @@ export default function WorkerScheduler() {
       </Sheet>
 
       {/* 출퇴근 기록 시트 */}
-      <Sheet open={showAttend} onClose={() => setShowAttend(false)} title="출퇴근 기록" height="80dvh">
-        <AttendanceForm workers={workers} initialDate={attendDate}
-          onSave={() => { setShowAttend(false); loadSchedules(); showToast('기록되었습니다'); }} />
+      <Sheet open={showAttend} onClose={() => { setShowAttend(false); setAttendWorkerId(''); }} title="출퇴근 기록" height="80dvh">
+        <AttendanceForm workers={workers} initialDate={attendDate} initialWorkerId={attendWorkerId}
+          onSave={() => { setShowAttend(false); setAttendWorkerId(''); loadSchedules(); showToast('기록되었습니다'); }} />
       </Sheet>
 
       <Toast msg={toast} />
@@ -792,8 +849,43 @@ function SalaryTabInner({ workers, year, month, prevMonth, nextMonth, showToast 
 
   const totalNet = data.reduce((s, d) => s + (d.netWage || 0), 0);
 
+  // 근태 요약 통계 계산
+  const attendStats = useMemo(() => {
+    let present = 0, late = 0, absent = 0, totalDays = 0;
+    data.forEach(item => {
+      present += item.totalDays || 0;
+      totalDays += item.totalDays || 0;
+    });
+    return { present, late, absent, totalDays };
+  }, [data]);
+
   return (
     <div>
+      {/* 근태 요약 통계 미니 카드 */}
+      {!loading && data.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #f8faff 0%, #eef2fb 100%)',
+          borderRadius: '14px', padding: '14px 16px', marginBottom: '14px',
+          border: '1px solid var(--color-gray-200)',
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-gray-700)', marginBottom: '10px' }}>
+            📊 이달 근태 현황
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px' }}>
+            {[
+              { label: '총 출근일', value: attendStats.present + '일', color: 'var(--color-primary)' },
+              { label: '직원 수',  value: data.length + '명',          color: 'var(--color-success)' },
+              { label: '예상 지출', value: (totalNet / 10000).toFixed(0) + '만원', color: 'var(--color-warning)' },
+            ].map(stat => (
+              <div key={stat.label} style={{ textAlign: 'center', padding: '8px', background: '#fff', borderRadius: '10px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: stat.color }}>{stat.value}</div>
+                <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', marginTop: '2px' }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 월 선택 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0 14px' }}>
         <button onClick={prevMonth} style={{ width: '32px', height: '32px', border: 'none', background: 'var(--color-gray-100)', borderRadius: '8px', cursor: 'pointer', fontSize: '18px' }}>‹</button>
@@ -817,7 +909,12 @@ function SalaryTabInner({ workers, year, month, prevMonth, nextMonth, showToast 
           return (
             <div key={item.worker.id} style={{
               background: '#fff', borderRadius: '18px', padding: '18px',
-              marginBottom: '12px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)',
+              marginBottom: '12px', boxShadow: 'var(--shadow-sm)',
+              border: `1px solid ${settled ? '#2ecc7130' : 'var(--color-gray-200)'}`,
+              // 정산완료 시 흐리게 + accent 보더
+              opacity: settled ? 0.65 : 1,
+              transition: 'opacity 0.3s, border-color 0.3s',
+              borderLeft: `4px solid ${item.worker.color || 'var(--color-primary)'}`,
             }}>
               {/* 직원 헤더 */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>

@@ -1,10 +1,10 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import LaborCostCalculator from '../../../components/tools/LaborCostCalculator.jsx';
+import ToolHeader from '../../../components/tools/ToolHeader.jsx';
 
 export default function LaborCostPage() {
   const router = useRouter();
-
   return (
     <div style={{ background: 'var(--color-bg)', minHeight: '100dvh' }}>
       <div className="top-bar">
@@ -15,6 +15,12 @@ export default function LaborCostPage() {
         </button>
         <span className="top-bar-title">인건비 계산기</span>
       </div>
+      <ToolHeader
+        icon={<svg viewBox="0 0 28 28" width="28" height="28" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="9" r="5"/><path d="M2 26c0-5 4-9 9-9"/><circle cx="21" cy="21" r="6"/><path d="M21 17v8M17 21h8"/></svg>}
+        title="인건비 계산기"
+        sub="주휴수당·4대보험까지 한번에"
+        badge="2026 최저시급 기준"
+      />
       <LaborCostCalculator />
     </div>
   );

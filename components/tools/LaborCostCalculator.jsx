@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect, useRef } from 'react';
 
-const MIN_WAGE = 10030;
+const MIN_WAGE = 10030; // 2025년 기준 (2026년: 10,320원 — 연초 업데이트 필요)
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 const WEEKS_PER_MONTH = 52 / 12; // 4.333...주
 
@@ -83,6 +83,8 @@ export default function LaborCostCalculator() {
   const [insuranceOn, setInsuranceOn] = useState(true);
   const [wageWarn, setWageWarn] = useState(false);
   const [wageShake, setWageShake] = useState(false);
+  const [resultTab, setResultTab] = useState('worker'); // 'worker' | 'boss'
+  const [numWorkers, setNumWorkers] = useState(1); // n명 시뮬레이션
 
   const wage = parseFloat(String(hourlyWage).replace(/,/g, '')) || 0;
   const weeklyHours = hoursPerDay * selectedDays.length;
@@ -96,16 +98,23 @@ export default function LaborCostCalculator() {
     if (!wage || selectedDays.length === 0) return null;
 
     const monthlyBase = Math.round(wage * hoursPerDay * selectedDays.length * WEEKS_PER_MONTH);
-    const monthlyWeeklyAllowance = Math.round(wage * weeklyAllowanceHours * WEEKS_PER_MONTH);
+
+    // 단기·일용직은 주휴수당 미발생 (고용 형태 반영)
+    const monthlyWeeklyAllowance = (employmentType === 'regular' && hasWeeklyAllowance)
+      ? Math.round(wage * weeklyAllowanceHours * WEEKS_PER_MONTH)
+      : 0;
+
     const grossWage = monthlyBase + monthlyWeeklyAllowance;
 
-    const employeeDeduction = insuranceOn ? Math.round(grossWage * EMPLOYEE_TOTAL_RATE) : 0;
-    const employerContribution = insuranceOn ? Math.round(grossWage * EMPLOYER_EXTRA_RATE) : 0;
-    const netWage = grossWage - employeeDeduction;
+    // 단기·일용직 + 보험OFF 시 공제 없음
+    const applyInsurance = insuranceOn && employmentType === 'regular';
+    const employeeDeduction    = applyInsurance ? Math.round(grossWage * EMPLOYEE_TOTAL_RATE)  : 0;
+    const employerContribution = applyInsurance ? Math.round(grossWage * EMPLOYER_EXTRA_RATE) : 0;
+    const netWage   = grossWage - employeeDeduction;
     const bossTotal = grossWage + employerContribution;
 
     return { monthlyBase, monthlyWeeklyAllowance, grossWage, employeeDeduction, employerContribution, netWage, bossTotal };
-  }, [wage, hoursPerDay, selectedDays, insuranceOn, weeklyAllowanceHours]);
+  }, [wage, hoursPerDay, selectedDays, insuranceOn, weeklyAllowanceHours, employmentType, hasWeeklyAllowance]);
 
   function handleWageChange(e) {
     const raw = e.target.value.replace(/[^0-9]/g, '');
@@ -134,41 +143,21 @@ export default function LaborCostCalculator() {
 
   const dividerRow = <div style={{ height: '1px', background: 'rgba(255,255,255,0.2)', margin: '4px 0' }} />;
 
+  // 스텝 완료 여부 — 입력 충분하면 ✅ 표시
+  const step1Done = wage > 0 && selectedDays.length > 0;
+  const step2Done = true; // 고용조건은 기본값 있음
+
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '20px 16px 40px', background: 'var(--color-bg)' }}>
-
-      {/* ── 헤더 ── */}
-      <div style={{ textAlign: 'center', paddingBottom: '22px', position: 'relative' }}>
-        {/* 오른쪽 상단 최저시급 뱃지 */}
-        <div style={{
-          position: 'absolute', top: 0, right: 0,
-          fontSize: '11px', fontWeight: 600, color: 'var(--color-primary)',
-          background: 'var(--color-primary-bg)', borderRadius: '6px',
-          padding: '4px 8px', lineHeight: 1.5, textAlign: 'center',
-        }}>
-          2025년 최저시급<br/>10,030원 기준
-        </div>
-
-        {/* 사람+원화 SVG 아이콘 */}
-        <div style={{ marginBottom: '12px', display: 'inline-block' }}>
-          <svg viewBox="0 0 48 48" width="48" height="48" fill="none">
-            <circle cx="17" cy="14" r="8" stroke="#1b4797" strokeWidth="2.4" fill="#eef2fb"/>
-            <path d="M5 40c0-7 5-12 12-12" stroke="#1b4797" strokeWidth="2.4" strokeLinecap="round"/>
-            <circle cx="33" cy="33" r="11" fill="#eef2fb" stroke="#1b4797" strokeWidth="2.2"/>
-            <path d="M33 26v14M29 29h5a3 3 0 110 6h-5M29 35h6" stroke="#4f80e1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-gray-900)' }}>인건비 계산기</div>
-        <div style={{ fontSize: '13px', color: 'var(--color-gray-500)', marginTop: '4px' }}>
-          주휴수당·4대보험까지 한번에 계산해요
-        </div>
-      </div>
+    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '16px 16px 40px', background: 'var(--color-bg)' }}>
 
       {/* ── Step 1: 기본 정보 ── */}
       <div style={cardStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <StepBadge n={1} />
-          <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-gray-900)' }}>기본 정보</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <StepBadge n={1} />
+            <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-gray-900)' }}>기본 정보</span>
+          </div>
+          {step1Done && <span style={{ fontSize: '12px', color: 'var(--color-success)', fontWeight: 700 }}>✅ 입력 완료</span>}
         </div>
 
         {/* 시급 입력 */}
@@ -220,7 +209,8 @@ export default function LaborCostCalculator() {
               <input
                 type="number" min="1" max="12" value={hoursPerDay}
                 onChange={e => {
-                  const v = Math.min(12, Math.max(1, parseInt(e.target.value) || 1));
+                  // parseInt → parseFloat 으로 변경해 슬라이더 소수점 값과 일치
+                  const v = Math.min(12, Math.max(1, parseFloat(e.target.value) || 1));
                   setHoursPerDay(v);
                 }}
                 style={{
@@ -287,9 +277,12 @@ export default function LaborCostCalculator() {
 
       {/* ── Step 2: 고용 조건 ── */}
       <div style={cardStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <StepBadge n={2} />
-          <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-gray-900)' }}>고용 조건</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <StepBadge n={2} />
+            <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-gray-900)' }}>고용 조건</span>
+          </div>
+          {step2Done && <span style={{ fontSize: '12px', color: 'var(--color-success)', fontWeight: 700 }}>✅ 입력 완료</span>}
         </div>
 
         {/* 고용형태 선택 */}
@@ -361,77 +354,122 @@ export default function LaborCostCalculator() {
           borderRadius: '20px', padding: '24px 20px', color: '#fff',
           animation: 'fadeSlideUp 0.25s ease',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-            <StepBadge n={3} light />
-            <span style={{ fontSize: '15px', fontWeight: 700 }}>계산 결과</span>
-          </div>
-
-          {/* 주휴수당 발생 여부 뱃지 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <StepBadge n={3} light />
+              <span style={{ fontSize: '15px', fontWeight: 700 }}>계산 결과</span>
+            </div>
+            {/* 주휴수당 뱃지 */}
             <span style={{
-              padding: '5px 13px', borderRadius: '20px', fontSize: '13px', fontWeight: 700,
-              background: hasWeeklyAllowance ? 'rgba(46,204,113,0.25)' : 'rgba(173,181,189,0.3)',
+              padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700,
+              background: (employmentType === 'regular' && hasWeeklyAllowance) ? 'rgba(46,204,113,0.25)' : 'rgba(173,181,189,0.3)',
             }}>
-              {hasWeeklyAllowance ? '✅ 주휴수당 발생' : '❌ 주휴수당 미발생'}
+              {(employmentType === 'regular' && hasWeeklyAllowance) ? '✅ 주휴수당 발생' : '❌ 주휴수당 미발생'}
             </span>
-            <span style={{ fontSize: '12px', opacity: 0.7 }}>현재 주 {weeklyHours}시간</span>
           </div>
 
-          {/* 금액 표 */}
+          {/* 근로자 / 사장 시점 탭 */}
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', padding: '3px', marginBottom: '18px' }}>
+            {[
+              { id: 'worker', label: '👤 근로자 시점' },
+              { id: 'boss',   label: '🏪 사장 시점' },
+            ].map(t => (
+              <button key={t.id} onClick={() => setResultTab(t.id)} style={{
+                flex: 1, padding: '8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 700,
+                background: resultTab === t.id ? 'rgba(255,255,255,0.2)' : 'transparent',
+                color: '#fff', transition: 'background 0.15s',
+              }}>{t.label}</button>
+            ))}
+          </div>
+
+          {/* 금액 표 — 탭에 따라 표시 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', marginBottom: '20px' }}>
-            {/* 기본급 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span style={{ opacity: 0.85 }}>기본급 (월)</span>
-              <span style={{ fontWeight: 600 }}>{calc.monthlyBase.toLocaleString()}원</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span style={{ opacity: 0.85 }}>주휴수당 (월)</span>
-              <span style={{ fontWeight: 600 }}>
-                {hasWeeklyAllowance ? calc.monthlyWeeklyAllowance.toLocaleString() : '0'}원
-              </span>
-            </div>
-            {dividerRow}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span style={{ fontWeight: 700 }}>세전 합계</span>
-              <span style={{ fontWeight: 800 }}>{calc.grossWage.toLocaleString()}원</span>
-            </div>
-            {insuranceOn && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', opacity: 0.8 }}>
-                <span>4대보험 공제 (근로자)</span>
-                <span style={{ fontWeight: 600 }}>-{calc.employeeDeduction.toLocaleString()}원</span>
-              </div>
+            {resultTab === 'worker' ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span style={{ opacity: 0.85 }}>기본급 (월)</span>
+                  <span style={{ fontWeight: 600 }}>{calc.monthlyBase.toLocaleString()}원</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span style={{ opacity: 0.85 }}>주휴수당 (월)</span>
+                  <span style={{ fontWeight: 600 }}>{calc.monthlyWeeklyAllowance.toLocaleString()}원</span>
+                </div>
+                {dividerRow}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span style={{ fontWeight: 700 }}>세전 합계</span>
+                  <span style={{ fontWeight: 800 }}>{calc.grossWage.toLocaleString()}원</span>
+                </div>
+                {insuranceOn && employmentType === 'regular' && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', opacity: 0.8 }}>
+                    <span>4대보험 공제 (근로자 부담)</span>
+                    <span style={{ fontWeight: 600 }}>-{calc.employeeDeduction.toLocaleString()}원</span>
+                  </div>
+                )}
+                {dividerRow}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+                  <span style={{ fontWeight: 800 }}>💰 실수령액</span>
+                  <span style={{ fontWeight: 800 }}><AnimatedNum value={calc.netWage} />원</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span style={{ opacity: 0.85 }}>세전 급여 지급</span>
+                  <span style={{ fontWeight: 600 }}>{calc.grossWage.toLocaleString()}원</span>
+                </div>
+                {insuranceOn && employmentType === 'regular' && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', opacity: 0.8 }}>
+                    <span>4대보험 추가 부담 (사장)</span>
+                    <span style={{ fontWeight: 600 }}>+{calc.employerContribution.toLocaleString()}원</span>
+                  </div>
+                )}
+                {dividerRow}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+                  <span style={{ fontWeight: 800 }}>🏪 총 인건비 지출</span>
+                  <span style={{ fontWeight: 800 }}><AnimatedNum value={calc.bossTotal} />원</span>
+                </div>
+              </>
             )}
-            {dividerRow}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-              <span style={{ fontWeight: 700 }}>실수령액</span>
-              <span style={{ fontWeight: 800 }}>{calc.netWage.toLocaleString()}원</span>
-            </div>
-            {insuranceOn && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', opacity: 0.8 }}>
-                <span>사장 추가 부담 (4대보험)</span>
-                <span style={{ fontWeight: 600 }}>+{calc.employerContribution.toLocaleString()}원</span>
-              </div>
-            )}
-            {dividerRow}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
-              <span style={{ fontWeight: 800 }}>사장 총 지출</span>
-              <span style={{ fontWeight: 800 }}>{calc.bossTotal.toLocaleString()}원</span>
-            </div>
           </div>
 
-          {/* 사장 총 인건비 BIG */}
-          <div style={{
-            background: 'rgba(255,255,255,0.15)', borderRadius: '14px',
-            padding: '20px', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '6px' }}>사장님 월 총 인건비</div>
+          {/* BIG 숫자 */}
+          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '14px', padding: '20px', textAlign: 'center', marginBottom: '18px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.75, marginBottom: '4px' }}>
+              {resultTab === 'worker' ? '근로자 월 실수령액' : '사장님 월 총 인건비'}
+            </div>
             <div style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.2 }}>
-              ₩ <AnimatedNum value={calc.bossTotal} />
+              ₩ <AnimatedNum value={resultTab === 'worker' ? calc.netWage : calc.bossTotal} />
             </div>
             <div style={{ fontSize: '12px', opacity: 0.65, marginTop: '6px' }}>
               {selectedDays.length}일 × {hoursPerDay}시간 · {wage.toLocaleString()}원/시
-              {insuranceOn ? ' · 4대보험 포함' : ''}
+              {insuranceOn && employmentType === 'regular' ? ' · 4대보험 포함' : ''}
+              {employmentType === 'temp' ? ' · 단기·일용직' : ''}
             </div>
+          </div>
+
+          {/* n명 시뮬레이션 슬라이더 */}
+          <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: '14px', padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, opacity: 0.9 }}>👥 직원 수별 총 인건비</span>
+              <span style={{ fontSize: '18px', fontWeight: 800 }}>{numWorkers}명</span>
+            </div>
+            <input
+              type="range" min="1" max="10" step="1" value={numWorkers}
+              onChange={e => setNumWorkers(Number(e.target.value))}
+              style={{ width: '100%', accentColor: '#fff', marginBottom: '10px' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', opacity: 0.6, marginBottom: '12px' }}>
+              <span>1명</span><span>5명</span><span>10명</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 800 }}>
+              <span>사장 총 월 인건비</span>
+              <span>₩ {(calc.bossTotal * numWorkers).toLocaleString()}</span>
+            </div>
+            {numWorkers > 1 && (
+              <div style={{ marginTop: '6px', fontSize: '11px', opacity: 0.7, textAlign: 'right' }}>
+                1인 기준 {calc.bossTotal.toLocaleString()}원 × {numWorkers}명
+              </div>
+            )}
           </div>
         </div>
       ) : (

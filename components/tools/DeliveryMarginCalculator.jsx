@@ -113,10 +113,9 @@ export default function DeliveryMarginCalculator() {
   const [deliveryFee, setDeliveryFee] = useState('');
   const [cardFeeOn, setCardFeeOn] = useState(true);
   const [vatOn, setVatOn] = useState(false);
-  // 월 매출 시뮬레이션 — 하루 주문 건수
   const [dailyOrders, setDailyOrders] = useState('');
-  // 공유 버튼 피드백 상태
   const [shareMsg, setShareMsg] = useState('');
+  const [showCompare, setShowCompare] = useState(false); // 앱 비교 테이블
 
   // 현재 선택된 앱 객체
   const currentApp = APPS.find(a => a.id === selectedApp);
@@ -145,6 +144,22 @@ export default function DeliveryMarginCalculator() {
 
     return { price, appFee, cardFee, vatAmount, delivery, cost, margin, marginRate, costRatio, feeRatio, otherRatio, marginRatio };
   }, [menuPrice, menuCost, deliveryFee, feeRate, cardFeeOn, vatOn]);
+
+  // 앱 비교 계산 — 같은 입력으로 배민/쿠팡/요기요 동시 계산
+  const comparison = useMemo(() => {
+    const price    = parseNum(menuPrice);
+    const cost     = parseNum(menuCost);
+    const delivery = parseNum(deliveryFee);
+    if (!price) return null;
+    return APPS.filter(a => a.fee !== null).map(app => {
+      const appFee  = Math.round(price * app.fee / 100);
+      const cardFee = cardFeeOn ? Math.round(price * 0.015) : 0;
+      const vatAmt  = vatOn     ? Math.round(price * 0.1)   : 0;
+      const margin  = price - appFee - cardFee - delivery - cost - vatAmt;
+      const rate    = price > 0 ? (margin / price) * 100 : 0;
+      return { app, margin, rate };
+    });
+  }, [menuPrice, menuCost, deliveryFee, cardFeeOn, vatOn]);
 
   // 월 시뮬레이션 계산
   const simulation = useMemo(() => {
@@ -204,27 +219,7 @@ export default function DeliveryMarginCalculator() {
   };
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '20px 16px 40px', background: 'var(--color-bg)', minHeight: '100%' }}>
-
-      {/* ── 상단 헤더 ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '24px' }}>
-        {/* 배달 오토바이 SVG */}
-        <div style={{ marginBottom: '12px' }}>
-          <svg viewBox="0 0 48 48" width="48" height="48" fill="none">
-            <circle cx="11" cy="35" r="7" stroke="#1b4797" strokeWidth="2.5" fill="#eef2fb"/>
-            <circle cx="37" cy="35" r="7" stroke="#1b4797" strokeWidth="2.5" fill="#eef2fb"/>
-            <path d="M18 35h10M24 35l-5-14h8l6 9" stroke="#1b4797" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M10 28l5-8h10" stroke="#4f80e1" strokeWidth="2.2" strokeLinecap="round"/>
-            <rect x="22" y="14" width="10" height="7" rx="2" stroke="#4f80e1" strokeWidth="2"/>
-            <circle cx="37" cy="35" r="3" fill="#1b4797"/>
-            <circle cx="11" cy="35" r="3" fill="#1b4797"/>
-          </svg>
-        </div>
-        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-gray-900)' }}>실마진 계산기</div>
-        <div style={{ fontSize: '13px', color: 'var(--color-gray-500)', marginTop: '4px' }}>
-          배달앱 수수료를 제외한 실제 마진을 계산해요
-        </div>
-      </div>
+    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '16px 16px 40px', background: 'var(--color-bg)', minHeight: '100%' }}>
 
       {/* ── 입력 카드 ── */}
       <div style={{
@@ -354,13 +349,38 @@ export default function DeliveryMarginCalculator() {
           boxShadow: '0 4px 20px rgba(27,71,151,0.08)',
           textAlign: 'center', color: 'var(--color-gray-500)', fontSize: '14px',
         }}>
+          <div style={{ fontSize: '32px', marginBottom: '10px' }}>🧮</div>
           메뉴 판매가를 입력하면 마진이 계산됩니다
         </div>
       ) : (
+        <>
+        {/* 음수 마진 경고 배너 */}
+        {calc.margin < 0 && (
+          <div style={{
+            background: '#fff0f0', border: '2px solid #e74c3c', borderRadius: '14px',
+            padding: '14px 18px', marginBottom: '12px', display: 'flex', gap: '10px', alignItems: 'flex-start',
+            animation: 'fadeSlideUp 0.25s ease',
+          }}>
+            <span style={{ fontSize: '22px', flexShrink: 0 }}>🚨</span>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#e74c3c', marginBottom: '3px' }}>이 메뉴는 팔수록 손해예요</div>
+              <div style={{ fontSize: '12px', color: '#c0392b', lineHeight: 1.5 }}>
+                건당 {Math.abs(calc.margin).toLocaleString()}원 손실이 발생합니다. 판매가를 올리거나 원가를 줄여보세요.
+              </div>
+            </div>
+          </div>
+        )}
         <div style={{
-          background: 'linear-gradient(135deg, #1b4797 0%, #2d5fc4 100%)',
+          background: calc.marginRate >= 30
+            ? 'linear-gradient(135deg, #1b6b3a 0%, #2ecc71 100%)'
+            : calc.marginRate >= 10
+              ? 'linear-gradient(135deg, #7d5a00 0%, #f39c12 100%)'
+              : calc.margin < 0
+                ? 'linear-gradient(135deg, #7d1b1b 0%, #e74c3c 100%)'
+                : 'linear-gradient(135deg, #1b4797 0%, #2d5fc4 100%)',
           borderRadius: '20px', padding: '28px 24px', color: '#fff',
           animation: 'fadeSlideUp 0.25s ease',
+          transition: 'background 0.5s ease',
         }}>
 
           {/* ① 실마진 BIG 표시 */}
@@ -397,7 +417,7 @@ export default function DeliveryMarginCalculator() {
               ...(cardFeeOn ? [{ icon: '💳', label: '카드수수료', amount: calc.cardFee, sign: '-', sub: '1.5%' }] : []),
               ...(calc.delivery > 0 ? [{ icon: '🛵', label: '배달비 부담', amount: calc.delivery, sign: '-', sub: null }] : []),
               ...(vatOn ? [{ icon: '🧾', label: '부가세', amount: calc.vatAmount, sign: '-', sub: '10%' }] : []),
-              { icon: '🥘', label: '원가',           amount: calc.cost,    sign: '-', sub: null },
+              ...(calc.cost > 0 ? [{ icon: '🥘', label: '원가', amount: calc.cost, sign: '-', sub: null }] : []),
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span style={{ opacity: 0.85 }}>{item.icon} {item.label}{item.sub && <span style={{ fontSize: '11px', opacity: 0.6, marginLeft: '4px' }}>({item.sub})</span>}</span>
@@ -499,24 +519,107 @@ export default function DeliveryMarginCalculator() {
             )}
           </div>
 
-          {/* ⑥ 공유 버튼 */}
-          <button
-            onClick={handleShare}
-            style={{
-              width: '100%', padding: '13px', borderRadius: '12px',
-              background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.35)',
-              color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-              transition: 'background 0.15s',
-            }}
-          >
-            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="15" cy="4" r="2"/><circle cx="5" cy="10" r="2"/><circle cx="15" cy="16" r="2"/>
-              <path d="M7 9l6-4M7 11l6 4"/>
-            </svg>
-            {shareMsg || '결과 공유하기'}
-          </button>
+          {/* ⑥ 손익분기점 (BEP) */}
+          {calc.margin > 0 && (
+            <div style={{
+              background: 'rgba(255,255,255,0.12)', borderRadius: '12px',
+              padding: '12px 16px', marginBottom: '16px', fontSize: '13px',
+            }}>
+              <div style={{ fontWeight: 700, marginBottom: '8px', opacity: 0.9 }}>📊 손익분기점 (BEP)</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ opacity: 0.8 }}>월 200만원 달성</span>
+                <span style={{ fontWeight: 700 }}>하루 {Math.ceil(2000000 / 30 / calc.margin)}건</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ opacity: 0.8 }}>월 500만원 달성</span>
+                <span style={{ fontWeight: 700 }}>하루 {Math.ceil(5000000 / 30 / calc.margin)}건</span>
+              </div>
+            </div>
+          )}
+
+          {/* ⑦ 공유 버튼 */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setShowCompare(v => !v)}
+              style={{
+                flex: 1, padding: '12px', borderRadius: '12px',
+                background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.35)',
+                color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              {showCompare ? '비교 닫기' : '📊 앱 비교'}
+            </button>
+            <button
+              onClick={handleShare}
+              style={{
+                flex: 2, padding: '12px', borderRadius: '12px',
+                background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.35)',
+                color: '#fff', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+              }}
+            >
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="15" cy="4" r="2"/><circle cx="5" cy="10" r="2"/><circle cx="15" cy="16" r="2"/>
+                <path d="M7 9l6-4M7 11l6 4"/>
+              </svg>
+              {shareMsg || '결과 공유'}
+            </button>
+          </div>
         </div>
+
+        {/* ⑧ 앱 비교 테이블 */}
+        {showCompare && comparison && (
+          <div style={{
+            background: '#fff', borderRadius: '16px', padding: '20px',
+            marginTop: '12px', boxShadow: '0 4px 20px rgba(27,71,151,0.1)',
+            animation: 'fadeSlideUp 0.2s ease',
+          }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-gray-900)', marginBottom: '14px' }}>
+              📊 배달앱별 마진 비교
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {comparison.map(({ app, margin, rate }) => {
+                const status = getMarginStatus(rate);
+                const isSelected = selectedApp === app.id;
+                return (
+                  <div key={app.id} style={{
+                    padding: '12px 14px', borderRadius: '12px',
+                    border: isSelected ? `2px solid ${app.color}` : '1.5px solid var(--color-gray-200)',
+                    background: isSelected ? `${app.color}08` : '#fafafa',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: app.color }} />
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-gray-900)' }}>{app.name}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--color-gray-500)' }}>수수료 {app.fee}%</span>
+                      </div>
+                      <span style={{
+                        fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '8px',
+                        background: status.bg.replace('0.25', '0.15'), color: status.color,
+                      }}>
+                        {status.emoji} {rate.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ flex: 1, height: '6px', borderRadius: '4px', background: 'var(--color-gray-100)', overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%', borderRadius: '4px',
+                          width: `${Math.max(0, rate)}%`,
+                          background: margin < 0 ? '#e74c3c' : app.color,
+                          transition: 'width 0.4s ease',
+                        }} />
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: 800, color: margin < 0 ? '#e74c3c' : 'var(--color-gray-900)', minWidth: '80px', textAlign: 'right' }}>
+                        {margin.toLocaleString()}원
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* 애니메이션 스타일 */}
