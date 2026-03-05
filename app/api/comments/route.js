@@ -29,14 +29,18 @@ export async function GET(request) {
 
     const [rows] = await pool.query(query, params);
 
-    const comments = [];
-    for (const row of rows) {
-      let alreadyLiked = false;
-      if (user) {
-        const [likeRows] = await pool.query('SELECT id FROM comment_likes WHERE comment_id = ? AND user_id = ?', [row.id, user.id]);
-        alreadyLiked = likeRows.length > 0;
-      }
-      comments.push({
+    let likedSet = new Set();
+    if (user && rows.length > 0) {
+      const ids = rows.map((r) => r.id);
+      const placeholders = ids.map(() => '?').join(',');
+      const [likeRows] = await pool.query(
+        `SELECT comment_id FROM comment_likes WHERE user_id = ? AND comment_id IN (${placeholders})`,
+        [user.id, ...ids]
+      );
+      likedSet = new Set(likeRows.map((r) => r.comment_id));
+    }
+
+    const comments = rows.map((row) => ({
         id: row.id,
         postId: row.post_id,
         userId: row.user_id,
@@ -44,12 +48,11 @@ export async function GET(request) {
         content: row.content,
         author: row.role === 'admin' ? '염광사' : '익명',
         likeCount: row.like_count,
-        alreadyLiked,
+        alreadyLiked: likedSet.has(row.id),
         isAuthor: user && user.id === row.user_id,
         isAdmin: user && user.role === ROLE_ADMIN,
         createdAt: row.created_at
-      });
-    }
+      }));
 
     return NextResponse.json({ comments });
   } catch (error) {
@@ -117,11 +120,46 @@ export async function DELETE(request) {
     const isAdmin = user.role === ROLE_ADMIN;
     if (!isAuthor && !isAdmin) return NextResponse.json({ error: 'No permission' }, { status: 403 });
 
-    await pool.query('DELETE FROM comment_likes WHERE comment_id = ?', [commentId]);
-    await pool.query('DELETE FROM reports WHERE target_type = ? AND target_id = ?', ['comment', commentId]);
-    await pool.query('DELETE FROM comments WHERE parent_id = ?', [commentId]);
-    await pool.query('DELETE FROM comments WHERE id = ?', [commentId]);
-    await pool.query('UPDATE posts SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [rows[0].post_id]);
+    const [targetRows] = await pool.query(
+      'SELECT id FROM comments WHERE id = ? OR parent_id = ?',
+      [commentId, commentId]
+    );
+    const targetIds = targetRows.map((r) => r.id);
+    const deletedCount = targetIds.length;
+
+    if (deletedCount === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const placeholders = targetIds.map(() => '?').join(',');
+      await conn.query(
+        `DELETE FROM comment_likes WHERE comment_id IN (${placeholders})`,
+        targetIds
+      );
+      await conn.query(
+        `DELETE FROM reports WHERE target_type = ? AND target_id IN (${placeholders})`,
+        ['comment', ...targetIds]
+      );
+      await conn.query(
+        `DELETE FROM comments WHERE id IN (${placeholders})`,
+        targetIds
+      );
+      await conn.query(
+        'UPDATE posts SET comment_count = GREATEST(comment_count - ?, 0) WHERE id = ?',
+        [deletedCount, rows[0].post_id]
+      );
+
+      await conn.commit();
+    } catch (txError) {
+      await conn.rollback();
+      throw txError;
+    } finally {
+      conn.release();
+    }
 
     return NextResponse.json({ message: 'Deleted' });
   } catch (error) {

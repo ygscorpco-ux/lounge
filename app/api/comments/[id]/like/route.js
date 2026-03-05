@@ -17,12 +17,25 @@ export async function POST(request, { params }) {
     );
 
     if (existing.length > 0) {
-      await pool.query('DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?', [id, user.id]);
-      await pool.query('UPDATE comments SET like_count = like_count - 1 WHERE id = ?', [id]);
+      const [deleted] = await pool.query(
+        'DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?',
+        [id, user.id]
+      );
+      if (deleted.affectedRows > 0) {
+        await pool.query(
+          'UPDATE comments SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?',
+          [id]
+        );
+      }
       return NextResponse.json({ message: 'unliked', liked: false });
     } else {
-      await pool.query('INSERT INTO comment_likes (comment_id, user_id) VALUES (?, ?)', [id, user.id]);
-      await pool.query('UPDATE comments SET like_count = like_count + 1 WHERE id = ?', [id]);
+      const [inserted] = await pool.query(
+        'INSERT IGNORE INTO comment_likes (comment_id, user_id) VALUES (?, ?)',
+        [id, user.id]
+      );
+      if (inserted.affectedRows > 0) {
+        await pool.query('UPDATE comments SET like_count = like_count + 1 WHERE id = ?', [id]);
+      }
       return NextResponse.json({ message: 'liked', liked: true });
     }
 
