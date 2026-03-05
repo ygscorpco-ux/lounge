@@ -17,11 +17,11 @@ export async function GET(request) {
       params.push(category);
     }
 
-    // 해당 월에 걸쳐 있는 지원금만 조회 (start_date ~ end_date 범위)
-    if (year && month) {
+    // 월 필터: year/month가 명시적으로 전달된 경우만 적용
+    // 전달되지 않으면 전체 지원금 조회 (마감 포함, 프론트에서 정렬 처리)
+    if (year && year !== 'all' && month) {
       const y = parseInt(year);
       const m = parseInt(month);
-      // 해당 월의 첫날과 마지막날
       const firstDay = `${y}-${String(m).padStart(2, '0')}-01`;
       const lastDay  = new Date(y, m, 0).toISOString().slice(0, 10);
       query += ' AND end_date >= ? AND (start_date IS NULL OR start_date <= ?)';
