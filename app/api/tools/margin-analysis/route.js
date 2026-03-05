@@ -40,8 +40,10 @@ ${benchmark ? `- ${industry} 업종 평균 마진율: ${benchmark.avg_margin_rat
 이 수익성을 개선하기 위한 현실적인 조언을 해주세요.`;
 
     // 같은 입력값이면 24시간 캐시 활용 (GPT 비용 절감)
+    // industry를 캐시 키에 포함 — 업종 바꾸면 다른 분석 결과가 나와야 함
     const cacheKey = makeCacheKey('margin', {
       platform, feeRate,
+      industry: industry || 'none',
       priceRange: Math.round((menuPrice || 0) / 1000),
       costRange: Math.round((menuCost || 0) / 1000),
       marginRange: Math.round(marginRate || 0),
