@@ -150,6 +150,7 @@ export default function WritePage() {
           flex: 1,
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
+          overscrollBehavior: "contain", /* 이 영역 안에서만 스크롤 — 브라우저 pull-to-refresh 차단 */
         }}
       >
         {/* 관리자 공지 옵션 */}
