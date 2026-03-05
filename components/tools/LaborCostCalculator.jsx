@@ -180,9 +180,10 @@ export default function LaborCostCalculator() {
     const employeeDeduction    = applyInsurance ? Math.round(grossWage * EMPLOYEE_TOTAL_RATE)  : 0;
     const employerContribution = applyInsurance ? Math.round(grossWage * EMPLOYER_EXTRA_RATE) : 0;
 
-    // 단기·일용직 3.3% 원천징수 — 사업소득세(3%) + 지방소득세(0.3%)
+    // 3.3% 원천징수 — 사업소득세(3%) + 지방소득세(0.3%)
+    // 고용형태 무관하게 알바 요청 시 또는 프리랜서 계약 시 적용
     // 사장이 대신 납부하므로 bossTotal에는 영향 없고 근로자 실수령액만 감소
-    const tax33Deduction = (tax33On && employmentType === 'temp') ? Math.round(grossWage * 0.033) : 0;
+    const tax33Deduction = tax33On ? Math.round(grossWage * 0.033) : 0;
 
     const netWage   = grossWage - employeeDeduction - tax33Deduction;
     const bossTotal = grossWage + employerContribution;
@@ -396,7 +397,7 @@ export default function LaborCostCalculator() {
         </div>
 
         {/* 4대보험 토글 */}
-        <div style={{ marginBottom: employmentType === 'temp' ? '14px' : 0 }}>
+        <div style={{ marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-gray-700)' }}>4대보험 적용</span>
             <Toggle on={insuranceOn} onChange={setInsuranceOn} />
@@ -420,9 +421,8 @@ export default function LaborCostCalculator() {
           )}
         </div>
 
-        {/* 3.3% 원천징수 — 단기·일용직 선택 시만 표시 */}
-        {employmentType === 'temp' && (
-          <div style={{ borderTop: '1px solid var(--color-gray-200)', paddingTop: '14px' }}>
+        {/* 3.3% 원천징수 — 고용형태 관계없이 알바 요청 시 적용 가능 */}
+        <div style={{ borderTop: '1px solid var(--color-gray-200)', paddingTop: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-gray-700)' }}>3.3% 원천징수</span>
@@ -432,11 +432,10 @@ export default function LaborCostCalculator() {
             </div>
             {tax33On && (
               <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', background: 'var(--color-gray-100)', borderRadius: '8px', padding: '8px 12px', lineHeight: 1.6 }}>
-                프리랜서·사업소득자에게 적용돼요. 사장님이 세금을 대신 납부하고 근로자 실수령액에서 차감해요.
+                알바가 요청하거나 프리랜서 계약 시 적용해요. 사장님이 세금을 대신 납부하고 근로자 실수령액에서 차감해요.
               </div>
             )}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* ── Step 3: 결과 카드 ── */}
