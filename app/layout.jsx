@@ -16,7 +16,10 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ko">
-      <head />
+      <head>
+        {/* Pretendard 폰트 CDN — 전체 앱에서 사용 */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+      </head>
       <body>
         <script
           dangerouslySetInnerHTML={{
