@@ -32,7 +32,7 @@ export default function ToolHeader({ icon, title, sub, note, badge, gradient }) 
       }} />
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
           {/* 아이콘 컨테이너 */}
           <div style={{
             width: '52px', height: '52px', borderRadius: '16px',
@@ -43,17 +43,18 @@ export default function ToolHeader({ icon, title, sub, note, badge, gradient }) 
           }}>
             {icon}
           </div>
-          <div>
+          {/* 텍스트 영역 — minWidth:0 이 없으면 flex 자식이 넘침 */}
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: '20px', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: '4px' }}>
               {title}
             </div>
             {sub && (
-              <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.4 }}>
                 {sub}
               </div>
             )}
             {note && (
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5, marginTop: '4px' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5, marginTop: '3px' }}>
                 {note}
               </div>
             )}
@@ -64,7 +65,8 @@ export default function ToolHeader({ icon, title, sub, note, badge, gradient }) 
             fontSize: '11px', fontWeight: 700, color: '#fff',
             background: 'rgba(255,255,255,0.18)',
             borderRadius: '8px', padding: '5px 10px',
-            flexShrink: 0, marginLeft: '8px', lineHeight: 1.4, textAlign: 'center',
+            flexShrink: 0, marginLeft: '8px', lineHeight: 1.5,
+            textAlign: 'center', whiteSpace: 'pre',
           }}>
             {badge}
           </div>
