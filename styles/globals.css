@@ -49,8 +49,12 @@ button {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
+  height: 100vh;
   background: #fff;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* ===== HEADER ===== */

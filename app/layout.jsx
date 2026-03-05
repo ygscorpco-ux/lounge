@@ -36,7 +36,9 @@ export default function RootLayout({ children }) {
           }}
         />
         <div className="app-container">
-          {children}
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            {children}
+          </div>
         </div>
       </body>
     </html>
