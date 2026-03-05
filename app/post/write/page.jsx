@@ -9,7 +9,35 @@ export default function WritePage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState("");
   const textareaRef = useRef(null);
+  const scrollRef = useRef(null); // 스크롤 영역 ref — pull-to-refresh 제어용
   const router = useRouter();
+
+  // iOS Safari pull-to-refresh 방지 — CSS만으론 iOS에서 안 됨, JS로 터치 이벤트 직접 차단
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let startY = 0;
+
+    const onTouchStart = (e) => {
+      startY = e.touches[0].clientY; // 터치 시작 Y좌표 기록
+    };
+
+    const onTouchMove = (e) => {
+      const currentY = e.touches[0].clientY;
+      // 스크롤이 맨 위에 있고, 아래로 당기는 동작이면 → 브라우저 기본동작(새로고침) 차단
+      if (el.scrollTop === 0 && currentY > startY) {
+        e.preventDefault();
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false }); // passive:false 여야 preventDefault 가능
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -146,11 +174,12 @@ export default function WritePage() {
 
       {/* ✅ 스크롤 영역 — 헤더 아래 전체가 스크롤됨 */}
       <div
+        ref={scrollRef}
         style={{
           flex: 1,
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
-          overscrollBehavior: "contain", /* 이 영역 안에서만 스크롤 — 브라우저 pull-to-refresh 차단 */
+          overscrollBehavior: "contain", /* Android Chrome용 pull-to-refresh 차단 */
         }}
       >
         {/* 관리자 공지 옵션 */}
