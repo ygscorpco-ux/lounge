@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function Header({ user }) {
+export default function Header() {
   const [unread, setUnread] = useState(0);
   const router = useRouter();
 
@@ -28,33 +28,16 @@ export default function Header({ user }) {
       </div>
       <div className='header-icons'>
         <button className='header-icon' onClick={() => router.push('/search')}>
-          &#x1F50D;
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
         <button className='header-icon' onClick={() => router.push('/notifications')} style={{ position: 'relative' }}>
-          &#x1F514;
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           {unread > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: '-2px',
-              right: '-2px',
-              background: '#ff3b30',
-              color: 'white',
-              fontSize: '10px',
-              fontWeight: 700,
-              borderRadius: '50%',
-              width: '16px',
-              height: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1
-            }}>
-              {unread > 9 ? '9+' : unread}
-            </span>
+            <span className='noti-badge'>{unread > 9 ? '9+' : unread}</span>
           )}
         </button>
         <button className='header-icon' onClick={() => router.push('/mypage')}>
-          &#x1F464;
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
       </div>
     </header>

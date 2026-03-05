@@ -10,19 +10,27 @@ const CATEGORIES = [
   { label: '염광사', value: '염광사' }
 ];
 
-export default function CategoryFilter({ current, onChange }) {
+export default function CategoryFilter({ current, onChange, sort, onSortChange }) {
   return (
-    <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', flex: 1 }}>
-      {CATEGORIES.map((cat) => (
-        <button
-          key={cat.label}
-          className={'category-tab' + (current === cat.value ? ' active' : '')}
-          onClick={() => onChange(cat.value)}
-          style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-        >
-          {cat.label}
-        </button>
-      ))}
+    <div className='category-filter-wrap'>
+      <div className='category-filter-scroll'>
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.label}
+            className={'category-tab' + (current === cat.value ? ' active' : '')}
+            onClick={() => onChange(cat.value)}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+      {onSortChange && (
+        <select className='sort-select' value={sort} onChange={(e) => onSortChange(e.target.value)}>
+          <option value="latest">최신순</option>
+          <option value="likes">추천순</option>
+          <option value="comments">댓글순</option>
+        </select>
+      )}
     </div>
   );
 }

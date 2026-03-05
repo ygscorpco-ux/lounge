@@ -12,44 +12,46 @@ function timeAgo(dateString) {
   return (date.getMonth() + 1) + '/' + date.getDate();
 }
 
+const PersonIcon = ({ size = 14 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="#a0aec0"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+);
+
 export default function CommentItem({ comment, onLike, onReport, onReply, onDelete, onBlock }) {
   const [showMenu, setShowMenu] = useState(false);
   const isAdmin = comment.author === '염광사';
 
   return (
-    <div className={comment.parentId ? 'comment-item comment-reply' : 'comment-item'} style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className={'comment-author' + (isAdmin ? ' admin' : '')}>
-          {comment.author}
-        </div>
-        <button onClick={() => setShowMenu(!showMenu)} style={{ background: 'none', border: 'none', color: '#999', fontSize: '14px', cursor: 'pointer', padding: '4px' }}>⋮</button>
-        {showMenu && (
-          <div style={{
-            position: 'absolute', top: '28px', right: '8px', background: 'white',
-            borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            padding: '4px 0', zIndex: 100, minWidth: '100px'
-          }}>
-            {(comment.isAuthor || comment.isAdmin) && (
-              <div onClick={() => { onDelete(comment.id); setShowMenu(false); }} style={{ padding: '8px 14px', fontSize: '13px', color: '#ff3b30', cursor: 'pointer' }}>삭제</div>
-            )}
-            <div onClick={() => { onReport(comment.id); setShowMenu(false); }} style={{ padding: '8px 14px', fontSize: '13px', color: '#333', cursor: 'pointer' }}>신고</div>
-            {!comment.isAuthor && comment.userId && (
-              <div onClick={() => { onBlock(comment.userId); setShowMenu(false); }} style={{ padding: '8px 14px', fontSize: '13px', color: '#333', cursor: 'pointer' }}>차단</div>
-            )}
+    <div className={comment.parentId ? 'comment-item comment-reply' : 'comment-item'}>
+      <div className='comment-top'>
+        <div className='comment-author-row'>
+          <div className={'comment-avatar' + (isAdmin ? ' admin' : '')}>
+            <PersonIcon />
           </div>
-        )}
+          <span className={'comment-author' + (isAdmin ? ' admin' : '')}>{comment.author}</span>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <button className='comment-menu-btn' onClick={() => setShowMenu(!showMenu)}>···</button>
+          {showMenu && (
+            <div className='dropdown-menu'>
+              {(comment.isAuthor || comment.isAdmin) && (
+                <div className='dropdown-item danger' onClick={() => { onDelete(comment.id); setShowMenu(false); }}>삭제</div>
+              )}
+              <div className='dropdown-item' onClick={() => { onReport(comment.id); setShowMenu(false); }}>신고</div>
+              {!comment.isAuthor && comment.userId && (
+                <div className='dropdown-item' onClick={() => { onBlock(comment.userId); setShowMenu(false); }}>차단</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <div className='comment-content'>{comment.content}</div>
       <div className='comment-footer'>
         <span>{timeAgo(comment.createdAt)}</span>
-        <span
-          style={{ cursor: 'pointer', color: comment.alreadyLiked ? '#1b4797' : '#aaa' }}
-          onClick={() => onLike(comment.id)}
-        >
-          &#x2764; {comment.likeCount}
+        <span className={comment.alreadyLiked ? 'liked' : ''} onClick={() => onLike(comment.id)}>
+          ♥ {comment.likeCount}
         </span>
         {!comment.parentId && (
-          <span style={{ cursor: 'pointer', color: '#1b4797' }} onClick={() => onReply(comment.id)}>
+          <span style={{ color: '#1b4797', fontWeight: 600 }} onClick={() => onReply(comment.id)}>
             답글
           </span>
         )}
