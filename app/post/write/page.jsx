@@ -62,24 +62,46 @@ export default function WritePage() {
     }
   }
 
-  // 이미지 파일 선택 → Cloudinary 업로드
+  // 업로드 전 클라이언트에서 이미지 압축 — 갤럭시/아이폰 원본(5~15MB)을 약 200~500KB로 줄임
+  async function compressImage(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1200;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height / width) * MAX); width = MAX; }
+          else { width = Math.round((width / height) * MAX); height = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(
+          (blob) => resolve(new File([blob], "image.jpg", { type: "image/jpeg" })),
+          "image/jpeg",
+          0.82 // 화질 82% — 육안 차이 거의 없고 용량 대폭 감소
+        );
+      };
+      img.src = url;
+    });
+  }
+
+  // 이미지 파일 선택 → 압축 → Cloudinary 업로드
   async function handleImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
-    if (images.length >= 4) {
-      setError("이미지는 최대 4장까지 첨부 가능합니다");
-      return;
-    }
+    if (images.length >= 4) { setError("이미지는 최대 4장까지 첨부 가능합니다"); return; }
 
     setUploading(true);
     setError("");
     try {
+      const compressed = await compressImage(file); // 압축 먼저 처리
       const formData = new FormData();
-      formData.append("image", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      formData.append("image", compressed);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (res.ok) {
         setImages((prev) => [...prev, data.url]);
@@ -90,7 +112,7 @@ export default function WritePage() {
       setError("이미지 업로드 중 오류가 발생했습니다");
     }
     setUploading(false);
-    e.target.value = ""; // 같은 파일 다시 선택 가능하도록 초기화
+    e.target.value = "";
   }
 
   // 업로드된 이미지 제거

@@ -87,8 +87,15 @@ export default function PostDetail() {
   const childComments = comments.filter(c => c.parentId);
 
   return (
-    <div className='post-detail'>
-      <div className='top-bar'>
+    /* position:fixed + flex column 구조 — 댓글 입력창이 항상 하단 고정 (iOS Safari 완벽 대응) */
+    <div style={{
+      position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+      width: '100%', maxWidth: '480px', height: '100dvh',
+      display: 'flex', flexDirection: 'column', background: '#fff', zIndex: 100,
+    }}>
+
+      {/* 상단 탑바 — 고정 */}
+      <div className='top-bar' style={{ position: 'relative', flexShrink: 0 }}>
         <button className='top-bar-back' onClick={() => router.push('/')}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -111,113 +118,90 @@ export default function PostDetail() {
         </div>
       </div>
 
-      <div className='post-detail-header'>
-        <div className='post-detail-author-row'>
-          <div className={'post-card-avatar' + (isAdmin ? ' admin' : '')} style={{ width: '40px', height: '40px' }}>
-            <PersonIcon />
+      {/* 스크롤 영역 — 게시글 본문 + 댓글 목록 */}
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div className='post-detail-header'>
+          <div className='post-detail-author-row'>
+            <div className={'post-card-avatar' + (isAdmin ? ' admin' : '')} style={{ width: '40px', height: '40px' }}>
+              <PersonIcon />
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: isAdmin ? '#1b4797' : '#333' }}>{post.author}</div>
+              <div style={{ fontSize: '12px', color: '#999' }}>{timeAgo(post.createdAt)}</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: isAdmin ? '#1b4797' : '#333' }}>{post.author}</div>
-            <div style={{ fontSize: '12px', color: '#999' }}>{timeAgo(post.createdAt)}</div>
-          </div>
+          {post.isNotice && <div style={{ display: 'inline-block', background: '#ff3b30', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', marginBottom: '8px' }}>공지</div>}
+          <div className='post-detail-title'>{post.title}</div>
         </div>
-        {post.isNotice && <div style={{ display: 'inline-block', background: '#ff3b30', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', marginBottom: '8px' }}>공지</div>}
-        
-        <div className='post-detail-title'>{post.title}</div>
-      </div>
 
-      <div className='post-detail-content'>{post.content}</div>
+        <div className='post-detail-content'>{post.content}</div>
 
-      {/* 이미지 영역 — 이미지가 있을 때만 표시 */}
-      {post.images && post.images.length > 0 && (
-        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {post.images.map((url, idx) => (
-            <img key={idx} src={url} alt="" style={{
-              width: '100%', borderRadius: '10px', display: 'block',
-              border: '1px solid #f0f0f0',
-            }} />
-          ))}
-        </div>
-      )}
-
-      {/* 투표 영역 — 투표가 있을 때만 표시 */}
-      {poll && (
-        <div style={{ margin: '0 16px 16px', borderRadius: '12px', border: '1px solid #e8edf5', overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', background: '#f0f4ff' }}>
-            <div style={{ fontSize: '13px', color: '#1b4797', fontWeight: 700, marginBottom: '4px' }}>📊 투표</div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a' }}>{poll.question}</div>
-            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>{poll.totalVotes}명 참여</div>
-          </div>
-          <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {poll.options.map((option) => {
-              const isVoted = poll.votedOptionId === option.id;
-              const showResult = !!poll.votedOptionId; // 투표한 뒤에만 결과 표시
-              return (
-                <button key={option.id} onClick={() => handleVote(option.id)} disabled={showResult || voting}
-                  style={{
-                    position: 'relative', width: '100%', padding: '10px 14px',
-                    border: isVoted ? '2px solid #1b4797' : '1px solid #e0e0e0',
-                    borderRadius: '8px', background: '#fff',
-                    cursor: showResult ? 'default' : 'pointer',
-                    textAlign: 'left', overflow: 'hidden',
-                  }}
-                >
-                  {/* 투표 결과 바 (투표 후에만 표시) */}
-                  {showResult && (
-                    <div style={{
-                      position: 'absolute', left: 0, top: 0, bottom: 0,
-                      width: option.percent + '%',
-                      background: isVoted ? '#e8edf5' : '#f5f5f5',
-                      transition: 'width 0.4s ease',
-                    }} />
-                  )}
-                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '14px', color: isVoted ? '#1b4797' : '#333', fontWeight: isVoted ? 700 : 400 }}>
-                      {isVoted && '✓ '}{option.text}
-                    </span>
-                    {showResult && (
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: isVoted ? '#1b4797' : '#999' }}>
-                        {option.percent}%
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-            {!poll.votedOptionId && (
-              <p style={{ fontSize: '12px', color: '#bbb', textAlign: 'center', margin: '4px 0 0' }}>
-                항목을 선택해 투표하세요
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className='post-detail-actions'>
-        <button className={'action-btn' + (post.alreadyLiked ? ' liked' : '')} onClick={handleLikePost}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill={post.alreadyLiked ? '#ff3b30' : 'none'} stroke={post.alreadyLiked ? '#ff3b30' : '#999'} strokeWidth="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-          좋아요 {post.likeCount}
-        </button>
-        <button className='action-btn'>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#999" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          댓글 {post.commentCount}
-        </button>
-      </div>
-
-      <div className='comment-section' style={{ paddingBottom: '80px' }}>
-        <div className='comment-count'>댓글 {comments.length}</div>
-        {parentComments.map(comment => (
-          <div key={comment.id}>
-            <CommentItem comment={comment} onLike={handleCommentLike} onReport={handleCommentReport} onReply={(cid) => setReplyTo(cid)} onDelete={handleCommentDelete} onBlock={handleCommentBlock} />
-            {childComments.filter(c => c.parentId === comment.id).map(child => (
-              <CommentItem key={child.id} comment={child} onLike={handleCommentLike} onReport={handleCommentReport} onReply={() => {}} onDelete={handleCommentDelete} onBlock={handleCommentBlock} />
+        {post.images && post.images.length > 0 && (
+          <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {post.images.map((url, idx) => (
+              <img key={idx} src={url} alt="" style={{ width: '100%', borderRadius: '10px', display: 'block', border: '1px solid #f0f0f0' }} />
             ))}
           </div>
-        ))}
-        {comments.length === 0 && <div className='empty'>댓글이 없습니다</div>}
+        )}
+
+        {poll && (
+          <div style={{ margin: '0 16px 16px', borderRadius: '12px', border: '1px solid #e8edf5', overflow: 'hidden' }}>
+            <div style={{ padding: '14px 16px', background: '#f0f4ff' }}>
+              <div style={{ fontSize: '13px', color: '#1b4797', fontWeight: 700, marginBottom: '4px' }}>📊 투표</div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: '#1a1a1a' }}>{poll.question}</div>
+              <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>{poll.totalVotes}명 참여</div>
+            </div>
+            <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {poll.options.map((option) => {
+                const isVoted = poll.votedOptionId === option.id;
+                const showResult = !!poll.votedOptionId;
+                return (
+                  <button key={option.id} onClick={() => handleVote(option.id)} disabled={showResult || voting}
+                    style={{ position: 'relative', width: '100%', padding: '10px 14px', border: isVoted ? '2px solid #1b4797' : '1px solid #e0e0e0', borderRadius: '8px', background: '#fff', cursor: showResult ? 'default' : 'pointer', textAlign: 'left', overflow: 'hidden' }}
+                  >
+                    {showResult && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: option.percent + '%', background: isVoted ? '#e8edf5' : '#f5f5f5', transition: 'width 0.4s ease' }} />}
+                    <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '14px', color: isVoted ? '#1b4797' : '#333', fontWeight: isVoted ? 700 : 400 }}>{isVoted && '✓ '}{option.text}</span>
+                      {showResult && <span style={{ fontSize: '13px', fontWeight: 700, color: isVoted ? '#1b4797' : '#999' }}>{option.percent}%</span>}
+                    </div>
+                  </button>
+                );
+              })}
+              {!poll.votedOptionId && <p style={{ fontSize: '12px', color: '#bbb', textAlign: 'center', margin: '4px 0 0' }}>항목을 선택해 투표하세요</p>}
+            </div>
+          </div>
+        )}
+
+        <div className='post-detail-actions'>
+          <button className={'action-btn' + (post.alreadyLiked ? ' liked' : '')} onClick={handleLikePost}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill={post.alreadyLiked ? '#ff3b30' : 'none'} stroke={post.alreadyLiked ? '#ff3b30' : '#999'} strokeWidth="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            좋아요 {post.likeCount}
+          </button>
+          <button className='action-btn'>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#999" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            댓글 {post.commentCount}
+          </button>
+        </div>
+
+        <div className='comment-section'>
+          <div className='comment-count'>댓글 {comments.length}</div>
+          {parentComments.map(comment => (
+            <div key={comment.id}>
+              <CommentItem comment={comment} onLike={handleCommentLike} onReport={handleCommentReport} onReply={(cid) => setReplyTo(cid)} onDelete={handleCommentDelete} onBlock={handleCommentBlock} />
+              {childComments.filter(c => c.parentId === comment.id).map(child => (
+                <CommentItem key={child.id} comment={child} onLike={handleCommentLike} onReport={handleCommentReport} onReply={() => {}} onDelete={handleCommentDelete} onBlock={handleCommentBlock} />
+              ))}
+            </div>
+          ))}
+          {comments.length === 0 && <div className='empty'>댓글이 없습니다</div>}
+        </div>
       </div>
 
-      <div className='comment-input-wrap'>
+      {/* 댓글 입력창 — flex 구조로 항상 하단 고정 (position:fixed 아님) */}
+      <div style={{
+        flexShrink: 0, background: '#fff', borderTop: '1px solid #f0f0f0',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
+      }}>
         {replyTo && (
           <div className='reply-indicator'>
             <span>답글 작성 중</span>

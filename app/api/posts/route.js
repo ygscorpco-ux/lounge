@@ -21,7 +21,7 @@ export async function GET(request) {
       blockedIds = blocks.map(b => b.blocked_user_id);
     }
 
-    let query = `SELECT p.id, p.user_id, p.category, p.title, p.content, p.is_notice, p.like_count, p.comment_count, p.created_at, u.role 
+    let query = `SELECT p.id, p.user_id, p.category, p.title, p.content, p.is_notice, p.like_count, p.comment_count, p.created_at, p.images, p.has_poll, u.role 
     FROM posts p JOIN users u ON p.user_id = u.id 
     WHERE p.is_hidden = FALSE`;
     const params = [];
@@ -58,7 +58,9 @@ export async function GET(request) {
       isNotice: row.is_notice === 1,
       likeCount: row.like_count,
       commentCount: row.comment_count,
-      createdAt: row.created_at
+      createdAt: row.created_at,
+      hasImages: !!(row.images && row.images !== '[]' && row.images !== 'null'),
+      hasPoll: !!row.has_poll,
     }));
 
     return NextResponse.json({ posts, page, pageSize: PAGE_SIZE });

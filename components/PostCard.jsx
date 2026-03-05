@@ -43,6 +43,22 @@ export default function PostCard({ post }) {
           <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" strokeWidth="2"/></svg>
           {post.commentCount}
         </span>
+        {/* 이미지 첨부 표시 아이콘 */}
+        {post.hasImages && (
+          <span className='post-card-stat' style={{ color: '#aaa', marginLeft: 'auto' }}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </span>
+        )}
+        {/* 투표 있는 글 표시 */}
+        {post.hasPoll && (
+          <span className='post-card-stat' style={{ color: '#aaa', marginLeft: post.hasImages ? '6px' : 'auto' }}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </span>
+        )}
       </div>
     </div>
   );
