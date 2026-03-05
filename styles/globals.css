@@ -1,4 +1,21 @@
 /* ===== RESET & BASE ===== */
+/* ===== 모바일 웹앱 고정 ===== */
+html {
+  touch-action: pan-y;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+}
 * {
   margin: 0;
   padding: 0;
