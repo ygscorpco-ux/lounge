@@ -149,6 +149,7 @@ export default function LaborCostCalculator() {
   const [selectedDays, setSelectedDays] = useState(['월', '화', '수', '목', '금']);
   const [employmentType, setEmploymentType] = useState('regular');
   const [insuranceOn, setInsuranceOn] = useState(true);
+  const [tax33On, setTax33On] = useState(false); // 단기·일용직 3.3% 원천징수
   const [wageWarn, setWageWarn] = useState(false);
   const [wageShake, setWageShake] = useState(false);
   const [resultTab, setResultTab] = useState('worker'); // 'worker' | 'boss'
@@ -178,11 +179,16 @@ export default function LaborCostCalculator() {
     const applyInsurance = insuranceOn && employmentType === 'regular';
     const employeeDeduction    = applyInsurance ? Math.round(grossWage * EMPLOYEE_TOTAL_RATE)  : 0;
     const employerContribution = applyInsurance ? Math.round(grossWage * EMPLOYER_EXTRA_RATE) : 0;
-    const netWage   = grossWage - employeeDeduction;
+
+    // 단기·일용직 3.3% 원천징수 — 사업소득세(3%) + 지방소득세(0.3%)
+    // 사장이 대신 납부하므로 bossTotal에는 영향 없고 근로자 실수령액만 감소
+    const tax33Deduction = (tax33On && employmentType === 'temp') ? Math.round(grossWage * 0.033) : 0;
+
+    const netWage   = grossWage - employeeDeduction - tax33Deduction;
     const bossTotal = grossWage + employerContribution;
 
-    return { monthlyBase, monthlyWeeklyAllowance, grossWage, employeeDeduction, employerContribution, netWage, bossTotal };
-  }, [wage, hoursPerDay, selectedDays, insuranceOn, weeklyAllowanceHours, employmentType, hasWeeklyAllowance]);
+    return { monthlyBase, monthlyWeeklyAllowance, grossWage, employeeDeduction, employerContribution, tax33Deduction, netWage, bossTotal };
+  }, [wage, hoursPerDay, selectedDays, insuranceOn, tax33On, weeklyAllowanceHours, employmentType, hasWeeklyAllowance]);
 
   function handleWageChange(e) {
     const raw = e.target.value.replace(/[^0-9]/g, '');
@@ -282,7 +288,7 @@ export default function LaborCostCalculator() {
                   setHoursPerDay(v);
                 }}
                 style={{
-                  width: '54px', padding: '7px 8px', textAlign: 'center',
+                  width: '68px', minWidth: '68px', padding: '7px 8px', textAlign: 'center',
                   fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)',
                   border: '2px solid var(--color-primary-bg)', borderRadius: '8px',
                   outline: 'none', fontFamily: 'inherit', background: 'var(--color-primary-bg)',
@@ -390,7 +396,7 @@ export default function LaborCostCalculator() {
         </div>
 
         {/* 4대보험 토글 */}
-        <div>
+        <div style={{ marginBottom: employmentType === 'temp' ? '14px' : 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-gray-700)' }}>4대보험 적용</span>
             <Toggle on={insuranceOn} onChange={setInsuranceOn} />
@@ -413,6 +419,24 @@ export default function LaborCostCalculator() {
             </div>
           )}
         </div>
+
+        {/* 3.3% 원천징수 — 단기·일용직 선택 시만 표시 */}
+        {employmentType === 'temp' && (
+          <div style={{ borderTop: '1px solid var(--color-gray-200)', paddingTop: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-gray-700)' }}>3.3% 원천징수</span>
+                <span style={{ fontSize: '11px', color: 'var(--color-gray-500)', marginLeft: '6px' }}>사업소득세 3% + 지방소득세 0.3%</span>
+              </div>
+              <Toggle on={tax33On} onChange={setTax33On} />
+            </div>
+            {tax33On && (
+              <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', background: 'var(--color-gray-100)', borderRadius: '8px', padding: '8px 12px', lineHeight: 1.6 }}>
+                프리랜서·사업소득자에게 적용돼요. 사장님이 세금을 대신 납부하고 근로자 실수령액에서 차감해요.
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Step 3: 결과 카드 ── */}
@@ -473,6 +497,13 @@ export default function LaborCostCalculator() {
                     <span style={{ fontWeight: 600 }}>-{calc.employeeDeduction.toLocaleString()}원</span>
                   </div>
                 )}
+                {/* 단기·일용직 3.3% 원천징수 공제 항목 */}
+                {calc.tax33Deduction > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', opacity: 0.8 }}>
+                    <span>3.3% 원천징수</span>
+                    <span style={{ fontWeight: 600 }}>-{calc.tax33Deduction.toLocaleString()}원</span>
+                  </div>
+                )}
                 {dividerRow}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
                   <span style={{ fontWeight: 800 }}>💰 실수령액</span>
@@ -512,6 +543,7 @@ export default function LaborCostCalculator() {
               {selectedDays.length}일 × {hoursPerDay}시간 · {wage.toLocaleString()}원/시
               {insuranceOn && employmentType === 'regular' ? ' · 4대보험 포함' : ''}
               {employmentType === 'temp' ? ' · 단기·일용직' : ''}
+              {calc.tax33Deduction > 0 ? ' · 3.3% 원천징수' : ''}
             </div>
           </div>
 
@@ -539,7 +571,7 @@ export default function LaborCostCalculator() {
               </div>
             )}
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginTop: '12px', lineHeight: 1.6, borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '10px' }}>
-              💡 실제 급여는 근무 기록·지각·결근 등에 따라 달라질 수 있어요. 이 계산기는 예상 인건비 기준으로 계획 수립에 활용하세요.
+              💡 실제 급여는 근무 기록·지각·결근 등에 따라 달라질 수 있어요.<br/>이 계산기는 예상 인건비 기준으로 계획 수립에 활용하세요.
             </div>
           </div>
         </div>
