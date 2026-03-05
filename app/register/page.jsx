@@ -31,7 +31,6 @@ export default function RegisterPage() {
     <div className='auth-page' style={{ position: 'relative' }}>
       <button onClick={() => router.push('/login')} style={{ position: 'absolute', top: '16px', left: '16px', background: 'none', border: 'none', padding: '4px', cursor: 'pointer' }}>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        <span style={{ fontSize: '15px', color: '#333', fontWeight: 500, marginLeft: '4px' }}>돌아가기</span>
       </button>
       <div className='auth-logo'>라운지</div>
       <div style={{ fontSize: '14px', color: '#888', marginTop: '-28px', marginBottom: '32px', textAlign: 'center', lineHeight: 1.6 }}>

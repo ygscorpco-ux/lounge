@@ -31,10 +31,7 @@ export default function PostCard({ post }) {
           <span className='post-card-date'>{timeAgo(post.createdAt)}</span>
         </div>
       </div>
-      <div className='post-card-badge'>
-        {post.isNotice && <span className='notice-tag'>공지</span>}
-        <span className='category-tag'>{post.category}</span>
-      </div>
+      {post.isNotice && <div className='post-card-badge'><span className='notice-tag'>공지</span></div>}
       <div className='post-card-title'>{post.title}</div>
       <div className='post-card-content'>{post.content}</div>
       <div className='post-card-footer'>

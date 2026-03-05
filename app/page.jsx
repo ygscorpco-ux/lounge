@@ -2,14 +2,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Header from '../components/Header.jsx';
-import CategoryFilter from '../components/CategoryFilter.jsx';
+
 import PostCard from '../components/PostCard.jsx';
 import WriteButton from '../components/WriteButton.jsx';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [bestPosts, setBestPosts] = useState([]);
-  const [category, setCategory] = useState(null);
   const [sort, setSort] = useState('latest');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -22,7 +21,7 @@ export default function Home() {
     setLoading(true);
     try {
       let url = '/api/posts?page=' + p + '&sort=' + s + '&t=' + Date.now();
-      if (cat) url += '&category=' + encodeURIComponent(cat);
+      
       const res = await fetch(url);
       const data = await res.json();
       if (reset) setPosts(data.posts || []);
@@ -39,12 +38,12 @@ export default function Home() {
     } catch (e) {}
   }, []);
 
-  useEffect(() => { setPage(1); fetchPosts(1, category, sort, true); fetchBest(); }, [category, sort, refreshKey, fetchPosts, fetchBest]);
+  useEffect(() => { setPage(1); fetchPosts(1, null, sort, true); fetchBest(); }, [sort, refreshKey, fetchPosts, fetchBest]);
   useEffect(() => { const h = () => setRefreshKey(p => p + 1); window.addEventListener('focus', h); window.addEventListener('pageshow', h); return () => { window.removeEventListener('focus', h); window.removeEventListener('pageshow', h); }; }, []);
   useEffect(() => { setRefreshKey(p => p + 1); }, [pathname]);
 
-  function loadMore() { const n = page + 1; setPage(n); fetchPosts(n, category, sort, false); }
-  useEffect(() => { const h = () => { if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && !loading && hasMore) loadMore(); }; window.addEventListener('scroll', h); return () => window.removeEventListener('scroll', h); }, [loading, hasMore, page, category, sort]);
+  function loadMore() { const n = page + 1; setPage(n); fetchPosts(n, null, sort, false); }
+  useEffect(() => { const h = () => { if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && !loading && hasMore) loadMore(); }; window.addEventListener('scroll', h); return () => window.removeEventListener('scroll', h); }, [loading, hasMore, page, sort]);
 
   return (
     <div>
@@ -101,7 +100,7 @@ export default function Home() {
                   minWidth: '180px', background: '#f8f9fa', borderRadius: '12px', padding: '14px',
                   cursor: 'pointer', flex: '0 0 auto', border: '1px solid #f0f0f0'
                 }}>
-                  <div style={{ fontSize: '11px', color: '#1b4797', fontWeight: 700, marginBottom: '6px' }}>#{i + 1} {post.category}</div>
+                  <div style={{ fontSize: '11px', color: '#1b4797', fontWeight: 700, marginBottom: '6px' }}>#{i + 1}</div>
                   <div style={{ fontSize: '14px', fontWeight: 600, color: '#1a1a1a', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</div>
                   <div style={{ fontSize: '11px', color: '#999', display: 'flex', gap: '8px' }}>
                     <span>♥ {post.likeCount}</span>
@@ -116,8 +115,15 @@ export default function Home() {
 
       <div className='section-divider' />
 
-      {/* 필터 + 정렬 */}
-      <CategoryFilter current={category} onChange={setCategory} sort={sort} onSortChange={setSort} />
+      {/* 정렬 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid #f0f0f0' }}>
+        <span style={{ fontSize: '15px', fontWeight: 700, color: '#1a1a1a' }}>게시판</span>
+        <select className='sort-select' value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="latest">최신순</option>
+          <option value="likes">추천순</option>
+          <option value="comments">댓글순</option>
+        </select>
+      </div>
 
       {/* 글 목록 */}
       <div>
