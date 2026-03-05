@@ -1018,11 +1018,7 @@ export default function DeliveryMarginCalculator() {
               fontSize: "14px",
             }}
           >
-            <div
-              style={{ fontSize: "48px", marginBottom: "8px", lineHeight: 1 }}
-            >
-              💰
-            </div>
+            <div style={{ fontSize: "28px", marginBottom: "6px", lineHeight: 1 }}>💰</div>
             메뉴 판매가를 입력하면 마진이 계산됩니다
           </div>
         ) : (
