@@ -346,7 +346,7 @@ export default function WritePage() {
           )}
         </button>
 
-        {/* 투표 추가 버튼 */}
+        {/* 투표 추가 버튼 — 투표용지/체크리스트 아이콘 */}
         <button onClick={() => !poll && setPoll({ question: "", options: ["", ""] })}
           style={{
             background: "none", border: "none", padding: "6px", cursor: "pointer",
@@ -355,9 +355,14 @@ export default function WritePage() {
           }}
           title="투표 추가"
         >
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="9" x2="15" y2="9"/>
+            <line x1="9" y1="12" x2="15" y2="12"/>
+            <line x1="9" y1="15" x2="12" y2="15"/>
+            <circle cx="6.5" cy="9" r="0.8" fill="currentColor"/>
+            <circle cx="6.5" cy="12" r="0.8" fill="currentColor"/>
+            <circle cx="6.5" cy="15" r="0.8" fill="currentColor"/>
           </svg>
           {poll && <span style={{ fontSize: "12px", color: "#1b4797", fontWeight: 600 }}>투표</span>}
         </button>

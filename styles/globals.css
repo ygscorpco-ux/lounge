@@ -581,28 +581,29 @@ button {
 .write-btn {
   position: fixed;
   bottom: 24px;
-  right: 24px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: #1b4797;
+  left: 24px;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 23px;
+  background: #222;
   color: white;
-  font-size: 26px;
-  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(27, 71, 151, 0.35);
+  gap: 7px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   border: none;
   cursor: pointer;
   z-index: 50;
-  padding: 0;
-  padding-bottom: 2px;
-  transition: transform 0.15s;
+  transition: transform 0.15s, background 0.15s;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
 }
 
 .write-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.95);
+  background: #111;
 }
 
 /* ===== WRITE FORM ===== */
