@@ -282,14 +282,17 @@ export default function LaborCostCalculator() {
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-gray-700)' }}>하루 근무시간</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <input
-                type="number" min="1" max="12" value={hoursPerDay}
+                type="number" min="1" max="12" step="0.5" value={hoursPerDay}
                 onChange={e => {
-                  // parseInt → parseFloat 으로 변경해 슬라이더 소수점 값과 일치
-                  const v = Math.min(12, Math.max(1, parseFloat(e.target.value) || 1));
+                  const raw = parseFloat(e.target.value);
+                  if (isNaN(raw)) return;
+                  // 0.5 단위로 반올림해 슬라이더와 동기화
+                  const snapped = Math.round(raw * 2) / 2;
+                  const v = Math.min(12, Math.max(1, snapped));
                   setHoursPerDay(v);
                 }}
                 style={{
-                  width: '68px', minWidth: '68px', padding: '7px 8px', textAlign: 'center',
+                  width: '72px', minWidth: '72px', padding: '7px 8px', textAlign: 'center',
                   fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)',
                   border: '2px solid var(--color-primary-bg)', borderRadius: '8px',
                   outline: 'none', fontFamily: 'inherit', background: 'var(--color-primary-bg)',
