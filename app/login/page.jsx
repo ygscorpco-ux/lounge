@@ -29,7 +29,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className='auth-page'>
+    <div className='auth-page' style={{ position: 'relative' }}>
+      <button onClick={() => router.back()} style={{ position: 'absolute', top: '16px', left: '16px', background: 'none', border: 'none', padding: '4px', cursor: 'pointer' }}>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
       <div className='auth-logo'>라운지</div>
       <form className='auth-form' onSubmit={handleSubmit}>
         {error && <div className='auth-error'>{error}</div>}
