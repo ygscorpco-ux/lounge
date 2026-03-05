@@ -39,7 +39,7 @@ function getMarginStatus(rate) {
   return            { emoji: '😨', label: '위험', bg: 'rgba(231,76,60,0.25)',   color: '#e74c3c' };
 }
 
-// 툴팁 컴포넌트
+// 툴팁 컴포넌트 — left:0 고정으로 왼쪽 클리핑 방지, maxWidth+줄바꿈으로 우측 오버플로우 방지
 function Tooltip({ text }) {
   const [show, setShow] = useState(false);
   return (
@@ -47,28 +47,35 @@ function Tooltip({ text }) {
       <span
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
-        onTouchStart={() => setShow(v => !v)}
+        onTouchStart={(e) => { e.preventDefault(); setShow(v => !v); }}
         style={{
-          width: '16px', height: '16px', borderRadius: '50%',
-          background: 'var(--color-gray-200)', color: 'var(--color-gray-700)',
-          fontSize: '10px', fontWeight: 700, cursor: 'pointer',
+          width: '17px', height: '17px', borderRadius: '50%',
+          background: '#dce7f9', color: 'var(--color-primary)',
+          fontSize: '10px', fontWeight: 800, cursor: 'pointer',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
+          flexShrink: 0, border: '1px solid #b8ccf0',
         }}
       >
         ?
       </span>
       {show && (
         <span style={{
-          position: 'absolute', bottom: '22px', left: '50%',
-          transform: 'translateX(-50%)',
+          position: 'absolute', bottom: '24px', left: 0,
           background: 'var(--color-gray-900)', color: '#fff',
-          fontSize: '11px', padding: '6px 10px', borderRadius: '8px',
-          whiteSpace: 'nowrap', zIndex: 100, lineHeight: 1.5,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          fontSize: '12px', padding: '8px 12px', borderRadius: '10px',
+          whiteSpace: 'normal', maxWidth: '200px', width: 'max-content',
+          zIndex: 200, lineHeight: 1.6,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
           pointerEvents: 'none',
         }}>
           {text}
+          {/* 아래 화살표 */}
+          <span style={{
+            position: 'absolute', bottom: '-5px', left: '6px',
+            width: '10px', height: '10px',
+            background: 'var(--color-gray-900)',
+            transform: 'rotate(45deg)', borderRadius: '2px',
+          }} />
         </span>
       )}
     </span>
@@ -252,8 +259,13 @@ export default function DeliveryMarginCalculator() {
                   </span>
                 </div>
                 {active
-                  ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill={app.color}/><path d="M4 7l2 2 4-4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  : <span style={{ fontSize: '11px', color: 'var(--color-gray-500)' }}>
+                  ? <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill={app.color}/><path d="M4 7l2 2 4-4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  : <span style={{
+                      fontSize: '13px', fontWeight: 700,
+                      color: app.color, opacity: 0.75,
+                      background: app.color + '14',
+                      padding: '2px 7px', borderRadius: '10px',
+                    }}>
                       {app.fee !== null ? `${app.fee}%` : '직접'}
                     </span>
                 }
@@ -404,15 +416,14 @@ export default function DeliveryMarginCalculator() {
           </div>
 
           {/* ④ 시각화 바 */}
-          <div>
+          <div style={{ marginBottom: '20px' }}>
             <div style={{ display: 'flex', height: '12px', borderRadius: '8px', overflow: 'hidden', marginBottom: '10px' }}>
               <div style={{ width: `${calc.costRatio}%`,   background: '#e74c3c', transition: 'width 0.3s ease' }} />
               <div style={{ width: `${calc.feeRatio}%`,    background: '#f39c12', transition: 'width 0.3s ease' }} />
               <div style={{ width: `${calc.otherRatio}%`,  background: '#adb5bd', transition: 'width 0.3s ease' }} />
               <div style={{ width: `${calc.marginRatio}%`, background: '#2ecc71', transition: 'width 0.3s ease' }} />
             </div>
-            {/* 범례 */}
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {[
                 { color: '#e74c3c', label: '원가' },
                 { color: '#f39c12', label: '수수료' },
@@ -427,7 +438,68 @@ export default function DeliveryMarginCalculator() {
             </div>
           </div>
 
-          {/* ⑤ 공유 버튼 */}
+          {/* ⑤ 월 매출 시뮬레이션 — 결과 카드 안에 통합 */}
+          <div style={{
+            background: 'rgba(255,255,255,0.12)', borderRadius: '14px',
+            padding: '16px', marginBottom: '16px',
+          }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, opacity: 0.9, marginBottom: '12px' }}>
+              📈 월 매출 시뮬레이션
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '13px', opacity: 0.8, flexShrink: 0 }}>하루 평균</span>
+              <input
+                type="number" inputMode="numeric"
+                placeholder="0"
+                value={dailyOrders}
+                onChange={e => setDailyOrders(e.target.value.replace(/[^0-9]/g, ''))}
+                style={{
+                  width: '68px', padding: '8px 10px', textAlign: 'center',
+                  fontSize: '16px', fontWeight: 700, color: '#1b4797',
+                  border: 'none', borderRadius: '8px',
+                  outline: 'none', fontFamily: 'inherit', background: '#fff',
+                }}
+              />
+              <span style={{ fontSize: '13px', opacity: 0.8, flexShrink: 0 }}>건 주문 시</span>
+            </div>
+
+            {simulation ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', opacity: 0.85 }}>
+                  <span>📅 하루 마진</span>
+                  <span style={{ fontWeight: 700 }}>{Math.round(simulation.dailyMargin).toLocaleString()}원</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', opacity: 0.85 }}>
+                  <span>📆 주간 마진</span>
+                  <span style={{ fontWeight: 700 }}>{Math.round(simulation.weeklyMargin).toLocaleString()}원</span>
+                </div>
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.2)', margin: '4px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 700 }}>💰 월 실마진</div>
+                    <div style={{ fontSize: '11px', opacity: 0.65 }}>{simulation.orders}건 × 30일</div>
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+                    {Math.round(simulation.monthlyMargin).toLocaleString()}원
+                  </div>
+                </div>
+                {calc.margin > 0 && (
+                  <div style={{
+                    marginTop: '4px', padding: '8px 12px', borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.15)', fontSize: '12px', lineHeight: 1.5,
+                  }}>
+                    💡 월 200만원 달성하려면 하루 <strong>{Math.ceil(2000000 / calc.margin)}건</strong> 필요해요
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: '12px', opacity: 0.6, textAlign: 'center', padding: '8px 0' }}>
+                건수를 입력하면 월 마진이 계산됩니다
+              </div>
+            )}
+          </div>
+
+          {/* ⑥ 공유 버튼 */}
           <button
             onClick={handleShare}
             style={{
@@ -444,101 +516,6 @@ export default function DeliveryMarginCalculator() {
             </svg>
             {shareMsg || '결과 공유하기'}
           </button>
-        </div>
-      )}
-
-      {/* ── 월 매출 시뮬레이션 카드 (결과 있을 때만 표시) ── */}
-      {calc && (
-        <div style={{
-          background: '#fff', borderRadius: '20px', padding: '24px',
-          boxShadow: '0 4px 20px rgba(27,71,151,0.08)', marginTop: '16px',
-          animation: 'fadeSlideUp 0.3s ease',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <span style={{ fontSize: '20px' }}>📈</span>
-            <div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-900)' }}>월 매출 시뮬레이션</div>
-              <div style={{ fontSize: '12px', color: 'var(--color-gray-500)', marginTop: '2px' }}>하루 몇 건 팔면 얼마 남을까요?</div>
-            </div>
-          </div>
-
-          {/* 하루 주문 건수 입력 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-gray-700)', flexShrink: 0 }}>하루 평균</span>
-            <input
-              type="number" inputMode="numeric"
-              placeholder="0"
-              value={dailyOrders}
-              onChange={e => setDailyOrders(e.target.value.replace(/[^0-9]/g, ''))}
-              style={{
-                width: '80px', padding: '10px 12px', textAlign: 'center',
-                fontSize: '16px', fontWeight: 700, color: 'var(--color-primary)',
-                border: '2px solid var(--color-primary-bg)', borderRadius: '10px',
-                outline: 'none', fontFamily: 'inherit', background: 'var(--color-primary-bg)',
-              }}
-            />
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-gray-700)', flexShrink: 0 }}>건 주문 시</span>
-          </div>
-
-          {/* 시뮬레이션 결과 */}
-          {simulation ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { label: '하루 마진',  value: simulation.dailyMargin,   icon: '📅', highlight: false },
-                { label: '주간 마진',  value: simulation.weeklyMargin,  icon: '📆', highlight: false },
-                { label: '월 매출액', value: simulation.monthlyRevenue, icon: '💵', highlight: false },
-              ].map((row, i) => (
-                <div key={i} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '12px 14px', borderRadius: '10px', background: 'var(--color-gray-100)',
-                }}>
-                  <span style={{ fontSize: '14px', color: 'var(--color-gray-700)' }}>{row.icon} {row.label}</span>
-                  <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-gray-900)' }}>
-                    {Math.round(row.value).toLocaleString()}원
-                  </span>
-                </div>
-              ))}
-
-              {/* 월 마진 — 강조 표시 */}
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '16px 18px', borderRadius: '14px',
-                background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
-                marginTop: '4px',
-              }}>
-                <div>
-                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)', marginBottom: '2px' }}>
-                    월 실마진 (30일 기준)
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
-                    하루 {simulation.orders}건 × {calc.margin.toLocaleString()}원
-                  </div>
-                </div>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>
-                  {Math.round(simulation.monthlyMargin).toLocaleString()}원
-                </div>
-              </div>
-
-              {/* 손익분기점 안내 */}
-              {calc.margin > 0 && (
-                <div style={{
-                  padding: '12px 14px', borderRadius: '10px',
-                  background: 'var(--color-primary-bg)', fontSize: '13px',
-                  color: 'var(--color-primary)', lineHeight: 1.6,
-                }}>
-                  💡 월 200만원 마진을 내려면 하루{' '}
-                  <strong>{Math.ceil(2000000 / calc.margin)}건</strong> 이상 팔아야 해요
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{
-              textAlign: 'center', padding: '20px',
-              color: 'var(--color-gray-500)', fontSize: '14px',
-            }}>
-              하루 주문 건수를 입력해 주세요
-            </div>
-          )}
         </div>
       )}
 

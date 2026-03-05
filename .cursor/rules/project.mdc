@@ -50,7 +50,3 @@ alwaysApply: true
 - 환경변수는 .env.local 사용, 절대 하드코딩 금지
 - 새 컴포넌트는 components/ 폴더에 추가
 - 새 API는 app/api/ 하위에 route.js로 추가
-
-# 공통 규칙
-
-- 작업이 끝나면 전체 변경사항 커밋 (git add, git commit, cat) 자동으로 하기, 커밋 사항은 알아서 한국어로 적어
