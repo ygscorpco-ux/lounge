@@ -84,7 +84,7 @@ export default function Home() {
     <div>
       <Header />
 
-      {/* 배너 */}
+      {/* ??ш끽維뽳쭩????嫄?*/}
       <div
         className="banner-scroll"
         style={{
@@ -116,15 +116,15 @@ export default function Home() {
               fontWeight: 500,
             }}
           >
-            공지사항
+            ?????곷쿀?????
           </div>
           <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.3 }}>
-            라운지에 오신 것을
+            ??嚥싲갭큔?琉븐쭍??노돗???????????ㅻ쿋????β뼯援????
             <br />
-            환영합니다!
+            ????蹂κ텠??㉱??癲ル슢?????
           </div>
           <div style={{ fontSize: "11px", opacity: 0.6, marginTop: "10px" }}>
-            사장님들의 솔직한 이야기 공간
+            ??????棺堉?댆???????거?????????욱룕?????????
           </div>
         </div>
         <div
@@ -145,241 +145,135 @@ export default function Home() {
               fontWeight: 500,
             }}
           >
-            이벤트
-          </div>
+            ??????          </div>
           <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.3 }}>
-            베스트 글 커피
+            ?嶺??影袁る젺????????맜? ??壤굿??딇???
             <br />
-            기프티콘!
+            ???????濾????????
           </div>
           <div style={{ fontSize: "11px", opacity: 0.6, marginTop: "10px" }}>
-            매주 추천 1등에게 드려요
+            ?轅붽틓???????????살퓢癲??1??μ떜媛?걫????ル쐞????癲ル슢캉?????          </div>
+        </div>
+      </div>
+
+      {/* ?熬곣뫖利??濚욌꼬?녹럶嶺??????????????熬곣뫗逾???嚥▲꺂???????썹땟?㈑??*/}
+      <div style={{ padding: "6px 12px 16px" }}>
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: "18px",
+            border: "1px solid #e9ecef",
+            padding: "14px 10px 12px",
+            boxShadow: "0 4px 14px rgba(27,71,151,0.10)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-around",
+              gap: "6px",
+            }}
+          >
+            {[
+              {
+                label: "YG Home",
+                url: "http://www.염광사.com",
+                external: true,
+                emoji: "\uD83C\uDFE0",
+                bg: "linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%)",
+              },
+              {
+                label: "Margin",
+                url: "/tools/delivery-margin",
+                external: false,
+                emoji: "\uD83D\uDEF5",
+                bg: "linear-gradient(135deg,#fee2e2 0%,#fecaca 100%)",
+              },
+              {
+                label: "Labor",
+                url: "/tools/labor-cost",
+                external: false,
+                emoji: "\uD83D\uDCBC",
+                bg: "linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%)",
+              },
+              {
+                label: "Subsidy",
+                url: "/tools/subsidy-calendar",
+                external: false,
+                emoji: "\uD83D\uDCC5",
+                bg: "linear-gradient(135deg,#fef3c7 0%,#fde68a 100%)",
+              },
+              {
+                label: "Scheduler",
+                url: "/tools/worker-scheduler",
+                external: false,
+                emoji: "\uD83D\uDCCB",
+                bg: "linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%)",
+              },
+            ].map((item, i) => (
+              <a
+                key={i}
+                href={item.url}
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noopener noreferrer" : undefined}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "8px",
+                  textDecoration: "none",
+                  minWidth: "62px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "16px",
+                    background: item.bg,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.22)",
+                    border: "2px solid rgba(27,71,151,0.65)",
+                    position: "relative",
+                  }}
+                >
+                  <span style={{ fontSize: "24px", lineHeight: 1 }}>
+                    {item.emoji}
+                  </span>
+                  <span
+                    style={{
+                      position: "absolute",
+                      right: "-2px",
+                      bottom: "-2px",
+                      width: "12px",
+                      height: "12px",
+                      borderRadius: "50%",
+                      background: "#1b4797",
+                      border: "2px solid #fff",
+                    }}
+                  />
+                </div>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#495057",
+                    textAlign: "center",
+                    whiteSpace: "nowrap",
+                    letterSpacing: "-0.1px",
+                  }}
+                >
+                  {item.label}
+                </span>
+              </a>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* 바로가기 퀵메뉴 — 5개, 한 줄 균등 배치 */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-around",
-          padding: "4px 8px 16px",
-        }}
-      >
-        {/* 염광사 홈 1개 + 사장님 도구 4개 = 총 5개 */}
-        {[
-          {
-            label: "염광사 홈",
-            url: "http://www.염광사.com",
-            external: true,
-            svg: (
-              <svg
-                viewBox="0 0 28 28"
-                width="26"
-                height="26"
-                fill="none"
-                stroke="#1b4797"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 13L14 5l10 8" />
-                <path d="M6 11.5V23h5v-5h6v5h5V11.5" />
-              </svg>
-            ),
-          },
-          {
-            label: "마진계산기",
-            url: "/tools/delivery-margin",
-            external: false,
-            svg: (
-              <svg
-                viewBox="0 0 28 28"
-                width="26"
-                height="26"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle
-                  cx="7"
-                  cy="21"
-                  r="2.5"
-                  stroke="#1b4797"
-                  strokeWidth="1.8"
-                />
-                <circle
-                  cx="21"
-                  cy="21"
-                  r="2.5"
-                  stroke="#1b4797"
-                  strokeWidth="1.8"
-                />
-                <path
-                  d="M9.5 21h9M14 21l-3-8h5l3 5"
-                  stroke="#1b4797"
-                  strokeWidth="1.8"
-                />
-                <text
-                  x="14"
-                  y="10"
-                  fontSize="8"
-                  fontWeight="700"
-                  fill="#4f80e1"
-                  stroke="none"
-                >
-                  ₩
-                </text>
-              </svg>
-            ),
-          },
-          {
-            label: "인건비계산",
-            url: "/tools/labor-cost",
-            external: false,
-            svg: (
-              <svg
-                viewBox="0 0 28 28"
-                width="26"
-                height="26"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle
-                  cx="10"
-                  cy="9"
-                  r="4"
-                  stroke="#1b4797"
-                  strokeWidth="1.8"
-                />
-                <path
-                  d="M4 24c0-4 3-7 7-7"
-                  stroke="#1b4797"
-                  strokeWidth="1.8"
-                />
-                <text
-                  x="15"
-                  y="22"
-                  fontSize="10"
-                  fontWeight="700"
-                  fill="#4f80e1"
-                  stroke="none"
-                >
-                  ₩
-                </text>
-              </svg>
-            ),
-          },
-          {
-            label: "지원금일정",
-            url: "/tools/subsidy-calendar",
-            external: false,
-            svg: (
-              <svg
-                viewBox="0 0 28 28"
-                width="26"
-                height="26"
-                fill="none"
-                stroke="#1b4797"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="5" width="22" height="19" rx="3" />
-                <path d="M8 5V3M20 5V3M3 11h22" />
-                <text
-                  x="7"
-                  y="22"
-                  fontSize="9"
-                  fontWeight="700"
-                  fill="#4f80e1"
-                  stroke="none"
-                >
-                  ₩
-                </text>
-              </svg>
-            ),
-          },
-          {
-            label: "알바관리",
-            url: "/tools/worker-scheduler",
-            external: false,
-            svg: (
-              <svg
-                viewBox="0 0 28 28"
-                width="26"
-                height="26"
-                fill="none"
-                stroke="#1b4797"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="6" y="2" width="16" height="22" rx="2" />
-                <path d="M10 2v3h8V2" />
-                <path d="M10 14h5M10 18h3" />
-                <circle
-                  cx="20"
-                  cy="20"
-                  r="5"
-                  fill="#eef2fb"
-                  stroke="#4f80e1"
-                  strokeWidth="1.6"
-                />
-                <path
-                  d="M20 17.5V20l1.5 1.5"
-                  stroke="#4f80e1"
-                  strokeWidth="1.5"
-                />
-              </svg>
-            ),
-          },
-        ].map((item, i) => (
-          <a
-            key={i}
-            href={item.url}
-            target={item.external ? "_blank" : undefined}
-            rel={item.external ? "noopener noreferrer" : undefined}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "8px",
-              textDecoration: "none",
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "50%",
-                background: "#eef2fb",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 2px 8px rgba(27,71,151,0.10)",
-              }}
-            >
-              {item.svg}
-            </div>
-            <span
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#495057",
-                textAlign: "center",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {item.label}
-            </span>
-          </a>
-        ))}
-      </div>
-
-      {/* 베스트 */}
+      {/* ?嶺??影袁る젺???*/}
       {bestPosts.length > 0 && (
         <>
           <div className="section-divider" />
@@ -392,7 +286,7 @@ export default function Home() {
                 marginBottom: "12px",
               }}
             >
-              🔥 실시간 인기 글
+              ????????ㅻ쿋?????꿔꺂??恝????????맜?
             </div>
             <div
               className="best-scroll"
@@ -449,8 +343,8 @@ export default function Home() {
                       gap: "8px",
                     }}
                   >
-                    <span>♥ {post.likeCount}</span>
-                    <span>💬 {post.commentCount}</span>
+                    <span>??{post.likeCount}</span>
+                    <span>???{post.commentCount}</span>
                   </div>
                 </div>
               ))}
@@ -461,7 +355,7 @@ export default function Home() {
 
       <div className="section-divider" />
 
-      {/* 정렬 */}
+      {/* ??꿔꺂???影??*/}
       <div
         style={{
           display: "flex",
@@ -472,7 +366,7 @@ export default function Home() {
         }}
       >
         <span style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a1a" }}>
-          게시판
+          寃뚯떆湲
         </span>
         <select
           className="sort-select"
@@ -485,14 +379,14 @@ export default function Home() {
         </select>
       </div>
 
-      {/* 글 목록 */}
+      {/* ?????맜? ?轅붽틓??熬곥끇釉띄춯誘좊???*/}
       <div>
         {posts.map((post) => (
           <PostCard key={post.id} post={post} />
         ))}
-        {loading && <div className="loading">로딩 중...</div>}
+        {loading && <div className="loading">?黎??筌??裕ㅒ???..</div>}
         {!loading && posts.length === 0 && (
-          <div className="empty">아직 글이 없습니다</div>
+          <div className="empty">?????밸븶??볧돯??????맜????????욱룏???????낆젵</div>
         )}
       </div>
       <WriteButton />
