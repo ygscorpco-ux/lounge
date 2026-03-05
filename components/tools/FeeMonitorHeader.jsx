@@ -36,27 +36,32 @@ function useCountUp(target, duration = 800) {
   return val;
 }
 
-// 개별 플랫폼 티커 셀
+// 개별 플랫폼 티커 셀 — 총부담률(중개+결제) 표시 + 툴팁
 function PlatformTicker({ platform }) {
   const [displayRate, setDisplayRate] = useState(null);
   const [flash, setFlash] = useState(false);
-  const baseRate = platform?.tiers?.find(t => t.is_default)?.fee_rate
-    ?? platform?.tiers?.[0]?.fee_rate ?? 0;
-  const countedRate = useCountUp(parseFloat(baseRate) || 0);
-  const feeColor = getFeeColor(parseFloat(baseRate) || 0);
+  const [showTip, setShowTip] = useState(false);
 
-  // 로드 완료 후 displayRate 세팅
+  // 기본 구간의 중개 + 결제 수수료 합산
+  const defaultTier = platform?.tiers?.find(t => t.is_default) ?? platform?.tiers?.[0];
+  const baseFee     = parseFloat(defaultTier?.fee_rate || 0);
+  const basePayFee  = parseFloat(defaultTier?.payment_fee_rate || 0);
+  const totalRate   = baseFee + basePayFee; // 총부담률
+
+  const countedRate = useCountUp(totalRate, 1500); // 1.5초 카운트업
+  const feeColor    = getFeeColor(totalRate);
+
   useEffect(() => {
-    if (!baseRate) return;
-    const t = setTimeout(() => setDisplayRate(parseFloat(baseRate)), 900);
+    if (!totalRate) return;
+    const t = setTimeout(() => setDisplayRate(totalRate), 1000);
     return () => clearTimeout(t);
-  }, [baseRate]);
+  }, [totalRate]);
 
-  // 3~7초 랜덤 ±0.1% 미세 깜빡임
+  // 3~7초 랜덤 ±0.1% 미세 깜빡임 (시각적 활성감)
   useEffect(() => {
     if (!displayRate) return;
     const interval = setInterval(() => {
-      const delta = (Math.random() - 0.5) * 0.2; // ±0.1
+      const delta = (Math.random() - 0.5) * 0.2;
       setDisplayRate(prev => parseFloat((prev + delta).toFixed(1)));
       setFlash(true);
       setTimeout(() => setFlash(false), 300);
@@ -65,33 +70,33 @@ function PlatformTicker({ platform }) {
   }, [displayRate]);
 
   const shown = displayRate ?? countedRate;
-  const isUp = displayRate && displayRate > parseFloat(baseRate);
+  const isUp  = displayRate && displayRate > totalRate;
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '6px 10px', minWidth: '80px',
-      borderRight: '1px solid rgba(255,255,255,0.08)',
-    }}>
-      <span style={{
-        fontSize: '10px', color: '#8899aa', fontWeight: 600, marginBottom: '2px',
-        fontFamily: 'monospace', letterSpacing: '0.5px',
-      }}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 10px', minWidth: '80px', borderRight: '1px solid rgba(255,255,255,0.08)', position: 'relative', cursor: 'pointer' }}
+      onMouseEnter={() => setShowTip(true)} onMouseLeave={() => setShowTip(false)}
+      onTouchStart={() => setShowTip(v => !v)}
+    >
+      <span style={{ fontSize: '10px', color: '#8899aa', fontWeight: 600, marginBottom: '2px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
         {platform?.name?.slice(0, 3) || '---'}
       </span>
-      <span style={{
-        fontSize: '13px', fontWeight: 800, fontFamily: 'monospace',
-        color: flash ? (isUp ? '#ff6b81' : '#2ed573') : feeColor,
-        transition: 'color 0.2s',
-        letterSpacing: '0.5px',
-      }}>
+      <span style={{ fontSize: '13px', fontWeight: 800, fontFamily: 'monospace', color: flash ? (isUp ? '#ff6b81' : '#2ed573') : feeColor, transition: 'color 0.2s', letterSpacing: '0.5px' }}>
         {shown > 0 ? shown.toFixed(1) : '..'}%
       </span>
-      <span style={{
-        fontSize: '9px', color: '#556677', fontFamily: 'monospace', marginTop: '1px',
-      }}>
-        {shown > 0 ? `+VAT ${(shown * 0.1).toFixed(1)}` : ''}
+      <span style={{ fontSize: '9px', color: '#556677', fontFamily: 'monospace', marginTop: '1px' }}>
+        총부담률
       </span>
+      {/* 툴팁: 중개/결제 수수료 분리 표시 */}
+      {showTip && totalRate > 0 && (
+        <div style={{ position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)', background: '#1e2a3a', color: '#cdd8e8', fontSize: '11px', padding: '8px 10px', borderRadius: '8px', whiteSpace: 'nowrap', zIndex: 100, boxShadow: '0 4px 16px rgba(0,0,0,0.4)', lineHeight: 1.6 }}>
+          <div>중개 <strong style={{ color: '#ffa502' }}>{baseFee.toFixed(1)}%</strong></div>
+          <div>결제 <strong style={{ color: '#ffa502' }}>{basePayFee.toFixed(1)}%</strong></div>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: '4px', paddingTop: '4px' }}>
+            합계 <strong style={{ color: '#7fdbff' }}>{totalRate.toFixed(1)}%</strong> <span style={{ opacity: 0.6 }}>(부가세 별도)</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

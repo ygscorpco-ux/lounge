@@ -35,7 +35,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: result, lastUpdated });
   } catch (error) {
-    console.error('delivery-fees GET error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('[delivery-fees]', error.message);
+    return NextResponse.json({ success: false, error: '수수료 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.' }, { status: 500 });
   }
 }

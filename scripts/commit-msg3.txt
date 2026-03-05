@@ -1,0 +1,7 @@
+refactor: 최저시급/4대보험 요율을 lib/constants.js로 통합
+
+- MIN_WAGE_BY_YEAR: 연도별 최저시급 테이블 (2024~2026)
+- INSURANCE_RATES_BY_YEAR: 연도별 4대보험 요율 테이블 (2025~2027)
+- getCurrentMinWage() / getCurrentInsuranceRates(): 현재 연도 자동 반환
+- LaborCostCalculator, WorkerScheduler, ContractGenerator, workers API 모두 constants import로 교체
+- 매년 초 constants.js 한 곳만 업데이트하면 전체 반영

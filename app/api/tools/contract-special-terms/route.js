@@ -1,6 +1,6 @@
 import pool from '../../../../lib/db.js';
 import { getCurrentUser } from '../../../../lib/auth.js';
-import { callGPT, makeCacheKey } from '../../../../lib/gpt.js';
+import { callGPT, makeCacheKey, getLastError } from '../../../../lib/gpt.js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -59,7 +59,7 @@ ${keywordList}
     });
 
     if (!result) {
-      return NextResponse.json({ success: false, error: 'AI 검토를 일시적으로 사용할 수 없습니다' }, { status: 503 });
+      return NextResponse.json({ success: false, error: getLastError() || 'AI 특약 검토를 사용할 수 없습니다. 잠시 후 다시 시도해주세요.' }, { status: 503 });
     }
 
     let parsed = { riskItems: [], safeTerms: [] };

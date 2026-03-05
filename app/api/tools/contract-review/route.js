@@ -1,5 +1,5 @@
 import { getCurrentUser } from '../../../../lib/auth.js';
-import { callGPT } from '../../../../lib/gpt.js';
+import { callGPT, getLastError } from '../../../../lib/gpt.js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -54,7 +54,7 @@ export async function POST(request) {
     });
 
     if (!result) {
-      return NextResponse.json({ success: false, error: 'AI 검토를 일시적으로 사용할 수 없습니다' }, { status: 503 });
+      return NextResponse.json({ success: false, error: getLastError() || 'AI 검토를 사용할 수 없습니다. 잠시 후 다시 시도해주세요.' }, { status: 503 });
     }
 
     let parsed = { riskLevel: '보통', issues: [], overallComment: '' };

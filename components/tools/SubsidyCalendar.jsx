@@ -506,9 +506,12 @@ export default function SubsidyCalendar() {
             {/* 날짜 셀 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px' }}>
               {grid.map((day, idx) => {
+                // null 셀 (달 앞/뒤 빈 칸) — 완전히 빈 div만 렌더링
+                if (!day) return <div key={idx} style={{ aspectRatio: '1' }} />;
+
                 const dow = idx % 7;
-                const hasSub = day && subsidyByDay[day];
-                const dots = hasSub ? subsidyByDay[day].slice(0, 3) : [];
+                const hasSub = subsidyByDay[day];
+                const dots = hasSub ? hasSub.slice(0, 3) : [];
                 const isSelected = day === selectedDate;
                 const isTod = isToday(day);
                 return (
@@ -520,25 +523,18 @@ export default function SubsidyCalendar() {
                     border: isTod && !isSelected ? '2px solid var(--color-primary)' : '2px solid transparent',
                     transition: 'all 0.15s',
                   }}>
-                    {day && (
-                      <>
-                        <span style={{
-                          fontSize: '13px', fontWeight: isSelected || isTod ? 700 : 400, lineHeight: 1,
-                          color: isSelected ? '#fff' : dow === 0 ? 'var(--color-danger)' : dow === 6 ? 'var(--color-accent)' : 'var(--color-gray-900)',
-                        }}>
-                          {day}
-                        </span>
-                        {dots.length > 0 && (
-                          <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
-                            {dots.map((s, i) => (
-                              <div key={i} style={{
-                                width: '5px', height: '5px', borderRadius: '50%',
-                                background: isSelected ? 'rgba(255,255,255,0.8)' : (CAT_MAP[s.category]?.color || '#1b4797'),
-                              }} />
-                            ))}
-                          </div>
-                        )}
-                      </>
+                    <span style={{
+                      fontSize: '13px', fontWeight: isSelected || isTod ? 700 : 400, lineHeight: 1,
+                      color: isSelected ? '#fff' : dow === 0 ? 'var(--color-danger)' : dow === 6 ? 'var(--color-accent)' : 'var(--color-gray-900)',
+                    }}>
+                      {day}
+                    </span>
+                    {dots.length > 0 && (
+                      <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                        {dots.map((s, i) => (
+                          <div key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', background: isSelected ? 'rgba(255,255,255,0.8)' : (CAT_MAP[s.category]?.color || '#1b4797') }} />
+                        ))}
+                      </div>
                     )}
                   </div>
                 );

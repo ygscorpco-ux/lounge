@@ -8,7 +8,7 @@ export async function GET(request) {
     const year     = searchParams.get('year');
     const month    = searchParams.get('month');
 
-    let query = 'SELECT * FROM subsidies WHERE is_active = 1';
+    let query = 'SELECT * FROM subsidy_calendar WHERE is_active = 1';
     const params = [];
 
     // 카테고리 필터
@@ -41,7 +41,7 @@ export async function GET(request) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('subsidy list error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('[subsidy list]', error.message);
+    return NextResponse.json({ success: false, error: '지원금 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.' }, { status: 500 });
   }
 }

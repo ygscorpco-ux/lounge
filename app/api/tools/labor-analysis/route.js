@@ -1,5 +1,5 @@
 import { getCurrentUser } from '../../../../lib/auth.js';
-import { callGPT, makeCacheKey } from '../../../../lib/gpt.js';
+import { callGPT, makeCacheKey, getLastError } from '../../../../lib/gpt.js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -44,7 +44,7 @@ ${numWorkers > 1 ? `- 직원 ${numWorkers}명 기준 총 인건비: ${(bossTotal
     });
 
     if (!result) {
-      return NextResponse.json({ success: false, error: 'AI 분석을 일시적으로 사용할 수 없습니다' }, { status: 503 });
+      return NextResponse.json({ success: false, error: getLastError() || 'AI 분석을 사용할 수 없습니다. 잠시 후 다시 시도해주세요.' }, { status: 503 });
     }
 
     return NextResponse.json({ success: true, data: result });

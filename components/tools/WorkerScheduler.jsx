@@ -142,9 +142,9 @@ function WorkerForm({ initial, onSave, onContract }) {
     try {
       const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const d = await r.json();
-      if (d.success) { goContract ? onContract(d.data?.id || initial?.id) : onSave(); }
-      else setErr(d.error);
-    } catch { setErr('저장 실패'); }
+      if (d.success) { goContract ? onContract(d.data?.id || initial?.id) : onSave(initial?.id ? '✅ 직원 정보 수정 완료!' : '✅ 직원 추가 완료!'); }
+      else setErr(d.error || '저장에 실패했습니다. 다시 시도해주세요.');
+    } catch { setErr('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); }
     setSaving(false);
   }
 
@@ -790,7 +790,7 @@ export default function WorkerScheduler() {
         title={editWorker ? '직원 수정' : '직원 추가'}>
         <WorkerForm
           initial={editWorker}
-          onSave={() => { setShowAddWorker(false); setEditWorker(null); loadWorkers(); showToast('저장되었습니다'); }}
+          onSave={(msg) => { setShowAddWorker(false); setEditWorker(null); loadWorkers(); showToast(msg || '✅ 저장 완료!'); }}
           onContract={(id) => { setShowAddWorker(false); setEditWorker(null); loadWorkers(); router.push(`/tools/contract?workerId=${id}`); }}
         />
       </Sheet>

@@ -1,6 +1,6 @@
 import pool from '../../../../lib/db.js';
 import { getCurrentUser } from '../../../../lib/auth.js';
-import { callGPT, makeCacheKey } from '../../../../lib/gpt.js';
+import { callGPT, makeCacheKey, getLastError } from '../../../../lib/gpt.js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -29,7 +29,7 @@ export async function POST(request) {
     // 활성 지원금 전체 조회 (현재 날짜 기준 마감 안된 것)
     const [subsidies] = await pool.query(
       `SELECT title, category, target, end_date, description, amount
-       FROM subsidies
+       FROM subsidy_calendar
        WHERE is_active = 1 AND end_date >= CURDATE()
        ORDER BY end_date ASC
        LIMIT 20`
@@ -73,7 +73,7 @@ ${subsidyList}
     });
 
     if (!result) {
-      return NextResponse.json({ success: false, error: 'AI 추천을 일시적으로 사용할 수 없습니다' }, { status: 503 });
+      return NextResponse.json({ success: false, error: getLastError() || 'AI 추천을 사용할 수 없습니다. 잠시 후 다시 시도해주세요.' }, { status: 503 });
     }
 
     // JSON 파싱 시도 — 실패해도 텍스트로 반환

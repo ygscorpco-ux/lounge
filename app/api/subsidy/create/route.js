@@ -16,14 +16,14 @@ export async function POST(request) {
     }
 
     const [result] = await pool.query(
-      `INSERT INTO subsidies (title, category, start_date, end_date, target, description, url, amount)
+      `INSERT INTO subsidy_calendar (title, category, start_date, end_date, target, description, apply_url, amount)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [title, category, start_date || null, end_date, target || null, description || null, url || null, amount || null]
     );
 
     return NextResponse.json({ success: true, data: { id: result.insertId } });
   } catch (error) {
-    console.error('subsidy create error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('[subsidy create]', error.message);
+    return NextResponse.json({ success: false, error: '등록에 실패했습니다. 잠시 후 다시 시도해주세요.' }, { status: 500 });
   }
 }

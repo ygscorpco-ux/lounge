@@ -1,0 +1,20 @@
+feat: 전체 수정 — 수수료 구간 UI, DB 통일, AI 에러 개선, 버그 수정
+
+FIX 0: lib/constants.js 호환성 alias 추가 (MIN_WAGE_2026, INSURANCE_RATES)
+FIX 1: DB 5개 테이블 생성(workers/work_schedule/salary_record/subsidy_calendar/owner_profile)
+       subsidy API 전체 subsidies -> subsidy_calendar 교체
+FIX 2: DeliveryMarginCalculator 완전 재작성
+       - /api/delivery-fees API 연동, 하드코딩 APPS 제거
+       - 수수료 구간 선택 UI (배민/쿠팡이츠 3단계 버튼)
+       - 중개수수료 + 결제수수료 분리 계산 및 표시
+       - 앱 비교 섹션 API 데이터 기반으로 교체
+FIX 3: 시뮬레이션 버그 수정 (2000000/calc.margin -> /calc.margin*30)
+       월 고정비 입력 필드 + BEP 계산 추가
+FIX 4: FeeMonitorHeader - 총부담률(중개+결제) 표시, 툴팁 추가, 카운트업 1.5초
+FIX 5: SubsidyCalendar 달력 빈 셀 완전 클린 렌더링
+FIX 6: lib/gpt.js 에러 타입별 분기 (401/429/5xx/네트워크), getLastError() 추가
+       5개 GPT API route 에러 메시지 getLastError() 로 교체
+FIX 7: WorkerScheduler 저장 성공 토스트 메시지 개선
+FIX 8: delivery-fees, subsidy-recommend API 에러 메시지 통일
+신규: 배달앱 마진 비교 API 기반 정렬 표시 (FIX2에 포함)
+신규: LaborCostCalculator 직원 수 슬라이더 (기존 구현 확인)
