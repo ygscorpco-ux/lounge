@@ -41,43 +41,70 @@ export default function WritePage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fff' }}>
-      {/* 고정 헤더 */}
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '100%',
+      maxWidth: '480px',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      background: '#fff',
+      zIndex: 200,
+    }}>
+      {/* 고정 상단바 */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 16px', borderBottom: '1px solid #f0f0f0',
-        background: '#fff', flexShrink: 0, zIndex: 10
+        background: '#fff', flexShrink: 0, zIndex: 10,
       }}>
         <button onClick={() => router.back()} style={{
-          background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center'
+          background: 'none', border: 'none', padding: '4px',
+          cursor: 'pointer', display: 'flex', alignItems: 'center',
         }}>
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+            stroke="#333" strokeWidth="2" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
         <span style={{ fontSize: '17px', fontWeight: 700, color: '#333' }}>글 쓰기</span>
         <button onClick={handleSubmit} style={{
           background: 'none', border: 'none', fontSize: '15px',
           color: (title.trim() && content.trim()) ? '#1b4797' : '#ccc',
-          fontWeight: 600, cursor: 'pointer'
+          fontWeight: 600, cursor: 'pointer',
         }}>
           완료
         </button>
       </div>
 
-      {error && <div style={{ padding: '10px 16px', background: '#fff5f5', color: '#e53e3e', fontSize: '13px', flexShrink: 0 }}>{error}</div>}
+      {error && (
+        <div style={{
+          padding: '10px 16px', background: '#fff5f5',
+          color: '#e53e3e', fontSize: '13px', flexShrink: 0,
+        }}>
+          {error}
+        </div>
+      )}
 
-      {/* 스크롤 영역 */}
+      {/* 스크롤 영역 — 이제 부모가 fixed+고정높이이므로 정상 동작 */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
 
         {/* 관리자 공지 옵션 */}
         {isAdmin && (
           <label style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '12px 16px', borderBottom: '1px solid #f0f0f0', fontSize: '14px', color: '#333', flexShrink: 0
+            padding: '12px 16px', borderBottom: '1px solid #f0f0f0',
+            fontSize: '14px', color: '#333', flexShrink: 0,
           }}>
-            <input type="checkbox" checked={isNotice} onChange={(e) => setIsNotice(e.target.checked)}
-              style={{ width: '18px', height: '18px', accentColor: '#1b4797' }} />
+            <input
+              type="checkbox"
+              checked={isNotice}
+              onChange={(e) => setIsNotice(e.target.checked)}
+              style={{ width: '18px', height: '18px', accentColor: '#1b4797' }}
+            />
             공지로 등록
           </label>
         )}
@@ -89,9 +116,10 @@ export default function WritePage() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           style={{
-            padding: '18px 16px 14px', border: 'none', borderBottom: '1px solid #f0f0f0',
-            fontSize: '18px', fontWeight: 600, color: '#1a1a1a', outline: 'none',
-            background: 'transparent', flexShrink: 0
+            padding: '18px 16px 14px', border: 'none',
+            borderBottom: '1px solid #f0f0f0',
+            fontSize: '18px', fontWeight: 600, color: '#1a1a1a',
+            outline: 'none', background: 'transparent', flexShrink: 0,
           }}
         />
 
@@ -101,13 +129,14 @@ export default function WritePage() {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           style={{
-            flex: 1, padding: '16px', border: 'none', fontSize: '15px',
-            lineHeight: 1.7, color: '#333', outline: 'none', resize: 'none',
-            background: 'transparent', minHeight: '200px'
+            flex: 1, padding: '16px', border: 'none',
+            fontSize: '15px', lineHeight: 1.7, color: '#333',
+            outline: 'none', resize: 'none',
+            background: 'transparent', minHeight: '200px',
           }}
         />
 
-        {/* 이용규칙 — 항상 보임, 내용이 밀어냄 */}
+        {/* 이용규칙 */}
         <div style={{ padding: '20px 16px 32px', flexShrink: 0 }}>
           <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
             <p style={{ fontSize: '12px', color: '#bbb', lineHeight: 1.8, marginBottom: '10px' }}>
@@ -124,7 +153,7 @@ export default function WritePage() {
             <button onClick={() => router.push('/rules')} style={{
               background: 'none', border: 'none', padding: '0',
               fontSize: '11px', color: '#bbb', cursor: 'pointer',
-              marginTop: '8px', textDecoration: 'underline'
+              marginTop: '8px', textDecoration: 'underline',
             }}>
               커뮤니티 이용규칙 전체 보기
             </button>
