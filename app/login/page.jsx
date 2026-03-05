@@ -34,6 +34,10 @@ export default function LoginPage() {
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <div className='auth-logo'>라운지</div>
+      <div style={{ fontSize: '14px', color: '#888', marginTop: '-28px', marginBottom: '32px', textAlign: 'center', lineHeight: 1.6 }}>
+        사장님들의 솔직한 이야기 공간<br/>
+        <span style={{ fontSize: '13px', color: '#aaa' }}>로그인하고 자유롭게 소통하세요</span>
+      </div>
       <form className='auth-form' onSubmit={handleSubmit}>
         {error && <div className='auth-error'>{error}</div>}
         <input
