@@ -1659,9 +1659,9 @@ export default function SubsidyCalendar() {
                       marginTop: s.description ? "0" : "12px",
                     }}
                   >
-                    {s.url ? (
+                    {(s.apply_url || s.url) ? (
                       <a
-                        href={s.url}
+                        href={s.apply_url || s.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
