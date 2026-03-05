@@ -581,11 +581,11 @@ button {
 .write-btn {
   position: fixed;
   bottom: 24px;
-  left: 24px;
+  right: 24px;
   height: 46px;
   padding: 0 20px;
   border-radius: 23px;
-  background: #222;
+  background: #1b4797;
   color: white;
   display: flex;
   align-items: center;
@@ -603,7 +603,7 @@ button {
 
 .write-btn:active {
   transform: scale(0.95);
-  background: #111;
+  background: #153a7a;
 }
 
 /* ===== WRITE FORM ===== */
