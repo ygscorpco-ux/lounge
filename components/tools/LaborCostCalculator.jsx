@@ -136,7 +136,7 @@ function LaborAiSection({ calc, hourlyWage, hoursPerDay, selectedDays, employmen
             {result.cached && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(240,147,251,0.15)', color: '#f093fb', marginLeft: 'auto' }}>캐시됨</span>}
           </div>
           <p style={{ fontSize: '14px', color: '#e0e0e0', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{result.text}</p>
-          <p style={{ fontSize: '11px', color: '#556', marginTop: '8px', marginBottom: 0 }}>* AI 제안은 참고용이며, 실제 적용 전 전문가 상담을 권장합니다.</p>
+          <p style={{ fontSize: '10px', color: '#6c757d', marginTop: '8px', marginBottom: 0, paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>⚠️ AI 제안은 참고용이며, 실제 적용 전 노무사 또는 고용노동부(1350) 상담을 권장해요.</p>
         </div>
       )}
     </div>
@@ -538,6 +538,9 @@ export default function LaborCostCalculator() {
                 1인 기준 {calc.bossTotal.toLocaleString()}원 × {numWorkers}명
               </div>
             )}
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginTop: '12px', lineHeight: 1.6, borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '10px' }}>
+              💡 실제 급여는 근무 기록·지각·결근 등에 따라 달라질 수 있어요. 이 계산기는 예상 인건비 기준으로 계획 수립에 활용하세요.
+            </div>
           </div>
         </div>
       ) : (

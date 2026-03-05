@@ -18,7 +18,8 @@ export default function DeliveryMarginPage() {
       <ToolHeader
         icon={<svg viewBox="0 0 28 28" width="28" height="28" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="20" r="2"/><circle cx="20" cy="20" r="2"/><path d="M1 3h3l2.5 11h11l2.5-8H7"/><path d="M16 10v5M18 12h-4"/></svg>}
         title="실마진 계산기"
-        sub="배달앱 수수료까지 한번에 정확하게"
+        sub="메뉴 하나 팔면 실제로 얼마 남을까?"
+        note="배민 정산서와 다를 수 있어요 — 이 계산기는 메뉴별 예상 마진을 미리 확인하는 도구예요"
         badge={`배민·쿠팡·요기요`}
       />
       <DeliveryMarginCalculator />

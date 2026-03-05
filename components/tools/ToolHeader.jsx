@@ -9,7 +9,7 @@
  *   badge   : 오른쪽 보조 뱃지 문자열 (선택)
  *   gradient: 배경 그라디언트 CSS 문자열 (기본: primary → accent)
  */
-export default function ToolHeader({ icon, title, sub, badge, gradient }) {
+export default function ToolHeader({ icon, title, sub, note, badge, gradient }) {
   const bg = gradient || 'linear-gradient(135deg, #1b4797 0%, #2d5fc4 100%)';
 
   return (
@@ -48,8 +48,13 @@ export default function ToolHeader({ icon, title, sub, badge, gradient }) {
               {title}
             </div>
             {sub && (
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>
                 {sub}
+              </div>
+            )}
+            {note && (
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5, marginTop: '4px' }}>
+                {note}
               </div>
             )}
           </div>

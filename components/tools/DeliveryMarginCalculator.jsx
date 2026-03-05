@@ -425,7 +425,7 @@ function AiAnalysisSection({ calc, platformName, feeRate }) {
               marginBottom: 0,
             }}
           >
-            * AI 분석은 참고용입니다. 실제 경영 결정은 전문가와 상의하세요.
+            ⚠️ AI 분석은 참고용이며 실제 수익을 보장하지 않아요. 정확한 수익 계산은 실제 정산서를 기준으로 확인하세요.
           </p>
         </div>
       )}
@@ -1063,7 +1063,11 @@ export default function DeliveryMarginCalculator() {
               fontSize: "14px",
             }}
           >
-            <div style={{ fontSize: "18px", marginBottom: "12px", lineHeight: 1 }}>💰</div>
+            <div
+              style={{ fontSize: "18px", marginBottom: "12px", lineHeight: 1 }}
+            >
+              💰
+            </div>
             메뉴 판매가를 입력하면 마진이 계산됩니다
           </div>
         ) : (
@@ -1387,6 +1391,7 @@ export default function DeliveryMarginCalculator() {
                   }}
                 >
                   📈 월 매출 시뮬레이션
+                  <span style={{ background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.9)', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: 600, marginLeft: '6px', verticalAlign: 'middle' }}>예상치</span>
                 </div>
                 {/* 하루 평균 주문 수 — +/- 카운터 */}
                 <div
@@ -1633,6 +1638,9 @@ export default function DeliveryMarginCalculator() {
                     건수를 입력하면 월 마진이 계산됩니다
                   </div>
                 )}
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '10px', lineHeight: 1.5 }}>
+                  실제 매출은 메뉴 구성·쿠폰·광고비·계절성에 따라 달라질 수 있어요
+                </div>
               </div>
 
               {/* BEP (손익분기점) */}
@@ -1702,6 +1710,13 @@ export default function DeliveryMarginCalculator() {
                   )}
                 </div>
               )}
+
+              {/* 면책 안내 박스 */}
+              <div style={{ background: 'rgba(0,0,0,0.15)', borderRadius: '8px', padding: '10px 12px', marginBottom: '14px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+                💡 실제 배민 정산서와 다를 수 있어요<br/>
+                정산서는 쿠폰할인·광고비·부가세 등이 반영된 실제 입금액이고, 이 계산기는 메뉴 1건 기준 예상 마진이에요.<br/>
+                '왜 정산서가 이것밖에 안 되지?' 싶을 때 메뉴별로 미리 계산해보는 용도로 쓰세요.
+              </div>
 
               {/* 공유 버튼 */}
               <div style={{ display: "flex", gap: "8px" }}>
@@ -1780,6 +1795,9 @@ export default function DeliveryMarginCalculator() {
                   }}
                 >
                   📊 배달앱별 마진 비교
+                </div>
+                <div style={{ fontSize: '11px', color: '#868e96', marginBottom: '10px' }}>
+                  동일 메뉴·원가 기준, 플랫폼별 기본 수수료 적용
                 </div>
                 <div
                   style={{

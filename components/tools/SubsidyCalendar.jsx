@@ -299,6 +299,11 @@ function SubsidyAiSection({ onRecommend }) {
               ))}
             </div>
           )}
+          {result && (
+            <p style={{ fontSize: '10px', color: '#6c757d', marginTop: '10px', marginBottom: 0, lineHeight: 1.6 }}>
+              ⚠️ AI 추천은 입력 정보 기반 참고용이에요. 실제 신청 자격은 각 기관 공고문을 확인하세요.
+            </p>
+          )}
         </div>
       )}
     </div>

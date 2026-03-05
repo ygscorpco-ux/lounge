@@ -262,6 +262,9 @@ function ContractReviewAI({ contractData: d, contractPeriod }) {
               💬 {result.overallComment}
             </div>
           )}
+          <p style={{ fontSize: '10px', color: '#6c757d', marginTop: '8px', marginBottom: 0, lineHeight: 1.6 }}>
+            ⚠️ AI 검토는 참고용이며 법적 효력이 없어요. 중요한 계약은 노무사 또는 법률 전문가의 검토를 받으시길 권장해요.
+          </p>
         </div>
       )}
     </div>
