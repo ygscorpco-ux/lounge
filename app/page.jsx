@@ -159,31 +159,181 @@ export default function Home() {
       </div>
 
       {/* 바로가기 퀵메뉴 — 5개, 한 줄 균등 배치 */}
-      <div style={{
-        display: "flex", justifyContent: "space-around",
-        padding: "4px 8px 16px",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-around",
+          padding: "4px 8px 16px",
+        }}
+      >
         {/* 염광사 홈 1개 + 사장님 도구 4개 = 총 5개 */}
         {[
           {
-            label: "염광사 홈", url: "http://www.염광사.com", external: true,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 13L14 5l10 8"/><path d="M6 11.5V23h5v-5h6v5h5V11.5"/></svg>
+            label: "염광사 홈",
+            url: "http://www.염광사.com",
+            external: true,
+            svg: (
+              <svg
+                viewBox="0 0 28 28"
+                width="26"
+                height="26"
+                fill="none"
+                stroke="#1b4797"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 13L14 5l10 8" />
+                <path d="M6 11.5V23h5v-5h6v5h5V11.5" />
+              </svg>
+            ),
           },
           {
-            label: "마진계산기", url: "/tools/delivery-margin", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" strokeLinecap="round" strokeLinejoin="round"><circle cx="7" cy="21" r="2.5" stroke="#1b4797" strokeWidth="1.8"/><circle cx="21" cy="21" r="2.5" stroke="#1b4797" strokeWidth="1.8"/><path d="M9.5 21h9M14 21l-3-8h5l3 5" stroke="#1b4797" strokeWidth="1.8"/><text x="14" y="10" fontSize="8" fontWeight="700" fill="#4f80e1" stroke="none">₩</text></svg>
+            label: "마진계산기",
+            url: "/tools/delivery-margin",
+            external: false,
+            svg: (
+              <svg
+                viewBox="0 0 28 28"
+                width="26"
+                height="26"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle
+                  cx="7"
+                  cy="21"
+                  r="2.5"
+                  stroke="#1b4797"
+                  strokeWidth="1.8"
+                />
+                <circle
+                  cx="21"
+                  cy="21"
+                  r="2.5"
+                  stroke="#1b4797"
+                  strokeWidth="1.8"
+                />
+                <path
+                  d="M9.5 21h9M14 21l-3-8h5l3 5"
+                  stroke="#1b4797"
+                  strokeWidth="1.8"
+                />
+                <text
+                  x="14"
+                  y="10"
+                  fontSize="8"
+                  fontWeight="700"
+                  fill="#4f80e1"
+                  stroke="none"
+                >
+                  ₩
+                </text>
+              </svg>
+            ),
           },
           {
-            label: "인건비계산", url: "/tools/labor-cost", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="9" r="4" stroke="#1b4797" strokeWidth="1.8"/><path d="M4 24c0-4 3-7 7-7" stroke="#1b4797" strokeWidth="1.8"/><text x="15" y="22" fontSize="10" fontWeight="700" fill="#4f80e1" stroke="none">₩</text></svg>
+            label: "인건비계산",
+            url: "/tools/labor-cost",
+            external: false,
+            svg: (
+              <svg
+                viewBox="0 0 28 28"
+                width="26"
+                height="26"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle
+                  cx="10"
+                  cy="9"
+                  r="4"
+                  stroke="#1b4797"
+                  strokeWidth="1.8"
+                />
+                <path
+                  d="M4 24c0-4 3-7 7-7"
+                  stroke="#1b4797"
+                  strokeWidth="1.8"
+                />
+                <text
+                  x="15"
+                  y="22"
+                  fontSize="10"
+                  fontWeight="700"
+                  fill="#4f80e1"
+                  stroke="none"
+                >
+                  ₩
+                </text>
+              </svg>
+            ),
           },
           {
-            label: "지원금일정", url: "/tools/subsidy-calendar", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="22" height="19" rx="3"/><path d="M8 5V3M20 5V3M3 11h22"/><text x="7" y="22" fontSize="9" fontWeight="700" fill="#4f80e1" stroke="none">₩</text></svg>
+            label: "지원금일정",
+            url: "/tools/subsidy-calendar",
+            external: false,
+            svg: (
+              <svg
+                viewBox="0 0 28 28"
+                width="26"
+                height="26"
+                fill="none"
+                stroke="#1b4797"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="5" width="22" height="19" rx="3" />
+                <path d="M8 5V3M20 5V3M3 11h22" />
+                <text
+                  x="7"
+                  y="22"
+                  fontSize="9"
+                  fontWeight="700"
+                  fill="#4f80e1"
+                  stroke="none"
+                >
+                  ₩
+                </text>
+              </svg>
+            ),
           },
           {
-            label: "알바관리", url: "/tools/worker-scheduler", external: false,
-            svg: <svg viewBox="0 0 28 28" width="26" height="26" fill="none" stroke="#1b4797" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="2" width="16" height="22" rx="2"/><path d="M10 2v3h8V2"/><path d="M10 14h5M10 18h3"/><circle cx="20" cy="20" r="5" fill="#eef2fb" stroke="#4f80e1" strokeWidth="1.6"/><path d="M20 17.5V20l1.5 1.5" stroke="#4f80e1" strokeWidth="1.5"/></svg>
+            label: "알바관리",
+            url: "/tools/worker-scheduler",
+            external: false,
+            svg: (
+              <svg
+                viewBox="0 0 28 28"
+                width="26"
+                height="26"
+                fill="none"
+                stroke="#1b4797"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="6" y="2" width="16" height="22" rx="2" />
+                <path d="M10 2v3h8V2" />
+                <path d="M10 14h5M10 18h3" />
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="5"
+                  fill="#eef2fb"
+                  stroke="#4f80e1"
+                  strokeWidth="1.6"
+                />
+                <path
+                  d="M20 17.5V20l1.5 1.5"
+                  stroke="#4f80e1"
+                  strokeWidth="1.5"
+                />
+              </svg>
+            ),
           },
         ].map((item, i) => (
           <a
@@ -191,16 +341,38 @@ export default function Home() {
             href={item.url}
             target={item.external ? "_blank" : undefined}
             rel={item.external ? "noopener noreferrer" : undefined}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", textDecoration: "none", flexShrink: 0 }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "8px",
+              textDecoration: "none",
+              flexShrink: 0,
+            }}
           >
-            <div style={{
-              width: "56px", height: "56px", borderRadius: "50%",
-              background: "#eef2fb", display: "flex", alignItems: "center",
-              justifyContent: "center", boxShadow: "0 2px 8px rgba(27,71,151,0.10)",
-            }}>
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: "#eef2fb",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(27,71,151,0.10)",
+              }}
+            >
               {item.svg}
             </div>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#495057", textAlign: "center", whiteSpace: "nowrap" }}>
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#495057",
+                textAlign: "center",
+                whiteSpace: "nowrap",
+              }}
+            >
               {item.label}
             </span>
           </a>
