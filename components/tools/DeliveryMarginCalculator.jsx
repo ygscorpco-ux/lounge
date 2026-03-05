@@ -1,6 +1,5 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
-import FeeMonitorHeader from './FeeMonitorHeader.jsx';
 
 // 숫자 → 천단위 콤마 문자열
 function formatNumber(val) {
@@ -48,6 +47,32 @@ function Toggle({ on, onChange }) {
     <div onClick={() => onChange(!on)} style={{ width: '44px', height: '24px', borderRadius: '12px', background: on ? 'var(--color-primary)' : 'var(--color-gray-300)', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s ease' }}>
       <div style={{ position: 'absolute', top: '3px', left: on ? '23px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s ease', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
     </div>
+  );
+}
+
+// 배달앱 로고 — Google favicon 우선, 실패하면 브랜드 컬러 원으로 fallback
+function PlatformLogo({ faviconUrl, color, name }) {
+  const [failed, setFailed] = useState(false);
+  const initial = name ? name.charAt(0) : '?';
+
+  if (!faviconUrl || failed) {
+    return (
+      <div style={{
+        width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+        background: color, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{ color: '#fff', fontSize: '14px', fontWeight: 800 }}>{initial}</span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={faviconUrl}
+      alt={name}
+      width={32} height={32}
+      onError={() => setFailed(true)}
+      style={{ borderRadius: '8px', flexShrink: 0, objectFit: 'contain' }}
+    />
   );
 }
 
@@ -244,12 +269,26 @@ export default function DeliveryMarginCalculator() {
     return (parseFloat(tier.fee_rate) + parseFloat(tier.payment_fee_rate)).toFixed(1);
   }
 
+    // 플랫폼별 Google favicon 도메인 맵핑
+  const FAVICON_DOMAINS = {
+    baemin:  'baemin.com',
+    coupang: 'coupangeats.com',
+    yogiyo:  'yogiyo.co.kr',
+    ddangyo: 'ddangyo.com',
+  };
+
   // 티어 선택이 필요한 플랫폼 (구간이 2개 이상)
   const hasTiers = selectedPlatform && (selectedPlatform.tiers?.length || 0) > 1;
 
+  // 티어 라벨 단축 — 괄호 안 내용 우선, 없으면 첫 단어
+  function shortTierLabel(label) {
+    const match = label.match(/\(([^)]+)\)/);
+    if (match) return match[1];
+    return label.split(' ')[0];
+  }
+
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', padding: '0 0 40px', background: 'var(--color-bg)', minHeight: '100%' }}>
-      <FeeMonitorHeader />
 
       <div style={{ padding: '16px 16px 0' }}>
         {/* ── 입력 카드 ── */}
@@ -261,51 +300,118 @@ export default function DeliveryMarginCalculator() {
           </div>
           {loadingPlatforms ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '20px' }}>
-              {[1,2,3,4].map(i => <div key={i} style={{ height: '54px', borderRadius: '12px', background: 'var(--color-gray-100)', animation: 'shimmer 1.2s infinite' }} />)}
+              {[1,2,3,4].map(i => <div key={i} style={{ height: '68px', borderRadius: '14px', background: 'var(--color-gray-100)', animation: 'shimmer 1.2s infinite' }} />)}
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: hasTiers ? '12px' : '20px' }}>
               {platforms.map(p => {
-                const active   = selectedPlatformId === p.platform_id;
+                const active    = selectedPlatformId === p.platform_id;
                 const totalRate = getPlatformDisplayRate(p);
+                const faviconDomain = FAVICON_DOMAINS[p.platform_id];
+                const faviconUrl    = faviconDomain
+                  ? `https://www.google.com/s2/favicons?domain=${faviconDomain}&sz=64`
+                  : null;
                 return (
-                  <button key={p.platform_id} onClick={() => { setSelectedPlatformId(p.platform_id); setSelectedTierId(null); }} style={{ padding: '10px', borderRadius: '12px', cursor: 'pointer', border: active ? `2px solid ${p.color}` : '1.5px solid var(--color-gray-200)', background: active ? `${p.color}18` : 'var(--color-gray-100)', display: 'flex', flexDirection: 'column', gap: '2px', transition: 'all 0.15s ease' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: p.color }} />
-                      <span style={{ fontSize: '12px', fontWeight: active ? 700 : 500, color: active ? p.color : 'var(--color-gray-700)' }}>{p.name}</span>
+                  <button
+                    key={p.platform_id}
+                    onClick={() => { setSelectedPlatformId(p.platform_id); setSelectedTierId(null); }}
+                    style={{
+                      padding: '12px 10px', borderRadius: '14px', cursor: 'pointer',
+                      border: active ? `2px solid ${p.color}` : '1.5px solid #e8eaf0',
+                      background: active ? `${p.color}12` : '#fff',
+                      display: 'flex', flexDirection: 'row', alignItems: 'center',
+                      gap: '10px', transition: 'all 0.15s ease',
+                      boxShadow: active ? `0 2px 10px ${p.color}30` : '0 1px 4px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    {/* 로고 영역 */}
+                    <PlatformLogo faviconUrl={faviconUrl} color={p.color} name={p.name} />
+                    {/* 텍스트 영역 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', minWidth: 0 }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: active ? p.color : '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {p.name}
+                      </span>
+                      {totalRate && (
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                          <span style={{ fontSize: '15px', fontWeight: 800, color: active ? p.color : '#333', fontVariantNumeric: 'tabular-nums' }}>
+                            {totalRate}%
+                          </span>
+                          <span style={{ fontSize: '10px', fontWeight: 500, color: active ? p.color : '#888' }}>
+                            총부담
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    {totalRate && <div style={{ fontSize: '13px', fontWeight: 800, color: active ? p.color : 'var(--color-gray-500)', marginLeft: '12px' }}>{totalRate}%<span style={{ fontSize: '10px', fontWeight: 500, marginLeft: '3px', opacity: 0.7 }}>총부담률</span></div>}
                   </button>
                 );
               })}
               {/* 직접입력 버튼 */}
-              <button onClick={() => { setSelectedPlatformId('custom'); setSelectedTierId(null); }} style={{ padding: '10px', borderRadius: '12px', cursor: 'pointer', border: selectedPlatformId === 'custom' ? '2px solid #1b4797' : '1.5px solid var(--color-gray-200)', background: selectedPlatformId === 'custom' ? '#eef2fb' : 'var(--color-gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', transition: 'all 0.15s ease' }}>
-                <span style={{ fontSize: '12px', fontWeight: selectedPlatformId === 'custom' ? 700 : 500, color: selectedPlatformId === 'custom' ? '#1b4797' : 'var(--color-gray-700)' }}>직접입력</span>
+              <button
+                onClick={() => { setSelectedPlatformId('custom'); setSelectedTierId(null); }}
+                style={{
+                  padding: '12px 10px', borderRadius: '14px', cursor: 'pointer',
+                  border: selectedPlatformId === 'custom' ? '2px solid #1b4797' : '1.5px solid #e8eaf0',
+                  background: selectedPlatformId === 'custom' ? '#eef2fb' : '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  transition: 'all 0.15s ease',
+                  boxShadow: selectedPlatformId === 'custom' ? '0 2px 10px rgba(27,71,151,0.15)' : '0 1px 4px rgba(0,0,0,0.04)',
+                }}
+              >
+                <span style={{ fontSize: '18px', lineHeight: 1 }}>✏️</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: selectedPlatformId === 'custom' ? '#1b4797' : '#333' }}>직접입력</span>
               </button>
             </div>
           )}
 
-          {/* ② 수수료 구간 선택 (배민/쿠팡이츠 등 다구간 플랫폼) */}
-          {hasTiers && selectedPlatformId !== 'custom' && (
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-gray-600)', marginBottom: '8px' }}>
-                내 매출 구간 선택
+          {/* ② 수수료 구간 선택 — 토스 스타일 세그먼트 탭 */}
+          {hasTiers && selectedPlatformId !== 'custom' && (() => {
+            const activeTier = selectedPlatform.tiers.find(t =>
+              selectedTierId ? t.id === selectedTierId : t.is_default
+            ) || selectedPlatform.tiers[0];
+            return (
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-gray-600)', marginBottom: '8px' }}>
+                  내 매출 구간 선택
+                </div>
+                {/* 세그먼트 컨트롤 컨테이너 — 회색 트랙 위에 흰 pill이 슬라이드 */}
+                <div style={{
+                  display: 'flex', background: '#f0f1f5', borderRadius: '12px',
+                  padding: '4px', gap: '2px',
+                }}>
+                  {selectedPlatform.tiers.map(tier => {
+                    const isActive = tier.id === activeTier.id;
+                    const total    = (parseFloat(tier.fee_rate) + parseFloat(tier.payment_fee_rate)).toFixed(1);
+                    const short    = shortTierLabel(tier.tier_label);
+                    return (
+                      <button
+                        key={tier.id}
+                        onClick={() => setSelectedTierId(tier.id)}
+                        style={{
+                          flex: 1, padding: '8px 4px', border: 'none', cursor: 'pointer',
+                          borderRadius: '9px', transition: 'all 0.18s ease',
+                          background: isActive ? '#fff' : 'transparent',
+                          boxShadow: isActive ? '0 1px 6px rgba(0,0,0,0.10)' : 'none',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px',
+                        }}
+                      >
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: isActive ? selectedPlatform.color : '#888', lineHeight: 1 }}>
+                          {short}
+                        </span>
+                        <span style={{ fontSize: '14px', fontWeight: 800, color: isActive ? selectedPlatform.color : '#555', fontVariantNumeric: 'tabular-nums' }}>
+                          {total}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* 선택된 구간 상세 설명 줄 */}
+                <div style={{ marginTop: '7px', fontSize: '11px', color: '#888', textAlign: 'center' }}>
+                  중개 {activeTier.fee_rate}% + 결제 {activeTier.payment_fee_rate}%
+                  &nbsp;·&nbsp; {activeTier.tier_label}
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${selectedPlatform.tiers.length}, 1fr)`, gap: '6px' }}>
-                {selectedPlatform.tiers.map(tier => {
-                  const isActive = (selectedTierId === tier.id) || (!selectedTierId && tier.is_default);
-                  const total = (parseFloat(tier.fee_rate) + parseFloat(tier.payment_fee_rate)).toFixed(1);
-                  return (
-                    <button key={tier.id} onClick={() => setSelectedTierId(tier.id)} style={{ padding: '8px 6px', borderRadius: '10px', cursor: 'pointer', border: isActive ? `2px solid ${selectedPlatform.color}` : '1.5px solid var(--color-gray-200)', background: isActive ? `${selectedPlatform.color}15` : '#fff', transition: 'all 0.15s', textAlign: 'center' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 600, color: isActive ? selectedPlatform.color : 'var(--color-gray-600)', marginBottom: '3px', lineHeight: 1.3 }}>{tier.tier_label}</div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: isActive ? selectedPlatform.color : 'var(--color-gray-700)' }}>총 {total}%</div>
-                      <div style={{ fontSize: '10px', color: 'var(--color-gray-400)', marginTop: '2px' }}>중개{tier.fee_rate}+결제{tier.payment_fee_rate}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* 직접입력 시 수수료율 필드 */}
           {selectedPlatformId === 'custom' && (
