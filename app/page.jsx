@@ -51,7 +51,7 @@ export default function Home() {
       <Header />
 
       {/* 배너 */}
-      <div style={{ padding: '12px 16px', display: 'flex', gap: '10px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+      <div className='banner-scroll' style={{ padding: '12px 16px', display: 'flex', gap: '10px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
         <div onClick={() => router.push('/notice')} style={{
           minWidth: '220px', background: 'linear-gradient(135deg, #1b4797 0%, #3d7bd8 100%)',
           borderRadius: '14px', padding: '18px', color: 'white', flex: '0 0 auto', cursor: 'pointer'
@@ -95,7 +95,7 @@ export default function Home() {
           <div className='section-divider' />
           <div style={{ padding: '16px 16px 12px' }}>
             <div style={{ fontSize: '16px', fontWeight: 800, color: '#1a1a1a', marginBottom: '12px' }}>🔥 실시간 인기 글</div>
-            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+            <div className='best-scroll' style={{ display: 'flex', gap: '10px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
               {bestPosts.map((post, i) => (
                 <div key={post.id} onClick={() => router.push('/post/' + post.id)} style={{
                   minWidth: '180px', background: '#f8f9fa', borderRadius: '12px', padding: '14px',

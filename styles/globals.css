@@ -1,7 +1,12 @@
 /* ===== RESET & BASE ===== */
-/* ===== 모바일 웹앱 고정 ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
 html {
-  touch-action: pan-y;
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
 }
@@ -12,14 +17,11 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-* {
-  -webkit-tap-highlight-color: transparent;
-  touch-action: pan-y;
-}
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.banner-scroll,
+.best-scroll,
+.category-filter-scroll {
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 html, body {
