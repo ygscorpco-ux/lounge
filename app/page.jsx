@@ -9,22 +9,38 @@ function QuickIcon({ type, accent }) {
   const stroke = accent || "#1b4797";
 
   const common = {
-    width: 30,
-    height: 30,
-    viewBox: "0 0 28 28",
+    width: 42,
+    height: 42,
+    viewBox: "0 0 48 48",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg",
     strokeLinecap: "round",
     strokeLinejoin: "round",
+    style: {
+      display: "block",
+      filter: "drop-shadow(0 2px 2px rgba(16,24,40,0.22))",
+    },
   };
 
   if (type === "home") {
     return (
       <svg {...common}>
-        <path d="M4 12.5L14 5L24 12.5V22a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 4 22v-9.5Z" fill="#ffc8c8" stroke={stroke} strokeWidth="1.9" />
-        <path d="M10.5 23.5V16.5h7V23.5" stroke={stroke} strokeWidth="1.9" />
-        <rect x="16.1" y="7.6" width="2.7" height="5.1" rx="0.8" fill="#ff4545" stroke={stroke} strokeWidth="1.4" />
-        <circle cx="17.4" cy="6.2" r="0.95" fill="#dbeafe" stroke={stroke} strokeWidth="1.1" />
+        <defs>
+          <linearGradient id="q-home-roof" x1="9" y1="11" x2="39" y2="11" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ff7676" />
+            <stop offset="1" stopColor="#ff3f3f" />
+          </linearGradient>
+          <linearGradient id="q-home-body" x1="11" y1="19" x2="35" y2="40" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#f7fbff" />
+            <stop offset="1" stopColor="#cbe4ff" />
+          </linearGradient>
+        </defs>
+        <path d="M8 22L24 9L40 22V40H8V22Z" fill="url(#q-home-body)" stroke={stroke} strokeWidth="2.1" />
+        <path d="M5.5 22L24 7L42.5 22H5.5Z" fill="url(#q-home-roof)" stroke={stroke} strokeWidth="2.1" />
+        <rect x="19.5" y="28" width="9" height="12" rx="1.8" fill="#1b4797" />
+        <rect x="12" y="27" width="5.8" height="5.8" rx="1.2" fill="#8be9ff" stroke={stroke} strokeWidth="1.4" />
+        <rect x="30.2" y="14.5" width="3.5" height="6.6" rx="1" fill="#ff5656" stroke={stroke} strokeWidth="1.4" />
+        <path d="M13 20.8H35.8" stroke="#ffffff" strokeWidth="1.3" opacity="0.8" />
       </svg>
     );
   }
@@ -32,11 +48,23 @@ function QuickIcon({ type, accent }) {
   if (type === "scooter") {
     return (
       <svg {...common}>
-        <circle cx="8.1" cy="21.2" r="2.7" fill="#8be9ff" stroke={stroke} strokeWidth="1.8" />
-        <circle cx="20" cy="21.2" r="2.7" fill="#8be9ff" stroke={stroke} strokeWidth="1.8" />
-        <path d="M9.9 21.2h6.2l2.7-6.4h-6.7l-2-3.3H7.3" stroke={stroke} strokeWidth="1.9" />
-        <rect x="15.9" y="11.4" width="4.7" height="2.9" rx="1.1" fill="#ff6b6b" stroke={stroke} strokeWidth="1.4" />
-        <path d="M20.6 14.3h1.6a1.5 1.5 0 0 1 1.5 1.5v2" stroke={stroke} strokeWidth="1.8" />
+        <defs>
+          <linearGradient id="q-scooter-body" x1="14" y1="23" x2="35" y2="23" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ff8d4d" />
+            <stop offset="1" stopColor="#ff4c4c" />
+          </linearGradient>
+          <linearGradient id="q-scooter-wheel" x1="11" y1="31" x2="18" y2="38" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#c8f6ff" />
+            <stop offset="1" stopColor="#78dff7" />
+          </linearGradient>
+        </defs>
+        <circle cx="14" cy="35" r="5.1" fill="url(#q-scooter-wheel)" stroke={stroke} strokeWidth="2" />
+        <circle cx="33.6" cy="35" r="5.1" fill="url(#q-scooter-wheel)" stroke={stroke} strokeWidth="2" />
+        <path d="M18 35h9l4.8-10.3H20.9L17.6 19H12" stroke={stroke} strokeWidth="2.3" />
+        <path d="M27.5 24.7H35v5.2h-9.5Z" fill="url(#q-scooter-body)" stroke={stroke} strokeWidth="1.8" />
+        <rect x="31.4" y="21.5" width="5.8" height="2.5" rx="1.2" fill="#1b4797" />
+        <path d="M36.8 24h2.4a2 2 0 0 1 2 2v2.7" stroke={stroke} strokeWidth="2" />
+        <circle cx="36.5" cy="27.5" r="1.1" fill="#fff4b0" stroke={stroke} strokeWidth="1.2" />
       </svg>
     );
   }
@@ -44,10 +72,17 @@ function QuickIcon({ type, accent }) {
   if (type === "briefcase") {
     return (
       <svg {...common}>
-        <rect x="4.2" y="9" width="19.6" height="13.6" rx="2.3" fill="#67e39a" stroke={stroke} strokeWidth="1.9" />
-        <path d="M10.8 9V7.4a1.3 1.3 0 0 1 1.3-1.3h3.8a1.3 1.3 0 0 1 1.3 1.3V9" stroke={stroke} strokeWidth="1.8" />
-        <path d="M4.2 14.2H23.8" stroke={stroke} strokeWidth="1.7" />
-        <rect x="11.9" y="13.1" width="4.2" height="2.4" rx="0.9" fill="#1b4797" />
+        <defs>
+          <linearGradient id="q-brief-main" x1="8" y1="18" x2="40" y2="38" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#87efb1" />
+            <stop offset="1" stopColor="#35d985" />
+          </linearGradient>
+        </defs>
+        <rect x="7" y="16" width="34" height="23" rx="4" fill="url(#q-brief-main)" stroke={stroke} strokeWidth="2.1" />
+        <path d="M19 16V12.6A2.2 2.2 0 0 1 21.2 10.4h5.6A2.2 2.2 0 0 1 29 12.6V16" stroke={stroke} strokeWidth="2" />
+        <path d="M7 25H41" stroke={stroke} strokeWidth="2" />
+        <rect x="21.5" y="23.7" width="5" height="3.5" rx="1.2" fill="#1b4797" />
+        <path d="M12.2 20.6H19" stroke="#ffffff" strokeWidth="1.3" opacity="0.8" />
       </svg>
     );
   }
@@ -55,19 +90,34 @@ function QuickIcon({ type, accent }) {
   if (type === "calendar") {
     return (
       <svg {...common}>
-        <rect x="5.2" y="6.5" width="17.6" height="16.8" rx="2.2" fill="#ffd95a" stroke={stroke} strokeWidth="1.9" />
-        <path d="M9.2 4.6V8M18.8 4.6V8M5.2 10.4h17.6" stroke={stroke} strokeWidth="1.7" />
-        <rect x="9.2" y="13" width="3.3" height="3.3" rx="0.8" fill="#ff5f5f" stroke={stroke} strokeWidth="1.2" />
-        <rect x="14.6" y="13" width="3.3" height="3.3" rx="0.8" fill="#fff3bf" stroke={stroke} strokeWidth="1.2" />
+        <defs>
+          <linearGradient id="q-cal-body" x1="10" y1="13" x2="38" y2="39" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffe995" />
+            <stop offset="1" stopColor="#ffc83e" />
+          </linearGradient>
+        </defs>
+        <rect x="9" y="10" width="30" height="29" rx="4" fill="url(#q-cal-body)" stroke={stroke} strokeWidth="2.1" />
+        <rect x="9" y="10" width="30" height="8.2" rx="4" fill="#1b4797" />
+        <path d="M16.5 7.5V13M31.5 7.5V13" stroke={stroke} strokeWidth="2" />
+        <rect x="14" y="22.5" width="6" height="6" rx="1.1" fill="#ff6e6e" stroke={stroke} strokeWidth="1.3" />
+        <rect x="23.5" y="22.5" width="6" height="6" rx="1.1" fill="#fff1b6" stroke={stroke} strokeWidth="1.3" />
+        <rect x="14" y="31" width="6" height="4.8" rx="1" fill="#fff8db" stroke={stroke} strokeWidth="1.1" />
       </svg>
     );
   }
 
   return (
     <svg {...common}>
-      <rect x="6.1" y="4.7" width="15.8" height="18.6" rx="2.4" fill="#b0a8ff" stroke={stroke} strokeWidth="1.9" />
-      <rect x="9.1" y="8.5" width="9.8" height="2" rx="0.9" fill="#1b4797" />
-      <path d="M9.3 13.2h9.4M9.3 16.8h6.6" stroke="#ffffff" strokeWidth="1.5" />
+      <defs>
+        <linearGradient id="q-clip-body" x1="12" y1="11" x2="36" y2="39" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#d2ccff" />
+          <stop offset="1" stopColor="#9b8fff" />
+        </linearGradient>
+      </defs>
+      <rect x="12" y="7.5" width="24" height="32" rx="3.5" fill="url(#q-clip-body)" stroke={stroke} strokeWidth="2.1" />
+      <rect x="17.5" y="10.3" width="13" height="4.2" rx="1.8" fill="#1b4797" />
+      <path d="M17.6 20.4H30.4M17.6 25.5H30.4M17.6 30.6H26.8" stroke="#ffffff" strokeWidth="1.7" />
+      <path d="M17.6 18.4H28.2" stroke="#8faeff" strokeWidth="1.2" />
     </svg>
   );
 }
@@ -89,40 +139,30 @@ export default function Home() {
       url: "https://www.\uC5FC\uAD11\uC0AC.com",
       external: true,
       type: "home",
-      bubble:
-        "radial-gradient(circle at 30% 25%, #ffffff 0%, #e8f0ff 45%, #dbe7ff 100%)",
     },
     {
       label: "\uB9C8\uC9C4\uACC4\uC0B0\uAE30",
       url: "/tools/delivery-margin",
       external: false,
       type: "scooter",
-      bubble:
-        "radial-gradient(circle at 30% 25%, #ffffff 0%, #fff1e6 45%, #ffe5d1 100%)",
     },
     {
       label: "\uC778\uAC74\uBE44\uACC4\uC0B0",
       url: "/tools/labor-cost",
       external: false,
       type: "briefcase",
-      bubble:
-        "radial-gradient(circle at 30% 25%, #ffffff 0%, #ebfbf3 45%, #d7f4e6 100%)",
     },
     {
       label: "\uC9C0\uC6D0\uAE08\uC77C\uC815",
       url: "/tools/subsidy-calendar",
       external: false,
       type: "calendar",
-      bubble:
-        "radial-gradient(circle at 30% 25%, #ffffff 0%, #fff9e7 45%, #fff0c9 100%)",
     },
     {
       label: "\uC54C\uBC14\uAD00\uB9AC",
       url: "/tools/worker-scheduler",
       external: false,
       type: "clipboard",
-      bubble:
-        "radial-gradient(circle at 30% 25%, #ffffff 0%, #f4f2ff 45%, #e4ddff 100%)",
     },
   ];
 
@@ -285,46 +325,27 @@ export default function Home() {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "8px",
+                  gap: "10px",
                   textDecoration: "none",
-                  minWidth: "62px",
+                  minWidth: "66px",
                 }}
               >
                 <div
                   style={{
-                    width: "58px",
-                    height: "58px",
-                    borderRadius: "50%",
-                    background: item.bubble,
+                    width: "48px",
+                    height: "46px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    boxShadow:
-                      "0 8px 14px rgba(15,39,84,0.18), inset 0 2px 4px rgba(255,255,255,0.92), inset 0 -2px 3px rgba(27,71,151,0.12)",
-                    border: "1.5px solid rgba(27,71,151,0.22)",
-                    position: "relative",
-                    overflow: "hidden",
                   }}
                 >
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: "7px",
-                      left: "11px",
-                      width: "22px",
-                      height: "8px",
-                      borderRadius: "10px",
-                      background: "rgba(255,255,255,0.58)",
-                      transform: "rotate(-12deg)",
-                    }}
-                  />
                   <QuickIcon type={item.type} accent="#1b4797" />
                 </div>
                 <span
                   style={{
                     fontSize: "12px",
                     fontWeight: 700,
-                    color: "#495057",
+                    color: "#2f3f58",
                     textAlign: "center",
                     whiteSpace: "nowrap",
                     letterSpacing: "-0.1px",
