@@ -62,19 +62,34 @@ export async function GET(request) {
 
     const [rows] = await pool.query(query, params);
 
-    const posts = rows.map((row) => ({
-      id: row.id,
-      category: row.category,
-      title: row.title,
-      content: (row.content || "").substring(0, 100),
-      author: row.role === "admin" ? ADMIN_DISPLAY_NAME : ANON_DISPLAY_NAME,
-      isNotice: row.is_notice === 1,
-      likeCount: row.like_count,
-      commentCount: row.comment_count,
-      createdAt: row.created_at,
-      hasImages: !!(row.images && row.images !== "[]" && row.images !== "null"),
-      hasPoll: !!row.has_poll,
-    }));
+    const posts = rows.map((row) => {
+      let imageList = [];
+      try {
+        if (row.images) {
+          const parsed = JSON.parse(row.images);
+          if (Array.isArray(parsed)) imageList = parsed;
+        }
+      } catch (error) {
+        console.error("list image parse error:", error);
+      }
+
+      const thumbnailUrl = imageList.length > 0 ? imageList[0] : null;
+
+      return {
+        id: row.id,
+        category: row.category,
+        title: row.title,
+        content: (row.content || "").substring(0, 120),
+        author: row.role === "admin" ? ADMIN_DISPLAY_NAME : ANON_DISPLAY_NAME,
+        isNotice: row.is_notice === 1,
+        likeCount: row.like_count,
+        commentCount: row.comment_count,
+        createdAt: row.created_at,
+        hasImages: imageList.length > 0,
+        thumbnailUrl,
+        hasPoll: !!row.has_poll,
+      };
+    });
 
     return NextResponse.json({ posts, page, pageSize: PAGE_SIZE });
   } catch (error) {
