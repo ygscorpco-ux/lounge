@@ -164,8 +164,14 @@ function WorkerForm({ initial, onSave, onContract }) {
       <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '10px', paddingBottom: '6px', borderBottom: '1.5px solid var(--color-gray-200)' }}>기본 정보</div>
       <div style={{ marginBottom: '10px' }}>{inp('name', { placeholder: '이름 *' })}</div>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-        <div style={{ flex: 1 }}>{inp('phone', { placeholder: '연락처', type: 'tel' })}</div>
-        <div style={{ flex: 1 }}>{inp('birth_date', { type: 'date' })}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', marginBottom: '4px' }}>연락처</div>
+          {inp('phone', { placeholder: '연락처', type: 'tel', 'aria-label': '연락처' })}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', marginBottom: '4px' }}>생년월일</div>
+          {inp('birth_date', { type: 'date', 'aria-label': '생년월일', title: '생년월일' })}
+        </div>
       </div>
 
       {/* 고용 조건 */}
