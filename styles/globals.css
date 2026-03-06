@@ -91,6 +91,97 @@ button {
   overflow: hidden;
 }
 
+/* ===== APP SPLASH ===== */
+.app-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 400;
+  background: #f2f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.app-splash.is-leaving {
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.app-splash-inner {
+  width: 100%;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.app-splash-logo {
+  width: min(62vw, 300px);
+  height: auto;
+  display: block;
+  object-fit: contain;
+  animation: splash-logo-in 0.28s ease-out both;
+}
+
+.app-splash-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-splash-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1b4797;
+  opacity: 0.28;
+  animation: splash-dot 0.9s ease-in-out infinite;
+}
+
+.app-splash-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.app-splash-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes splash-logo-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes splash-dot {
+  0%, 100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-splash.is-leaving {
+    transition: none;
+  }
+  .app-splash-logo,
+  .app-splash-dot {
+    animation: none;
+  }
+}
+
 /* ===== HEADER ===== */
 .header {
   display: flex;

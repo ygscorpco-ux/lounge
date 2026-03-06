@@ -1,5 +1,6 @@
 import '../styles/globals.css';
 import WebVitalsReporter from '../components/WebVitalsReporter.jsx';
+import AppSplashGate from '../components/AppSplashGate.jsx';
 
 export const metadata = {
   title: '라운지',
@@ -46,6 +47,7 @@ export default function RootLayout({ children }) {
           >
             {children}
           </div>
+          <AppSplashGate />
         </div>
         <WebVitalsReporter />
       </body>
