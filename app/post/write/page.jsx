@@ -417,6 +417,53 @@ export default function WritePage() {
             </div>
           </div>
         )}
+
+        <div style={{ padding: "12px 16px 32px" }}>
+          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px" }}>
+            <p
+              style={{
+                fontSize: 12,
+                color: "#b7bcc5",
+                lineHeight: 1.75,
+                marginBottom: 10,
+              }}
+            >
+              {"\uB77C\uC6B4\uC9C0 \uC774\uC6A9\uADDC\uCE59\uC5D0 \uC758\uD574 \uC815\uD574\uC9C4 \uAC8C\uC2DC\uBB3C \uAC8C\uC7AC \uC81C\uD55C\uC744 \uC704\uBC18\uD560 \uACBD\uC6B0, \uAC8C\uC2DC\uBB3C\uC774 \uC0AD\uC81C\uB418\uACE0 \uC11C\uBE44\uC2A4 \uC774\uC6A9\uC774 \uC77C\uC815 \uAE30\uAC04 \uC81C\uD55C\uB420 \uC218 \uC788\uC2B5\uB2C8\uB2E4."}
+            </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: "#c6cbd3",
+                lineHeight: 1.7,
+              }}
+            >
+              {"\u00B7 \uAD11\uACE0/\uD64D\uBCF4 \uBAA9\uC801\uC758 \uAC8C\uC2DC\uBB3C \uC791\uC131 \uAE08\uC9C0"}
+              <br />
+              {"\u00B7 \uC815\uCE58\u00B7\uC0AC\uD68C\uC801 \uC758\uACAC, \uC8FC\uC7A5\uC744 \uB4DC\uB7EC\uB0B4\uB294 \uD589\uC704 \uAE08\uC9C0"}
+              <br />
+              {"\u00B7 \uC695\uC124, \uBE44\uD558, \uCC28\uBCC4, \uD610\uC624, \uC74C\uB780\uBB3C \uB4F1 \uBD88\uCF8C\uAC10\uC744 \uC8FC\uB294 \uD589\uC704 \uAE08\uC9C0"}
+              <br />
+              {"\u00B7 \uD0C0\uC778\uC758 \uAD8C\uB9AC\uB97C \uCE68\uD574\uD558\uB294 \uD589\uC704 \uAE08\uC9C0"}
+              <br />
+              {"\u00B7 \uBD88\uBC95\uCD2C\uC601\uBB3C \uC720\uD1B5 \uC2DC \uAD00\uB828 \uBC95\uB960\uC5D0 \uC758\uAC70 \uCC98\uBC8C"}
+            </p>
+            <button
+              onClick={() => router.push("/rules")}
+              style={{
+                marginTop: 8,
+                border: "none",
+                background: "none",
+                padding: 0,
+                fontSize: 11,
+                color: "#b7bcc5",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+            >
+              {"\uB77C\uC6B4\uC9C0 \uC774\uC6A9\uADDC\uCE59 \uC804\uCCB4 \uBCF4\uAE30"}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div
