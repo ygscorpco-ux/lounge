@@ -44,6 +44,12 @@ function formatCurrency(value) {
   return `${numberFormatter.format(Math.round(value || 0))}원`;
 }
 
+function formatSignedCurrency(value) {
+  const rounded = Math.round(value || 0);
+  const sign = rounded > 0 ? "+" : "";
+  return `${sign}${numberFormatter.format(rounded)}원`;
+}
+
 function formatPercent(value) {
   return `${percentFormatter.format(value || 0)}%`;
 }
@@ -92,25 +98,25 @@ function getTierTitle(tier) {
   return "기본 구간";
 }
 
-function getTierDescription(tier) {
-  if (!tier) return "";
-
-  const parts = [`중개 ${formatPercent(Number(tier.fee_rate || 0))}`];
-  const paymentRate = Number(tier.payment_fee_rate || 0);
-
-  if (paymentRate) {
-    parts.push(`결제 ${formatPercent(paymentRate)}`);
-  }
-
-  parts.push(tier.vat_included ? "부가세 포함" : "부가세 별도");
-  return parts.join(" · ");
-}
-
 function getTierBadge(tier) {
   if (!tier) return "";
   if (tier.is_default) return "기본";
   if (tier.memo?.trim()) return tier.memo.trim();
   return "";
+}
+
+function getTierMetaItems(tier) {
+  if (!tier) return [];
+
+  const items = [`중개 ${formatPercent(Number(tier.fee_rate || 0))}`];
+  const paymentRate = Number(tier.payment_fee_rate || 0);
+
+  if (paymentRate) {
+    items.push(`결제 ${formatPercent(paymentRate)}`);
+  }
+
+  items.push(tier.vat_included ? "부가세 포함" : "부가세 별도");
+  return items;
 }
 
 function getPlatformTotalRate(platform) {
@@ -121,58 +127,42 @@ function getPlatformTotalRate(platform) {
 
 function getMarginTone(rate) {
   if (rate >= 25) {
-    return { label: "건강한 구조", toneClass: styles.ratePositive };
+    return {
+      label: "좋음",
+      icon: "▲",
+      badgeClass: styles.ratePositive,
+      insightClass: styles.resultInsightPositive,
+      headline: "현재 가격이면 메뉴 1건당 마진이 비교적 안정적으로 남습니다.",
+      action: "앱별 비교에서 더 유리한 조건도 함께 확인해보세요.",
+    };
   }
   if (rate >= 12) {
-    return { label: "안정권", toneClass: styles.rateNeutral };
+    return {
+      label: "보통",
+      icon: "●",
+      badgeClass: styles.rateNeutral,
+      insightClass: styles.resultInsightNeutral,
+      headline: "운영은 가능하지만 여유가 넉넉한 구간은 아닙니다.",
+      action: "원가나 배달비를 함께 확인하면 판단이 더 쉬워집니다.",
+    };
   }
   if (rate >= 0) {
-    return { label: "타이트함", toneClass: styles.rateCaution };
-  }
-  return { label: "손실 구간", toneClass: styles.rateWarning };
-}
-
-function getMarginStory(calc) {
-  if (!calc) {
     return {
-      title: "판매가를 입력하면 결과가 열립니다.",
-      description: "현재 수수료 조건을 반영한 예상 실마진이 바로 계산됩니다.",
-      action: "메뉴 판매가부터 입력해보세요.",
+      label: "주의",
+      icon: "!",
+      badgeClass: styles.rateCaution,
+      insightClass: styles.resultInsightCaution,
+      headline: "남기는 금액은 있지만 실제 체감 마진은 빠듯할 수 있습니다.",
+      action: "판매가와 비용을 조금만 바꿔도 결과가 크게 달라질 수 있습니다.",
     };
   }
-
-  if (calc.marginRate >= 25) {
-    return {
-      title: "현재 구조는 비교적 안정적입니다.",
-      description:
-        "원가와 수수료를 감안해도 마진 여유가 남는 편입니다. 판매가를 크게 흔들지 않아도 운영 판단이 가능합니다.",
-      action: "앱별 비교에서 가장 유리한 플랫폼 차이도 함께 확인해보세요.",
-    };
-  }
-
-  if (calc.marginRate >= 12) {
-    return {
-      title: "운영 가능한 수준이지만 여유는 크지 않습니다.",
-      description:
-        "광고비나 쿠폰 부담이 추가되면 체감 마진이 빠르게 줄 수 있는 구간입니다.",
-      action: "배달비 부담이나 원가 항목을 먼저 다시 점검하는 편이 안전합니다.",
-    };
-  }
-
-  if (calc.marginRate >= 0) {
-    return {
-      title: "남기기는 하지만 구조가 타이트합니다.",
-      description:
-        "정산 오차나 추가 비용이 붙으면 실제 체감 수익이 기대보다 낮아질 수 있습니다.",
-      action: "판매가 조정이나 원가 절감 여지가 있는 메뉴인지 확인해보세요.",
-    };
-  }
-
   return {
-    title: "현재 조건에서는 손실이 예상됩니다.",
-    description:
-      "한 건을 팔수록 손실이 누적될 수 있는 구간입니다. 판매가와 수수료 구조를 바로 다시 보는 편이 좋습니다.",
-    action: "직접 입력 모드나 다른 앱 조건으로 즉시 비교해보세요.",
+    label: "손실",
+    icon: "−",
+    badgeClass: styles.rateWarning,
+    insightClass: styles.resultInsightWarning,
+    headline: "현재 가격이면 메뉴 1건당 손실이 발생하는 구조입니다.",
+    action: "판매가, 원가, 앱 조건을 다시 넣어 바로 비교해보세요.",
   };
 }
 
@@ -211,7 +201,7 @@ function SectionHeader({ step, title, description }) {
       <span className={styles.sectionBadge}>{step}</span>
       <div className={styles.sectionHeaderCopy}>
         <h2 className={styles.sectionTitle}>{title}</h2>
-        <p className={styles.sectionDescription}>{description}</p>
+        {description ? <p className={styles.sectionDescription}>{description}</p> : null}
       </div>
     </div>
   );
@@ -264,26 +254,39 @@ function PlatformCard({ platform, active, displayRate, onSelect }) {
       className={`${styles.platformCard} ${active ? styles.platformCardActive : ""}`}
       onClick={onSelect}
     >
-      <span className={styles.platformCardIndicator}>{active ? "선택 중" : " "}</span>
-      <span className={styles.platformCardBody}>
-        <span className={styles.platformLogoBox}>
-          {logoSrc ? (
-            <img className={styles.platformLogo} src={logoSrc} alt={platform.name} />
-          ) : (
-            <span className={styles.platformFallback}>
-              {isCustom ? "%" : platform.name.slice(0, 1)}
-            </span>
-          )}
+      <span className={styles.platformCardTop}>
+        <span
+          className={`${styles.platformStatus} ${active ? styles.platformStatusActive : ""}`}
+        >
+          {active ? "선택됨" : isCustom ? "직접 설정" : "앱 선택"}
         </span>
-        <span className={styles.platformCopy}>
-          <span className={styles.platformName}>{platform.name}</span>
-          <span className={styles.platformCaption}>
-            {isCustom
-              ? "수수료를 직접 입력"
-              : displayRate !== null
-                ? `기본 총 수수료 ${formatPercent(displayRate)}`
-                : "수수료 정보 준비 중"}
+        <span className={styles.platformRateChip}>
+          {isCustom
+            ? "수수료 직접 입력"
+            : displayRate !== null
+              ? `총 ${formatPercent(displayRate)}`
+              : "정보 준비 중"}
+        </span>
+      </span>
+
+      <span className={styles.platformLogoBox}>
+        {logoSrc ? (
+          <img className={styles.platformLogo} src={logoSrc} alt={platform.name} />
+        ) : (
+          <span className={styles.platformFallback}>
+            {isCustom ? "%" : platform.name.slice(0, 1)}
           </span>
+        )}
+      </span>
+
+      <span className={styles.platformCopy}>
+        <span className={styles.platformNameRow}>
+          <span className={styles.platformName}>{platform.name}</span>
+        </span>
+        <span className={styles.platformCaption}>
+          {isCustom
+            ? "운영 중인 수수료를 직접 넣고 계산합니다."
+            : "기본 수수료를 바로 불러옵니다."}
         </span>
       </span>
     </button>
@@ -293,10 +296,6 @@ function PlatformCard({ platform, active, displayRate, onSelect }) {
 function ToggleRow({ label, description, checked, onToggle }) {
   return (
     <div className={styles.settingRow}>
-      <div className={styles.settingCopy}>
-        <div className={styles.settingLabel}>{label}</div>
-        <div className={styles.settingDescription}>{description}</div>
-      </div>
       <button
         type="button"
         role="switch"
@@ -306,6 +305,10 @@ function ToggleRow({ label, description, checked, onToggle }) {
       >
         <span className={styles.switchThumb} />
       </button>
+      <div className={styles.settingCopy}>
+        <div className={styles.settingLabel}>{label}</div>
+        <div className={styles.settingDescription}>{description}</div>
+      </div>
     </div>
   );
 }
@@ -548,25 +551,86 @@ export default function DeliveryMarginCalculator() {
   const selectedTierName =
     selectedPlatformId === "custom" ? "수수료 직접 입력" : getTierTitle(selectedTier);
   const resultTone = calc ? getMarginTone(calc.marginRate) : null;
-  const resultStory = getMarginStory(calc);
+  const compareHeadline =
+    bestComparison && currentComparison
+      ? bestComparison.platformId === currentComparison.platformId
+        ? "현재 선택한 앱이 가장 많이 남습니다."
+        : `${bestComparison.name}이 현재보다 ${formatCurrency(bestComparison.margin - currentComparison.margin)} 더 남아요.`
+      : bestComparison
+        ? `${bestComparison.name} 기준이 가장 유리하게 계산됩니다.`
+        : "같은 메뉴 조건으로 앱별 실마진을 비교합니다.";
 
-  const ratioCards = calc
+  const resultFacts = calc
     ? [
-        { label: "원가율", value: formatPercent(calc.costRate), className: styles.ratioCardGray },
-        { label: "수수료율", value: formatPercent(calc.feeRate), className: styles.ratioCardBlue },
-        { label: "기타 비용", value: formatPercent(calc.extraRate), className: styles.ratioCardSoft },
-        { label: "마진율", value: formatPercent(calc.marginRate), className: styles.ratioCardStrong },
+        {
+          label: calc.margin >= 0 ? "손익률" : "손실률",
+          value: formatPercent(calc.marginRate),
+          note: resultTone?.label || "",
+          className: calc.margin >= 0 ? styles.factCardStrong : styles.factCardAlert,
+        },
+        {
+          label: calc.margin >= 0 ? "매출 1만원당 남는 돈" : "매출 1만원당 손실",
+          value: formatCurrency(calc.contributionPerTenThousand),
+          note: "매출 기준 체감 수익",
+          className: styles.factCardBlue,
+        },
+        {
+          label: "총 차감액",
+          value: formatCurrency(calc.totalDeductions),
+          note: "판매가에서 빠지는 금액",
+          className: styles.factCardNeutral,
+        },
+        {
+          label: "앱/결제 수수료",
+          value: formatCurrency(calc.appFee + calc.cardFee),
+          note: `총 수수료 ${formatPercent(calc.feeRate)}`,
+          className: styles.factCardSoft,
+        },
+      ]
+    : [];
+
+  const breakdownItems = calc
+    ? [
+        {
+          label: "원가",
+          value: calc.cost,
+          share: formatPercent(calc.costRate),
+          color: "#d2dbe8",
+          className: styles.breakdownRowCost,
+        },
+        {
+          label: "앱/결제 수수료",
+          value: calc.appFee + calc.cardFee,
+          share: formatPercent(calc.feeRate),
+          color: "#95b0e0",
+          className: styles.breakdownRowFees,
+        },
+        {
+          label: "배달비 · 부가세",
+          value: calc.delivery + calc.vatAmount,
+          share: formatPercent(calc.extraRate),
+          color: "#f2c989",
+          className: styles.breakdownRowExtra,
+        },
+        {
+          label: calc.margin >= 0 ? "예상 마진" : "예상 손실",
+          value: calc.margin,
+          share: formatPercent(calc.marginRate),
+          color: calc.margin >= 0 ? "#1b4797" : "#d9554d",
+          className:
+            calc.margin >= 0 ? styles.breakdownRowMargin : styles.breakdownRowLoss,
+        },
       ]
     : [];
 
   const quickSummaryItems = [
-    { label: "현재 앱", value: selectedPlatformName },
+    { label: "선택 앱", value: selectedPlatformName },
     {
-      label: "수수료",
+      label: "총 수수료",
       value: formatPercent(totalFeeRate),
     },
     {
-      label: "현재 상태",
+      label: "메뉴 1개 예상",
       value: calc ? formatCurrency(calc.margin) : "입력 후 확인",
       accent: true,
     },
@@ -654,10 +718,10 @@ export default function DeliveryMarginCalculator() {
             </span>
           </div>
 
-          <div className={styles.heroCompact}>
+          <div className={styles.heroMain}>
             <h1 className={styles.heroTitle}>실마진 계산기</h1>
             <p className={styles.heroDescription}>
-              메뉴 1건당 실제로 남는 금액만 빠르게 확인할 수 있게 화면을 더 짧고 선명하게 정리했습니다.
+              메뉴 1개 팔았을 때 실제로 남는 금액을 앱별로 바로 확인해보세요.
             </p>
 
             <div className={styles.quickSummaryRow}>
@@ -682,7 +746,7 @@ export default function DeliveryMarginCalculator() {
           <SectionHeader
             step="STEP 1"
             title="배달앱 선택"
-            description="자주 쓰는 앱을 고르면 해당 기본 수수료가 자동으로 채워집니다."
+            description="자주 쓰는 앱을 고르면 기본 수수료가 바로 들어갑니다."
           />
 
           {loadingPlatforms ? (
@@ -714,8 +778,7 @@ export default function DeliveryMarginCalculator() {
                   <div className={styles.inlineFieldHeader}>
                     <div className={styles.inlineFieldTitle}>직접 수수료 입력</div>
                     <div className={styles.inlineFieldDescription}>
-                      중개 수수료를 직접 입력하고, 결제 수수료는 설정 토글에 맞춰 별도로
-                      반영합니다.
+                      운영 중인 중개 수수료를 넣으면 결제 수수료는 아래 옵션에 맞춰 계산합니다.
                     </div>
                   </div>
                   <div className={styles.percentFieldShell}>
@@ -742,7 +805,7 @@ export default function DeliveryMarginCalculator() {
             <SectionHeader
               step="STEP 2"
               title="매출 구간 선택"
-              description="월 매출 구간별 수수료 차이를 카드형으로 정리해 빠르게 비교할 수 있습니다."
+              description="월 매출 구간을 고르면 해당 수수료가 바로 반영됩니다."
             />
 
             <div className={styles.tierList}>
@@ -758,11 +821,22 @@ export default function DeliveryMarginCalculator() {
                     onClick={() => setSelectedTierId(String(tier.id))}
                   >
                     <div className={styles.tierTop}>
-                      <div>
+                      <div className={styles.tierHead}>
                         <div className={styles.tierTitle}>{getTierTitle(tier)}</div>
-                        <div className={styles.tierDescription}>{getTierDescription(tier)}</div>
+                        {badge ? <span className={styles.tierBadge}>{badge}</span> : null}
                       </div>
-                      {badge ? <span className={styles.tierBadge}>{badge}</span> : null}
+                      <div className={styles.tierMetaRow}>
+                        {getTierMetaItems(tier).map((item) => (
+                          <span
+                            key={item}
+                            className={`${styles.tierMetaChip} ${
+                              item.includes("부가세") ? styles.tierMetaVat : ""
+                            }`}
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </button>
                 );
@@ -774,19 +848,19 @@ export default function DeliveryMarginCalculator() {
         <section className={styles.card}>
           <SectionHeader
             step={selectedPlatformId === "custom" ? "STEP 2" : "STEP 3"}
-            title="핵심 입력"
-            description="판매가, 원가, 배달비만 바로 넣으면 아래 결과가 즉시 바뀝니다."
+            title="판매 정보 입력"
+            description="메뉴 가격과 비용, 옵션 두 가지만 확인하면 실마진이 바로 계산됩니다."
           />
 
           <div className={styles.fieldStack}>
             <NumberField
               primary
               label="메뉴 판매가"
-              hint="고객 결제 금액 기준"
+              hint="고객 결제 금액"
               value={menuPrice}
               onChange={handleNumericChange(setMenuPrice)}
               placeholder="예: 18,000"
-              help="판매가를 입력하면 결과 카드가 즉시 활성화됩니다."
+              help="판매가를 넣는 즉시 아래 결과가 바뀝니다."
             />
 
             <div className={styles.compactFieldGrid}>
@@ -808,43 +882,44 @@ export default function DeliveryMarginCalculator() {
               />
             </div>
           </div>
-        </section>
 
-        <section className={styles.card}>
-          <SectionHeader
-            step={selectedPlatformId === "custom" ? "STEP 3" : "STEP 4"}
-            title="설정"
-            description="필요한 옵션만 짧게 확인하고 바로 계산할 수 있게 구성했습니다."
-          />
+          <div className={styles.inlineOptionsBlock}>
+            <div className={styles.inlineOptionsHeader}>
+              <div className={styles.inlineOptionsTitle}>옵션 반영</div>
+              <div className={styles.inlineOptionsDescription}>
+                카드 수수료와 부가세 포함 여부를 선택하세요.
+              </div>
+            </div>
 
-          <div className={styles.settingList}>
-            <ToggleRow
-              label="카드 수수료 포함"
-              description="끄면 결제 수수료를 제외한 값으로 계산합니다."
-              checked={cardFeeOn}
-              onToggle={() => setCardFeeOn((value) => !value)}
-            />
-            <ToggleRow
-              label="부가세 포함"
-              description="켜면 판매가의 10%를 추가 차감 항목으로 반영합니다."
-              checked={vatOn}
-              onToggle={() => setVatOn((value) => !value)}
-            />
-          </div>
+            <div className={styles.settingGrid}>
+              <ToggleRow
+                label="카드 수수료 포함"
+                description="끄면 결제 수수료를 제외합니다."
+                checked={cardFeeOn}
+                onToggle={() => setCardFeeOn((value) => !value)}
+              />
+              <ToggleRow
+                label="부가세 포함"
+                description="켜면 판매가의 10%를 반영합니다."
+                checked={vatOn}
+                onToggle={() => setVatOn((value) => !value)}
+              />
+            </div>
 
-          <div className={styles.settingSummary}>
-            <span>현재 반영 수수료</span>
-            <strong>
-              중개 {formatPercent(appFeeRate)} · 결제 {formatPercent(paymentFeeRate)}
-            </strong>
+            <div className={styles.settingSummary}>
+              <span>현재 반영 수수료</span>
+              <strong>
+                중개 {formatPercent(appFeeRate)} · 결제 {formatPercent(paymentFeeRate)}
+              </strong>
+            </div>
           </div>
         </section>
 
         <section className={`${styles.card} ${styles.resultCard}`}>
           <SectionHeader
-            step={selectedPlatformId === "custom" ? "STEP 4" : "STEP 5"}
-            title="결과 확인"
-            description="한 건당 얼마가 남는지 먼저 크게 보여주고, 필요한 정보만 아래에 압축했습니다."
+            step={selectedPlatformId === "custom" ? "STEP 3" : "STEP 4"}
+            title="예상 결과"
+            description="메뉴 1개 팔면 얼마 남는지 먼저 보여드리고, 필요한 비교만 아래에 담았습니다."
           />
 
           {!calc ? (
@@ -852,49 +927,74 @@ export default function DeliveryMarginCalculator() {
               <div className={styles.emptyIcon}>₩</div>
               <div className={styles.emptyTitle}>판매가를 입력하면 예상 마진이 바로 표시됩니다.</div>
               <div className={styles.emptyDescription}>
-                앱과 설정 조건은 이미 반영되어 있으니, 숫자만 넣으면 결과 구조가 열립니다.
+                앱과 옵션은 이미 반영되어 있으니 숫자만 넣어보세요.
               </div>
             </div>
           ) : (
             <>
               <div className={styles.resultHeroPanel}>
-                <div className={styles.resultHeroCopy}>
-                  <div className={styles.resultEyebrow}>
-                    {selectedPlatformName}
-                    <span className={styles.resultEyebrowDivider}>·</span>
-                    {selectedTierName}
+                <div className={styles.resultHeroHeader}>
+                  <div>
+                    <div className={styles.resultContextLabel}>현재 조건</div>
+                    <div className={styles.resultEyebrow}>
+                      {selectedPlatformName}
+                      <span className={styles.resultEyebrowDivider}>·</span>
+                      {selectedTierName}
+                    </div>
                   </div>
-                  <div className={styles.resultValue}>{formatCurrency(calc.margin)}</div>
-                  <div className={styles.resultCaption}>메뉴 1건 판매 시 남는 예상 금액</div>
+
+                  <div className={`${styles.rateBadge} ${resultTone?.badgeClass || ""}`}>
+                    <span className={styles.rateBadgeIcon}>{resultTone?.icon}</span>
+                    <span className={styles.rateBadgeCopy}>
+                      <span>{resultTone?.label}</span>
+                      <strong>{formatPercent(calc.marginRate)}</strong>
+                    </span>
+                  </div>
                 </div>
 
-                <div className={styles.resultHeroSide}>
-                  <div className={`${styles.rateBadge} ${resultTone?.toneClass || ""}`}>
-                    <span>{resultTone?.label}</span>
-                    <strong>{formatPercent(calc.marginRate)}</strong>
+                <div className={styles.resultLead}>메뉴 1개 팔면</div>
+                <div
+                  className={`${styles.resultValue} ${
+                    calc.margin >= 0 ? styles.resultValuePositive : styles.resultValueNegative
+                  }`}
+                >
+                  {formatCurrency(calc.margin)}
+                </div>
+
+                <div className={styles.resultHeroMeta}>
+                  <div className={styles.resultMiniMetric}>
+                    <span className={styles.resultMiniLabel}>
+                      {calc.margin >= 0 ? "매출 1만원당 남는 돈" : "매출 1만원당 손실"}
+                    </span>
+                    <strong>{formatCurrency(calc.contributionPerTenThousand)}</strong>
                   </div>
                   <div className={styles.resultMiniMetric}>
-                    매출 1만원당 약 {formatCurrency(calc.contributionPerTenThousand)}
+                    <span className={styles.resultMiniLabel}>총 차감액</span>
+                    <strong>{formatCurrency(calc.totalDeductions)}</strong>
                   </div>
+                </div>
+
+                <div className={`${styles.resultInsight} ${resultTone?.insightClass || ""}`}>
+                  <strong>{resultTone?.headline}</strong>
+                  <span>{resultTone?.action}</span>
                 </div>
               </div>
 
-              <div className={styles.resultStoryCard}>
-                <div className={styles.resultStoryTitle}>{resultStory.title}</div>
-                <div className={styles.resultStoryAction}>{resultStory.action}</div>
-              </div>
-
-              <div className={styles.ratioGrid}>
-                {ratioCards.map((item) => (
-                  <div key={item.label} className={`${styles.ratioCard} ${item.className}`}>
-                    <span className={styles.ratioLabel}>{item.label}</span>
-                    <strong className={styles.ratioValue}>{item.value}</strong>
+              <div className={styles.factGrid}>
+                {resultFacts.map((item) => (
+                  <div key={item.label} className={`${styles.factCard} ${item.className}`}>
+                    <span className={styles.factLabel}>{item.label}</span>
+                    <strong className={styles.factValue}>{item.value}</strong>
+                    <span className={styles.factNote}>{item.note}</span>
                   </div>
                 ))}
               </div>
 
               <div className={styles.breakdownPanel}>
-                <div className={styles.panelTitle}>수익 구조</div>
+                <div className={styles.panelHeader}>
+                  <div className={styles.panelTitle}>수익 구조</div>
+                  <div className={styles.panelCaption}>한 주문 기준 차감 구성을 한눈에 봅니다.</div>
+                </div>
                 <div className={styles.meter}>
                   {meterSegments.map((segment) => (
                     <span
@@ -904,55 +1004,33 @@ export default function DeliveryMarginCalculator() {
                     />
                   ))}
                 </div>
-                <div className={styles.legendList}>
-                  <div className={styles.legendRow}>
-                    <span className={styles.legendLabel}>
-                      <span className={styles.legendDot} style={{ backgroundColor: "#dae2f0" }} />
-                      원가
-                    </span>
-                    <strong>{formatCurrency(calc.cost)}</strong>
-                  </div>
-                  <div className={styles.legendRow}>
-                    <span className={styles.legendLabel}>
-                      <span className={styles.legendDot} style={{ backgroundColor: "#b8caeb" }} />
-                      앱/결제 수수료
-                    </span>
-                    <strong>{formatCurrency(calc.appFee + calc.cardFee)}</strong>
-                  </div>
-                  <div className={styles.legendRow}>
-                    <span className={styles.legendLabel}>
-                      <span className={styles.legendDot} style={{ backgroundColor: "#e7edf7" }} />
-                      배달비/부가세
-                    </span>
-                    <strong>{formatCurrency(calc.delivery + calc.vatAmount)}</strong>
-                  </div>
-                  <div className={styles.legendRow}>
-                    <span className={styles.legendLabel}>
-                      <span className={styles.legendDot} style={{ backgroundColor: "#1b4797" }} />
-                      예상 마진
-                    </span>
-                    <strong>{formatCurrency(calc.margin)}</strong>
-                  </div>
+                <div className={styles.breakdownList}>
+                  {breakdownItems.map((item) => (
+                    <div key={item.label} className={`${styles.breakdownRow} ${item.className}`}>
+                      <div className={styles.breakdownLabelWrap}>
+                        <span className={styles.legendDot} style={{ backgroundColor: item.color }} />
+                        <span className={styles.breakdownLabel}>{item.label}</span>
+                        <span className={styles.breakdownShare}>{item.share}</span>
+                      </div>
+                      <div className={styles.breakdownValues}>
+                        <strong>{formatCurrency(item.value)}</strong>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {comparison.length > 1 ? (
-                <details className={styles.compareDetails}>
-                  <summary className={styles.compareSummary}>
+                <div className={styles.comparePanel}>
+                  <div className={styles.comparePanelHeader}>
                     <div>
-                      <div className={styles.compareTitle}>앱별 비교 보기</div>
-                      <div className={styles.compareDescription}>
-                        {bestComparison && currentComparison
-                          ? bestComparison.platformId === currentComparison.platformId
-                            ? "현재 선택한 앱이 가장 유리합니다."
-                            : `${bestComparison.name}이 ${formatCurrency(bestComparison.margin - currentComparison.margin)} 더 유리합니다.`
-                          : "같은 조건으로 앱별 마진을 비교합니다."}
-                      </div>
+                      <div className={styles.compareTitle}>앱별 비교</div>
+                      <div className={styles.compareDescription}>{compareHeadline}</div>
                     </div>
-                    <span className={styles.compareSummaryValue}>
-                      {bestComparison ? `${bestComparison.name} ${formatCurrency(bestComparison.margin)}` : ""}
-                    </span>
-                  </summary>
+                    {bestComparison ? (
+                      <span className={styles.compareSummaryPill}>최고 {bestComparison.name}</span>
+                    ) : null}
+                  </div>
 
                   <div className={styles.compareList}>
                     {comparison.map((item, index) => {
@@ -966,29 +1044,53 @@ export default function DeliveryMarginCalculator() {
                         <div
                           key={item.platformId}
                           className={`${styles.compareRow} ${
-                            active ? styles.compareRowActive : ""
+                            index === 0
+                              ? styles.compareRowBest
+                              : active
+                                ? styles.compareRowCurrent
+                                : styles.compareRowDefault
                           }`}
                         >
                           <div className={styles.compareRank}>{index + 1}</div>
+
                           <div className={styles.compareCopy}>
-                            <div className={styles.compareName}>
-                              {item.name}
-                              {active ? (
-                                <span className={styles.compareCurrent}>현재 선택</span>
-                              ) : null}
+                            <div className={styles.compareNameRow}>
+                              <div className={styles.compareName}>{item.name}</div>
+                              <div className={styles.compareStatusRow}>
+                                {index === 0 ? (
+                                  <span className={styles.compareBest}>가장 유리</span>
+                                ) : null}
+                                {active ? (
+                                  <span className={styles.compareCurrent}>현재 선택</span>
+                                ) : null}
+                              </div>
                             </div>
+
                             <div className={styles.compareMeta}>
                               총 수수료 {formatPercent(item.totalRate)}
-                              {!active && currentComparison ? (
-                                <span className={styles.compareDelta}>
-                                  {delta >= 0 ? "+" : ""}
-                                  {formatCurrency(delta)}
-                                </span>
-                              ) : null}
                             </div>
+
+                            {!active && currentComparison ? (
+                              <span
+                                className={`${styles.compareDeltaPill} ${
+                                  delta > 0
+                                    ? styles.compareDeltaPositive
+                                    : delta < 0
+                                      ? styles.compareDeltaNegative
+                                      : styles.compareDeltaNeutral
+                                }`}
+                              >
+                                현재 대비 {formatSignedCurrency(delta)}
+                              </span>
+                            ) : null}
                           </div>
+
                           <div className={styles.compareValues}>
-                            <strong className={styles.compareAmount}>
+                            <strong
+                              className={`${styles.compareAmount} ${
+                                item.margin >= 0 ? styles.compareAmountPositive : styles.compareAmountNegative
+                              }`}
+                            >
                               {formatCurrency(item.margin)}
                             </strong>
                             <span className={styles.compareRate}>
@@ -999,7 +1101,7 @@ export default function DeliveryMarginCalculator() {
                       );
                     })}
                   </div>
-                </details>
+                </div>
               ) : null}
             </>
           )}
@@ -1008,9 +1110,9 @@ export default function DeliveryMarginCalculator() {
         <details className={`${styles.card} ${styles.extraDetails}`}>
           <summary className={styles.detailsSummary}>
             <div>
-              <div className={styles.detailsTitle}>추가 분석</div>
+              <div className={styles.detailsTitle}>운영 시뮬레이션</div>
               <div className={styles.detailsDescription}>
-                일 주문 수 시뮬레이션과 AI 해석은 기본 결과와 분리해 필요할 때만 열 수 있게 구성했습니다.
+                주문 수를 넣으면 하루, 일주일, 한 달 예상 마진과 고정비 회수 주문 수를 볼 수 있습니다.
               </div>
             </div>
             <span className={styles.summaryChevron}>
@@ -1027,7 +1129,7 @@ export default function DeliveryMarginCalculator() {
           </summary>
 
           <div className={styles.extraContent}>
-            <div className={styles.subsectionTitle}>일 주문 수 시뮬레이션</div>
+            <div className={styles.subsectionTitle}>주문 수 시뮬레이션</div>
             <div className={styles.compactFieldGrid}>
               <NumberField
                 compact
@@ -1071,18 +1173,22 @@ export default function DeliveryMarginCalculator() {
               </div>
             ) : (
               <div className={styles.helperNote}>
-                일 주문 수를 넣으면 하루, 일주일, 한 달 기준 추정 수익을 함께 볼 수 있습니다.
+                일 주문 수를 넣으면 기간별 예상 마진이 바로 계산됩니다.
               </div>
             )}
 
             {breakEvenOrders ? (
               <div className={styles.breakEvenBox}>
-                월 고정비 {formatCurrency(parseNumber(fixedCost))}를 회수하려면 현재 조건에서
-                약 <strong>{numberFormatter.format(breakEvenOrders)}건</strong>의 주문이 필요합니다.
+                <span className={styles.breakEvenLead}>
+                  월 고정비 {formatCurrency(parseNumber(fixedCost))}를 회수하려면
+                </span>
+                <strong className={styles.breakEvenValue}>
+                  현재 조건에서 약 {numberFormatter.format(breakEvenOrders)}건 주문이 필요합니다.
+                </strong>
               </div>
             ) : null}
 
-            <div className={styles.subsectionTitle}>AI 마진 해석</div>
+            <div className={styles.subsectionTitle}>AI 해석</div>
             <div className={styles.chipRow}>
               {ANALYSIS_INDUSTRIES.map((industry) => (
                 <button
@@ -1106,7 +1212,7 @@ export default function DeliveryMarginCalculator() {
               onClick={handleAnalyze}
               disabled={!calc || analysisLoading}
             >
-              {analysisLoading ? "AI 분석 불러오는 중..." : "AI로 결과 해석하기"}
+              {analysisLoading ? "AI 분석 불러오는 중..." : "AI로 운영 코멘트 보기"}
             </button>
 
             {analysisError ? <div className={styles.notice}>{analysisError}</div> : null}
@@ -1121,7 +1227,7 @@ export default function DeliveryMarginCalculator() {
                 </div>
                 <p className={styles.analysisText}>{analysisResult.text}</p>
                 <p className={styles.analysisNote}>
-                  AI 해석은 참고용입니다. 실제 정산서는 광고비, 쿠폰, 프로모션 정책에 따라 달라질 수 있습니다.
+                  AI 해석은 참고용입니다. 실제 정산은 광고비, 쿠폰, 프로모션 정책에 따라 달라질 수 있습니다.
                 </p>
               </div>
             ) : null}
