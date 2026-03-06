@@ -993,6 +993,10 @@
   height: 100%;
 }
 
+.meterSegment + .meterSegment {
+  box-shadow: inset 2px 0 0 rgba(255, 255, 255, 0.72);
+}
+
 .breakdownList {
   display: flex;
   flex-direction: column;
@@ -1007,26 +1011,32 @@
   gap: 12px;
   padding: 11px 12px;
   border-radius: 16px;
+  border: 1px solid #eef3f8;
+  background: #f7f9fc;
 }
 
 .breakdownRowCost {
-  background: #f6f8fb;
+  background: #f7f9fc;
 }
 
 .breakdownRowFees {
-  background: #eef4ff;
+  background: #f7f9fc;
 }
 
 .breakdownRowExtra {
-  background: #fff9ef;
+  background: #f7f9fc;
 }
 
 .breakdownRowMargin {
-  background: #eef4ff;
+  background: #f7f9fc;
 }
 
 .breakdownRowLoss {
-  background: #fff3f1;
+  background: #f7f9fc;
+}
+
+.breakdownRowLoss .breakdownValues strong {
+  color: #d9554d;
 }
 
 .breakdownLabelWrap {

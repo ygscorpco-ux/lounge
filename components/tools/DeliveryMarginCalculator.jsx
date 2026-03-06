@@ -525,9 +525,9 @@ export default function DeliveryMarginCalculator() {
     if (!base) return [];
 
     return [
-      { key: "cost", value: calc.cost, color: "#dae2f0" },
-      { key: "fees", value: calc.appFee + calc.cardFee, color: "#b8caeb" },
-      { key: "extra", value: calc.delivery + calc.vatAmount, color: "#e7edf7" },
+      { key: "cost", value: calc.cost, color: "#C7D2E3" },
+      { key: "fees", value: calc.appFee + calc.cardFee, color: "#6F96DA" },
+      { key: "extra", value: calc.delivery + calc.vatAmount, color: "#F1B24A" },
       { key: "margin", value: Math.max(calc.margin, 0), color: "#1b4797" },
     ]
       .filter((segment) => segment.value > 0)
@@ -638,21 +638,21 @@ export default function DeliveryMarginCalculator() {
           label: "원가",
           value: calc.cost,
           share: formatPercent(calc.costRate),
-          color: "#d2dbe8",
+          color: "#C7D2E3",
           className: styles.breakdownRowCost,
         },
         {
           label: "앱/결제 수수료",
           value: calc.appFee + calc.cardFee,
           share: formatPercent(calc.feeRate),
-          color: "#95b0e0",
+          color: "#6F96DA",
           className: styles.breakdownRowFees,
         },
         {
           label: "배달비 · 부가세",
           value: calc.delivery + calc.vatAmount,
           share: formatPercent(calc.extraRate),
-          color: "#f2c989",
+          color: "#F1B24A",
           className: styles.breakdownRowExtra,
         },
         {
