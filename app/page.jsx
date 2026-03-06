@@ -167,6 +167,34 @@ const FEED_CACHE_KEY = "lounge-home-feed-cache-v1";
 const FEED_RETURN_KEY = "lounge-home-feed-return-v1";
 const FEED_SCROLL_KEY = "lounge-home-feed-scroll-v1";
 const FEED_CACHE_TTL_MS = 1000 * 60 * 30;
+const APP_SCROLL_CONTAINER_SELECTOR = '[data-app-scroll-container="1"]';
+
+function getAppScrollContainer() {
+  if (typeof document === "undefined") return null;
+  return document.querySelector(APP_SCROLL_CONTAINER_SELECTOR);
+}
+
+function getAppScrollTop() {
+  const container = getAppScrollContainer();
+  return container ? container.scrollTop : window.scrollY || 0;
+}
+
+function setAppScrollTop(top) {
+  const container = getAppScrollContainer();
+  if (container) {
+    container.scrollTo({ top, behavior: "auto" });
+    return;
+  }
+  window.scrollTo({ top, behavior: "auto" });
+}
+
+function getAppMaxScrollTop() {
+  const container = getAppScrollContainer();
+  if (container) {
+    return Math.max(container.scrollHeight - container.clientHeight, 0);
+  }
+  return Math.max(document.body.scrollHeight - window.innerHeight, 0);
+}
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -220,7 +248,7 @@ export default function Home() {
   const openPostDetail = useCallback((postId) => {
     if (typeof window !== "undefined") {
       sessionStorage.setItem(FEED_RETURN_KEY, "1");
-      sessionStorage.setItem(FEED_SCROLL_KEY, String(window.scrollY || 0));
+      sessionStorage.setItem(FEED_SCROLL_KEY, String(getAppScrollTop()));
       try {
         sessionStorage.setItem(
           FEED_CACHE_KEY,
@@ -356,9 +384,9 @@ export default function Home() {
     let tries = 0;
 
     const restore = () => {
-      window.scrollTo({ top: safeY, behavior: "auto" });
-      const maxY = Math.max(document.body.scrollHeight - window.innerHeight, 0);
-      const nearTarget = Math.abs(window.scrollY - safeY) < 2;
+      setAppScrollTop(safeY);
+      const maxY = getAppMaxScrollTop();
+      const nearTarget = Math.abs(getAppScrollTop() - safeY) < 2;
       const cannotReachMore = maxY <= safeY;
 
       if (nearTarget || cannotReachMore || tries >= 6) {
@@ -438,7 +466,7 @@ export default function Home() {
           loadMore();
         }
       },
-      { root: null, rootMargin: "260px 0px", threshold: 0 },
+      { root: getAppScrollContainer(), rootMargin: "260px 0px", threshold: 0 },
     );
 
     observer.observe(loadMoreTriggerRef.current);

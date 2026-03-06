@@ -39,7 +39,10 @@ export default function RootLayout({ children }) {
           }}
         />
         <div className="app-container">
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div
+            data-app-scroll-container="1"
+            style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+          >
             {children}
           </div>
         </div>
