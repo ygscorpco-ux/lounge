@@ -41,6 +41,42 @@ const SendIcon = ({ color = "#1b4797" }) => (
   </svg>
 );
 
+const HeartIcon = ({ active }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width="16"
+    height="16"
+    fill={active ? "#ff4d7e" : "none"}
+    stroke={active ? "#ff4d7e" : "#b8bcc4"}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+  </svg>
+);
+
+const CommentIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#b8bcc4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+const BookmarkIcon = ({ active }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width="16"
+    height="16"
+    fill={active ? "#4f79d7" : "none"}
+    stroke={active ? "#4f79d7" : "#b8bcc4"}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
 export default function PostDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -450,19 +486,24 @@ export default function PostDetailPage() {
         )}
 
         <section style={{ borderTop: "1px solid #efefef", borderBottom: "1px solid #efefef", background: "#fff" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", height: 52 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", height: 56 }}>
             <button
               onClick={handleLikePost}
               style={{
                 border: "none",
                 background: "none",
                 borderRight: "1px solid #efefef",
-                color: post.alreadyLiked ? "#1b4797" : "#8c8c8c",
+                color: post.alreadyLiked ? "#ff4d7e" : "#8c8c8c",
                 fontWeight: 700,
                 fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
               }}
             >
-              {`\uACF5\uAC10 ${post.likeCount}`}
+              <HeartIcon active={post.alreadyLiked} />
+              {`\uC88B\uC544\uC694 ${post.likeCount}`}
             </button>
             <button
               onClick={() => commentsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
@@ -473,8 +514,13 @@ export default function PostDetailPage() {
                 color: "#8c8c8c",
                 fontWeight: 700,
                 fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
               }}
             >
+              <CommentIcon />
               {`\uB313\uAE00 ${post.commentCount}`}
             </button>
             <button
@@ -482,12 +528,17 @@ export default function PostDetailPage() {
               style={{
                 border: "none",
                 background: "none",
-                color: bookmarked ? "#1b4797" : "#8c8c8c",
+                color: bookmarked ? "#4f79d7" : "#8c8c8c",
                 fontWeight: 700,
                 fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
               }}
             >
-              {bookmarked ? "\uC2A4\uD06C\uB7A9 \uCDE8\uC18C" : "\uC2A4\uD06C\uB7A9"}
+              <BookmarkIcon active={bookmarked} />
+              {"\uC2A4\uD06C\uB7A9"}
             </button>
           </div>
         </section>
