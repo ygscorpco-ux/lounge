@@ -1,14 +1,16 @@
 import pool from "../../../../lib/db.js";
 import { getCurrentUser } from "../../../../lib/auth.js";
 import { ROLE_ADMIN } from "../../../../lib/constants.js";
+import { withApiMonitoring } from "../../../../lib/monitoring.js";
 import { NextResponse } from "next/server";
 
 const ADMIN_DISPLAY_NAME = "\uC5FC\uAD11\uC0AC";
 const ANON_DISPLAY_NAME = "\uC775\uBA85";
 
 export async function GET(request, { params }) {
-  try {
-    const { id } = params;
+  return withApiMonitoring("posts.detail.GET", async () => {
+    try {
+      const { id } = params;
 
     const [rows] = await pool.query(
       `SELECT
@@ -108,19 +110,21 @@ export async function GET(request, { params }) {
       poll: pollData,
     };
 
-    return NextResponse.json({ post });
-  } catch (error) {
-    console.error("post detail error:", error);
-    return NextResponse.json({ error: "server error" }, { status: 500 });
-  }
+      return NextResponse.json({ post });
+    } catch (error) {
+      console.error("post detail error:", error);
+      return NextResponse.json({ error: "server error" }, { status: 500 });
+    }
+  });
 }
 
 export async function DELETE(request, { params }) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Login required" }, { status: 401 });
-    }
+  return withApiMonitoring("posts.detail.DELETE", async () => {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        return NextResponse.json({ error: "Login required" }, { status: 401 });
+      }
 
     const { id } = params;
     const [rows] = await pool.query("SELECT user_id FROM posts WHERE id = ?", [id]);
@@ -146,11 +150,12 @@ export async function DELETE(request, { params }) {
       ["comment", id],
     );
     await pool.query("DELETE FROM comments WHERE post_id = ?", [id]);
-    await pool.query("DELETE FROM posts WHERE id = ?", [id]);
+      await pool.query("DELETE FROM posts WHERE id = ?", [id]);
 
-    return NextResponse.json({ message: "Deleted" });
-  } catch (error) {
-    console.error("delete post error:", error);
-    return NextResponse.json({ error: "server error" }, { status: 500 });
-  }
+      return NextResponse.json({ message: "Deleted" });
+    } catch (error) {
+      console.error("delete post error:", error);
+      return NextResponse.json({ error: "server error" }, { status: 500 });
+    }
+  });
 }

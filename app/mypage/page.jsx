@@ -150,12 +150,20 @@ export default function MyPage() {
             이용규칙 보기 <span className="mypage-menu-arrow">›</span>
           </div>
           {user.role === "admin" && (
-            <div
-              className="mypage-menu-item"
-              onClick={() => router.push("/admin")}
-            >
-              관리자 대시보드 <span className="mypage-menu-arrow">›</span>
-            </div>
+            <>
+              <div
+                className="mypage-menu-item"
+                onClick={() => router.push("/admin")}
+              >
+                관리자 대시보드 <span className="mypage-menu-arrow">›</span>
+              </div>
+              <div
+                className="mypage-menu-item"
+                onClick={() => router.push("/admin/monitoring")}
+              >
+                모니터링 대시보드 <span className="mypage-menu-arrow">›</span>
+              </div>
+            </>
           )}
           <div className="mypage-menu-item danger" onClick={handleLogout}>
             로그아웃

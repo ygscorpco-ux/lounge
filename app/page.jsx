@@ -168,6 +168,9 @@ const FEED_RETURN_KEY = "lounge-home-feed-return-v1";
 const FEED_SCROLL_KEY = "lounge-home-feed-scroll-v1";
 const FEED_CACHE_TTL_MS = 1000 * 60 * 30;
 const APP_SCROLL_CONTAINER_SELECTOR = '[data-app-scroll-container="1"]';
+const POST_ROW_ESTIMATE_PX = 144;
+const POST_WINDOW_OVERSCAN = 7;
+const VIRTUALIZATION_THRESHOLD = 28;
 
 function getAppScrollContainer() {
   if (typeof document === "undefined") return null;
@@ -206,11 +209,13 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
   const loadMoreTriggerRef = useRef(null);
+  const freeBoardListRef = useRef(null);
   const feedHydratedRef = useRef(false);
   const shouldRestoreScrollRef = useRef(false);
   const expectedSectionsRef = useRef({ notice: 0, best: 0 });
   const pageRef = useRef(1);
   const loadingNextPageRef = useRef(false);
+  const [virtualRange, setVirtualRange] = useState({ start: 0, end: 20 });
 
   const quickMenus = [
     {
@@ -457,6 +462,59 @@ export default function Home() {
     }
   }, [loading, hasMore, sort, fetchPosts]);
 
+  const refreshVirtualRange = useCallback(() => {
+    const total = posts.length;
+    if (total === 0) {
+      setVirtualRange((prev) => (prev.start === 0 && prev.end === 0 ? prev : { start: 0, end: 0 }));
+      return;
+    }
+
+    if (total <= VIRTUALIZATION_THRESHOLD) {
+      setVirtualRange((prev) =>
+        prev.start === 0 && prev.end === total ? prev : { start: 0, end: total },
+      );
+      return;
+    }
+
+    const container = getAppScrollContainer();
+    const viewportHeight = container ? container.clientHeight : window.innerHeight;
+    const scrollTop = container ? container.scrollTop : window.scrollY || 0;
+    const listTop = freeBoardListRef.current?.offsetTop || 0;
+    const localTop = Math.max(scrollTop - listTop, 0);
+    const start = Math.max(
+      Math.floor(localTop / POST_ROW_ESTIMATE_PX) - POST_WINDOW_OVERSCAN,
+      0,
+    );
+    const visibleCount =
+      Math.ceil(viewportHeight / POST_ROW_ESTIMATE_PX) + POST_WINDOW_OVERSCAN * 2;
+    const end = Math.min(total, start + Math.max(visibleCount, 1));
+
+    setVirtualRange((prev) => {
+      if (prev.start === start && prev.end === end) return prev;
+      return { start, end };
+    });
+  }, [posts.length]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    refreshVirtualRange();
+
+    const container = getAppScrollContainer();
+    const target = container || window;
+    const onScrollOrResize = () => {
+      refreshVirtualRange();
+    };
+
+    target.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize, { passive: true });
+
+    return () => {
+      target.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [refreshVirtualRange]);
+
   useEffect(() => {
     if (!loadMoreTriggerRef.current) return;
 
@@ -472,6 +530,19 @@ export default function Home() {
     observer.observe(loadMoreTriggerRef.current);
     return () => observer.disconnect();
   }, [loadMore]);
+
+  const shouldVirtualize = posts.length > VIRTUALIZATION_THRESHOLD;
+  const safeStart = shouldVirtualize
+    ? Math.max(0, Math.min(virtualRange.start, posts.length))
+    : 0;
+  const safeEnd = shouldVirtualize
+    ? Math.max(safeStart, Math.min(virtualRange.end, posts.length))
+    : posts.length;
+  const renderedPosts = shouldVirtualize ? posts.slice(safeStart, safeEnd) : posts;
+  const topSpacerHeight = shouldVirtualize ? safeStart * POST_ROW_ESTIMATE_PX : 0;
+  const bottomSpacerHeight = shouldVirtualize
+    ? Math.max((posts.length - safeEnd) * POST_ROW_ESTIMATE_PX, 0)
+    : 0;
 
   return (
     <div>
@@ -846,9 +917,13 @@ export default function Home() {
       </div>
 
       <div>
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} onOpen={openPostDetail} />
-        ))}
+        <div ref={freeBoardListRef} data-testid="free-board-list">
+          {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
+          {renderedPosts.map((post) => (
+            <PostCard key={post.id} post={post} onOpen={openPostDetail} />
+          ))}
+          {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
+        </div>
         <div ref={loadMoreTriggerRef} style={{ height: 1 }} />
         {loading && <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>}
         {!loading && posts.length === 0 && (

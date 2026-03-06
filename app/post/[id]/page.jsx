@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import CommentItem from "../../../components/CommentItem.jsx";
+import { buildCloudinaryOptimizedUrl } from "../../../lib/image.js";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
 const ANON_NAME = "\uC775\uBA85";
@@ -82,6 +83,7 @@ export default function PostDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const commentsAnchorRef = useRef(null);
+  const commentIdempotencyKeyRef = useRef("");
 
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -93,6 +95,18 @@ export default function PostDetailPage() {
   const [poll, setPoll] = useState(null);
   const [voting, setVoting] = useState(false);
   const [adImageError, setAdImageError] = useState(false);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+
+  function createIdempotencyKey() {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return `comment-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+
+  function invalidateCommentKey() {
+    commentIdempotencyKeyRef.current = "";
+  }
 
   async function fetchPost() {
     const response = await fetch("/api/posts/" + id);
@@ -131,6 +145,8 @@ export default function PostDetailPage() {
   }
 
   useEffect(() => {
+    invalidateCommentKey();
+    setCommentSubmitting(false);
     fetchPost();
     checkBookmark();
   }, [id]);
@@ -203,31 +219,55 @@ export default function PostDetailPage() {
   }
 
   async function handleCommentSubmit() {
-    if (!commentText.trim()) return;
+    const normalizedComment = commentText.trim();
+    if (!normalizedComment || commentSubmitting) return;
 
-    const response = await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        postId: parseInt(id, 10),
-        parentId: replyTo,
-        content: commentText.trim(),
-      }),
-    });
+    setCommentSubmitting(true);
+    try {
+      const idempotencyKey =
+        commentIdempotencyKeyRef.current || createIdempotencyKey();
+      commentIdempotencyKeyRef.current = idempotencyKey;
 
-    if (!response.ok) return;
+      const response = await fetch("/api/comments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": idempotencyKey,
+        },
+        body: JSON.stringify({
+          postId: parseInt(id, 10),
+          parentId: replyTo,
+          content: normalizedComment,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
 
-    setCommentText("");
-    setReplyTo(null);
-    fetchComments();
-    setPost((prev) =>
-      prev
-        ? {
-            ...prev,
-            commentCount: prev.commentCount + 1,
-          }
-        : prev,
-    );
+      if (!response.ok) {
+        if (response.status < 500) {
+          invalidateCommentKey();
+        }
+        alert(data.error || "\uB313\uAE00 \uC791\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+        return;
+      }
+
+      invalidateCommentKey();
+      setCommentText("");
+      setReplyTo(null);
+      fetchComments();
+      setPost((prev) =>
+        prev
+          ? {
+              ...prev,
+              commentCount: prev.commentCount + 1,
+            }
+          : prev,
+      );
+    } catch (error) {
+      console.error(error);
+      alert("\uB313\uAE00 \uC791\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
+    } finally {
+      setCommentSubmitting(false);
+    }
   }
 
   async function handleCommentLike(commentId) {
@@ -345,7 +385,7 @@ export default function PostDetailPage() {
       }}
     >
       <div className="top-bar" style={{ flexShrink: 0, justifyContent: "space-between" }}>
-        <button className="top-bar-back" onClick={handleBack}>
+        <button className="top-bar-back" onClick={handleBack} data-testid="post-detail-back">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -433,8 +473,14 @@ export default function PostDetailPage() {
               {post.images.map((url, idx) => (
                 <img
                   key={idx}
-                  src={url}
+                  src={buildCloudinaryOptimizedUrl(url, {
+                    width: 1200,
+                    height: 1200,
+                    crop: "limit",
+                  })}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   style={{ width: "100%", borderRadius: 10, display: "block", border: "1px solid #f0f0f0" }}
                 />
               ))}
@@ -630,7 +676,10 @@ export default function PostDetailPage() {
                   comment={comment}
                   onLike={handleCommentLike}
                   onReport={handleCommentReport}
-                  onReply={(commentId) => setReplyTo(commentId)}
+                  onReply={(commentId) => {
+                    invalidateCommentKey();
+                    setReplyTo(commentId);
+                  }}
                   onDelete={handleCommentDelete}
                   onBlock={handleCommentBlock}
                 />
@@ -691,7 +740,13 @@ export default function PostDetailPage() {
                 }}
               >
                 <span>{"\uB2F5\uAE00 \uC791\uC131 \uC911"}</span>
-                <button onClick={() => setReplyTo(null)} style={{ border: "none", background: "none", color: "#9097a3" }}>
+                <button
+                  onClick={() => {
+                    invalidateCommentKey();
+                    setReplyTo(null);
+                  }}
+                  style={{ border: "none", background: "none", color: "#9097a3" }}
+                >
                   {"\uCDE8\uC18C"}
                 </button>
               </div>
@@ -714,10 +769,14 @@ export default function PostDetailPage() {
                   {"\uC775\uBA85"}
                 </span>
                 <input
+                  data-testid="comment-input"
                   value={commentText}
-                  onChange={(event) => setCommentText(event.target.value)}
+                  onChange={(event) => {
+                    invalidateCommentKey();
+                    setCommentText(event.target.value);
+                  }}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") handleCommentSubmit();
+                    if (event.key === "Enter" && !commentSubmitting) handleCommentSubmit();
                   }}
                   placeholder={commentInputPlaceholder}
                   style={{
@@ -730,8 +789,9 @@ export default function PostDetailPage() {
                   }}
                 />
                 <button
+                  data-testid="comment-submit"
                   onClick={handleCommentSubmit}
-                  disabled={!commentText.trim()}
+                  disabled={!commentText.trim() || commentSubmitting}
                   style={{
                     border: "none",
                     background: "none",
@@ -741,7 +801,7 @@ export default function PostDetailPage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    opacity: commentText.trim() ? 1 : 0.4,
+                    opacity: commentText.trim() && !commentSubmitting ? 1 : 0.4,
                   }}
                 >
                   <SendIcon />

@@ -1,4 +1,5 @@
 import '../styles/globals.css';
+import WebVitalsReporter from '../components/WebVitalsReporter.jsx';
 
 export const metadata = {
   title: '라운지',
@@ -46,6 +47,7 @@ export default function RootLayout({ children }) {
             {children}
           </div>
         </div>
+        <WebVitalsReporter />
       </body>
     </html>
   );

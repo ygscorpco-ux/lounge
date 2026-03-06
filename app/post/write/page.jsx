@@ -7,6 +7,7 @@ export default function WritePage() {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const scrollRef = useRef(null);
+  const submitIdempotencyKeyRef = useRef("");
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -17,6 +18,19 @@ export default function WritePage() {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [poll, setPoll] = useState(null);
+  const [noticeStartAt, setNoticeStartAt] = useState("");
+  const [noticeEndAt, setNoticeEndAt] = useState("");
+
+  function invalidateSubmitKey() {
+    submitIdempotencyKeyRef.current = "";
+  }
+
+  function createIdempotencyKey() {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return `post-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -55,6 +69,7 @@ export default function WritePage() {
   }, [router]);
 
   function handleContentChange(event) {
+    invalidateSubmitKey();
     setContent(event.target.value);
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -125,6 +140,7 @@ export default function WritePage() {
       if (!response.ok) {
         setError(data.error || "\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
       } else {
+        invalidateSubmitKey();
         setImages((prev) => [...prev, data.url]);
       }
     } catch (uploadError) {
@@ -137,10 +153,12 @@ export default function WritePage() {
   }
 
   function removeImage(index) {
+    invalidateSubmitKey();
     setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
   function updatePollOption(index, value) {
+    invalidateSubmitKey();
     setPoll((prev) => {
       const options = [...prev.options];
       options[index] = value;
@@ -150,11 +168,13 @@ export default function WritePage() {
 
   function addPollOption() {
     if (!poll || poll.options.length >= 4) return;
+    invalidateSubmitKey();
     setPoll((prev) => ({ ...prev, options: [...prev.options, ""] }));
   }
 
   function removePollOption(index) {
     if (!poll || poll.options.length <= 2) return;
+    invalidateSubmitKey();
     setPoll((prev) => ({
       ...prev,
       options: prev.options.filter((_, i) => i !== index),
@@ -185,17 +205,40 @@ export default function WritePage() {
         return;
       }
     }
+    if (isAdmin && isNotice && noticeStartAt && noticeEndAt) {
+      const startTime = new Date(noticeStartAt).getTime();
+      const endTime = new Date(noticeEndAt).getTime();
+      if (Number.isFinite(startTime) && Number.isFinite(endTime) && startTime > endTime) {
+        setError("\uACF5\uC9C0 \uC2DC\uC791 \uC77C\uC2DC\uB294 \uC885\uB8CC \uC77C\uC2DC\uBCF4\uB2E4 \uC774\uC804\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4.");
+        return;
+      }
+    }
 
     setSubmitting(true);
     try {
+      const idempotencyKey =
+        submitIdempotencyKeyRef.current || createIdempotencyKey();
+      submitIdempotencyKeyRef.current = idempotencyKey;
+
       const response = await fetch("/api/posts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": idempotencyKey,
+        },
         body: JSON.stringify({
           category: "\uC790\uC720",
           title,
           content,
           isNotice: isAdmin ? isNotice : false,
+          noticeStartAt:
+            isAdmin && isNotice && noticeStartAt
+              ? new Date(noticeStartAt).toISOString()
+              : null,
+          noticeEndAt:
+            isAdmin && isNotice && noticeEndAt
+              ? new Date(noticeEndAt).toISOString()
+              : null,
           images,
           poll: poll
             ? {
@@ -209,9 +252,16 @@ export default function WritePage() {
       const data = await response.json();
       if (!response.ok) {
         setError(data.error || "\uC791\uC131 \uC2E4\uD328");
+        if (response.status < 500) {
+          invalidateSubmitKey();
+        }
       } else {
+        invalidateSubmitKey();
         router.push("/");
       }
+    } catch (submitError) {
+      console.error(submitError);
+      setError("\uC791\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
     } finally {
       setSubmitting(false);
     }
@@ -259,6 +309,7 @@ export default function WritePage() {
 
         <button
           onClick={handleSubmit}
+          data-testid="write-submit"
           disabled={!canSubmit}
           style={{
             background: "none",
@@ -292,7 +343,15 @@ export default function WritePage() {
             <input
               type="checkbox"
               checked={isNotice}
-              onChange={(event) => setIsNotice(event.target.checked)}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                invalidateSubmitKey();
+                setIsNotice(checked);
+                if (!checked) {
+                  setNoticeStartAt("");
+                  setNoticeEndAt("");
+                }
+              }}
               style={{ width: 18, height: 18, accentColor: "#1b4797" }}
             />
             <span style={{ fontSize: 14, color: "#333" }}>
@@ -301,11 +360,76 @@ export default function WritePage() {
           </label>
         )}
 
+        {isAdmin && isNotice && (
+          <div
+            style={{
+              padding: "12px 16px",
+              borderBottom: "1px solid #f0f0f0",
+              background: "#f8fbff",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+            }}
+          >
+            <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <span style={{ fontSize: 12, color: "#59667a", fontWeight: 600 }}>
+                {"\uB178\uCD9C \uC2DC\uC791"}
+              </span>
+              <input
+                type="datetime-local"
+                value={noticeStartAt}
+                onChange={(event) => {
+                  invalidateSubmitKey();
+                  setNoticeStartAt(event.target.value);
+                }}
+                style={{
+                  width: "100%",
+                  border: "1px solid #dbe3ef",
+                  borderRadius: 8,
+                  padding: "8px 10px",
+                  fontSize: 12,
+                  color: "#3e4a5b",
+                  background: "#fff",
+                  outline: "none",
+                }}
+              />
+            </label>
+
+            <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              <span style={{ fontSize: 12, color: "#59667a", fontWeight: 600 }}>
+                {"\uB178\uCD9C \uC885\uB8CC"}
+              </span>
+              <input
+                type="datetime-local"
+                value={noticeEndAt}
+                onChange={(event) => {
+                  invalidateSubmitKey();
+                  setNoticeEndAt(event.target.value);
+                }}
+                style={{
+                  width: "100%",
+                  border: "1px solid #dbe3ef",
+                  borderRadius: 8,
+                  padding: "8px 10px",
+                  fontSize: 12,
+                  color: "#3e4a5b",
+                  background: "#fff",
+                  outline: "none",
+                }}
+              />
+            </label>
+          </div>
+        )}
+
         <input
+          data-testid="write-title-input"
           type="text"
           placeholder={"\uC81C\uBAA9\uC744 \uC785\uB825\uD558\uC138\uC694."}
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            invalidateSubmitKey();
+            setTitle(event.target.value);
+          }}
           style={{
             width: "100%",
             padding: "18px 16px 14px",
@@ -319,6 +443,7 @@ export default function WritePage() {
         />
 
         <textarea
+          data-testid="write-content-input"
           ref={textareaRef}
           placeholder={"\uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694.\n#\uB9E4\uCD9C #\uC9C1\uC6D0\uAD00\uB9AC #\uC6B4\uC601"}
           value={content}
@@ -374,7 +499,13 @@ export default function WritePage() {
               <span style={{ color: "#1b4797", fontSize: 14, fontWeight: 700 }}>
                 {"\uD22C\uD45C"}
               </span>
-              <button onClick={() => setPoll(null)} style={{ border: "none", background: "none", color: "#999" }}>
+              <button
+                onClick={() => {
+                  invalidateSubmitKey();
+                  setPoll(null);
+                }}
+                style={{ border: "none", background: "none", color: "#999" }}
+              >
                 {"\uC0AD\uC81C"}
               </button>
             </div>
@@ -384,7 +515,10 @@ export default function WritePage() {
                 type="text"
                 placeholder={"\uD22C\uD45C \uC9C8\uBB38"}
                 value={poll.question}
-                onChange={(event) => setPoll((prev) => ({ ...prev, question: event.target.value }))}
+                onChange={(event) => {
+                  invalidateSubmitKey();
+                  setPoll((prev) => ({ ...prev, question: event.target.value }));
+                }}
                 style={{ width: "100%", padding: "10px 12px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 14, outline: "none" }}
               />
 
@@ -494,7 +628,12 @@ export default function WritePage() {
         </button>
 
         <button
-          onClick={() => !poll && setPoll({ question: "", options: ["", ""] })}
+          onClick={() => {
+            if (!poll) {
+              invalidateSubmitKey();
+              setPoll({ question: "", options: ["", ""] });
+            }
+          }}
           style={{ border: "none", background: "none", color: poll ? "#1b4797" : "#555", display: "flex", alignItems: "center", gap: 4 }}
         >
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

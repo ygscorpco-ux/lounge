@@ -1,6 +1,7 @@
 "use client";
 import { memo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { buildThumbnailUrl } from "../lib/image.js";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
 const ANON_NAME = "\uC775\uBA85";
@@ -28,6 +29,9 @@ function PostCard({ post, onOpen }) {
   const [pressed, setPressed] = useState(false);
   const displayAuthor = post.author === ADMIN_NAME ? ADMIN_NAME : ANON_NAME;
   const hasComments = !post.isNotice && (post.commentCount || 0) > 0;
+  const thumbnailUrl = post.thumbnailUrl
+    ? buildThumbnailUrl(post.thumbnailUrl, 220, 220)
+    : null;
 
   function openPost() {
     if (typeof onOpen === "function") {
@@ -39,6 +43,8 @@ function PostCard({ post, onOpen }) {
 
   return (
     <article
+      data-testid="feed-post-card"
+      data-post-id={post.id}
       onClick={openPost}
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}
@@ -51,6 +57,8 @@ function PostCard({ post, onOpen }) {
         cursor: "pointer",
         transform: pressed ? "scale(0.997)" : "scale(1)",
         transition: "background-color 120ms ease, transform 120ms ease",
+        contentVisibility: "auto",
+        containIntrinsicSize: "140px",
       }}
     >
       <div
@@ -143,10 +151,14 @@ function PostCard({ post, onOpen }) {
           </div>
         </div>
 
-        {post.thumbnailUrl && (
+        {thumbnailUrl && (
           <img
-            src={post.thumbnailUrl}
+            src={thumbnailUrl}
             alt=""
+            width={84}
+            height={84}
+            loading="lazy"
+            decoding="async"
             style={{
               width: "84px",
               height: "84px",

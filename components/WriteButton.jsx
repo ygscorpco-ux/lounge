@@ -6,6 +6,7 @@ export default function WriteButton() {
 
   return (
     <button
+      data-testid="write-button"
       onClick={() => router.push("/post/write")}
       style={{
         position: "fixed",
