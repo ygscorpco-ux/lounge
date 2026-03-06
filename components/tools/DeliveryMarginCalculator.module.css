@@ -248,8 +248,7 @@
 .platformWideCard {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
+  justify-content: center;
   width: 100%;
   margin-top: 10px;
   min-height: 78px;
@@ -257,7 +256,7 @@
   border: 1.5px solid #dfe8f3;
   border-radius: 22px;
   background: #ffffff;
-  text-align: left;
+  text-align: center;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -280,25 +279,15 @@
 .platformWideMain {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.platformWideIcon {
-  display: inline-flex;
-  align-items: center;
   justify-content: center;
-  width: 54px;
-  height: 54px;
-  border-radius: 18px;
-  background: #f4f7fb;
-  border: 1px solid #edf2f7;
-  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .platformWideLabel {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   min-width: 0;
   color: #0f172a;
@@ -307,16 +296,16 @@
   letter-spacing: -0.03em;
 }
 
-.platformWideAccent {
+.platformWidePencil {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: rgba(27, 71, 151, 0.1);
-  font-size: 14px;
-  line-height: 1;
+  color: rgba(27, 71, 151, 0.78);
+  transform: translateY(1px);
+}
+
+.platformWideCardActive .platformWidePencil {
+  color: #1b4797;
 }
 
 @media (hover: hover) {
