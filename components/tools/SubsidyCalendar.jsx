@@ -68,6 +68,20 @@ function DdayBadge({ endDate, small = false }) {
   );
 }
 
+function getApplyStatus(subsidy) {
+  const dday = getDday(subsidy.end_date);
+
+  if (dday < 0) {
+    return { label: "마감됨", color: "#64748b", bg: "#f1f5f9" };
+  }
+
+  if (subsidy.apply_url || subsidy.url) {
+    return { label: "바로 신청 가능", color: "#1b4797", bg: "#eef5ff" };
+  }
+
+  return { label: "공고 확인 필요", color: "#b45309", bg: "#fff7ed" };
+}
+
 // 달력 그리드 생성 (일~토 기준)
 function buildGrid(year, month) {
   const firstDow = new Date(year, month - 1, 1).getDay(); // 0=Sun
@@ -790,6 +804,7 @@ export default function SubsidyCalendar() {
   const [user, setUser] = useState(null);
   const [bookmarks, setBookmarks] = useState([]); // 북마크 지원금 ID 배열
   const [showBookmarkOnly, setShowBookmarkOnly] = useState(false);
+  const [expandedSubsidyId, setExpandedSubsidyId] = useState(null);
 
   // 북마크 초기 로드
   useEffect(() => {
@@ -840,35 +855,40 @@ export default function SubsidyCalendar() {
   // 캘린더 그리드
   const grid = useMemo(() => buildGrid(year, month), [year, month]);
 
+  const visibleSubsidies = useMemo(() => {
+    if (!showBookmarkOnly) return subsidies;
+    return subsidies.filter((subsidy) => bookmarks.includes(subsidy.id));
+  }, [bookmarks, showBookmarkOnly, subsidies]);
+
   // 날짜별 지원금 그룹핑 (마감일 기준)
   const subsidyByDay = useMemo(() => {
     const map = {};
-    subsidies.forEach((s) => {
+    visibleSubsidies.forEach((s) => {
       const day = parseInt(s.end_date.slice(8, 10));
       if (!map[day]) map[day] = [];
       map[day].push(s);
     });
     return map;
-  }, [subsidies]);
+  }, [visibleSubsidies]);
 
   // 선택 날짜의 지원금
   const selectedSubsidies = useMemo(() => {
     if (!selectedDate) return [];
-    return subsidies.filter(
+    return visibleSubsidies.filter(
       (s) => s.end_date.slice(8, 10) === String(selectedDate).padStart(2, "0"),
     );
-  }, [selectedDate, subsidies]);
+  }, [selectedDate, visibleSubsidies]);
 
   // 리스트 뷰: D-day 임박 순 정렬, 마감 항목은 뒤로
   const sortedList = useMemo(() => {
-    return [...subsidies].sort((a, b) => {
+    return [...visibleSubsidies].sort((a, b) => {
       const da = getDday(a.end_date),
         db = getDday(b.end_date);
       if (da < 0 && db >= 0) return 1;
       if (db < 0 && da >= 0) return -1;
       return da - db;
     });
-  }, [subsidies]);
+  }, [visibleSubsidies]);
 
   function prevMonth() {
     if (month === 1) {
@@ -876,6 +896,7 @@ export default function SubsidyCalendar() {
       setMonth(12);
     } else setMonth((m) => m - 1);
     setSelectedDate(null);
+    setExpandedSubsidyId(null);
   }
   function nextMonth() {
     if (month === 12) {
@@ -883,6 +904,7 @@ export default function SubsidyCalendar() {
       setMonth(1);
     } else setMonth((m) => m + 1);
     setSelectedDate(null);
+    setExpandedSubsidyId(null);
   }
 
   function handleDayClick(day) {
@@ -895,11 +917,11 @@ export default function SubsidyCalendar() {
     today.getFullYear() === year &&
     today.getMonth() + 1 === month &&
     today.getDate() === day;
-  const urgentCount = subsidies.filter((s) => {
+  const urgentCount = visibleSubsidies.filter((s) => {
     const d = getDday(s.end_date);
     return d >= 0 && d <= 7;
   }).length;
-  const activeCount = subsidies.filter((s) => getDday(s.end_date) >= 0).length;
+  const activeCount = visibleSubsidies.filter((s) => getDday(s.end_date) >= 0).length;
   const bookmarkedCount = bookmarks.length;
 
   return (
@@ -1031,13 +1053,16 @@ export default function SubsidyCalendar() {
           marginBottom: "16px",
         }}
       >
-        {[
+        {[ 
           { id: "calendar", label: "캘린더" },
           { id: "list", label: "리스트" },
         ].map((t) => (
           <button
             key={t.id}
-            onClick={() => setView(t.id)}
+            onClick={() => {
+              setView(t.id);
+              setExpandedSubsidyId(null);
+            }}
             style={{
               flex: 1,
               padding: "10px",
@@ -1078,6 +1103,7 @@ export default function SubsidyCalendar() {
                 setCategory(c.id);
                 setSelectedDate(null);
                 setShowBookmarkOnly(false);
+                setExpandedSubsidyId(null);
               }}
               style={{
                 padding: "8px 14px",
@@ -1104,6 +1130,7 @@ export default function SubsidyCalendar() {
             setShowBookmarkOnly((v) => !v);
             setCategory("전체");
             setSelectedDate(null);
+            setExpandedSubsidyId(null);
           }}
           style={{
             padding: "8px 14px",
@@ -1127,6 +1154,50 @@ export default function SubsidyCalendar() {
       {/* ── 캘린더 뷰 ── */}
       {view === "calendar" && (
         <div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "10px",
+              background: "#fff",
+              borderRadius: "18px",
+              padding: "14px 16px",
+              border: "1px solid #e6edf5",
+              marginBottom: "12px",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
+                스크랩한 사업 마감일도 캘린더에 반영돼요
+              </div>
+              <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
+                관심 있는 공고만 따로 보면 마감일을 놓치기 쉽지 않습니다.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowBookmarkOnly((v) => !v);
+                setSelectedDate(null);
+                setExpandedSubsidyId(null);
+              }}
+              style={{
+                flexShrink: 0,
+                padding: "8px 12px",
+                borderRadius: "999px",
+                border: showBookmarkOnly ? "1px solid #cfe0f7" : "1px solid #dbe5f1",
+                background: showBookmarkOnly ? "#eef5ff" : "#fff",
+                color: showBookmarkOnly ? "#1b4797" : "#475569",
+                fontSize: "12px",
+                fontWeight: 800,
+                cursor: "pointer",
+              }}
+            >
+              {showBookmarkOnly ? "전체 일정 보기" : "관심 일정만 보기"}
+            </button>
+          </div>
+
           {/* 로딩 스켈레톤 */}
           {loading && (
             <div
@@ -1289,6 +1360,10 @@ export default function SubsidyCalendar() {
                 const dow = idx % 7;
                 const hasSub = subsidyByDay[day];
                 const dots = hasSub ? hasSub.slice(0, 3) : [];
+                const bookmarkedItems = hasSub
+                  ? hasSub.filter((item) => bookmarks.includes(item.id))
+                  : [];
+                const hasBookmarked = bookmarkedItems.length > 0;
                 const isSelected = day === selectedDate;
                 const isTod = isToday(day);
                 const subsidyCount = hasSub ? hasSub.length : 0;
@@ -1322,6 +1397,8 @@ export default function SubsidyCalendar() {
                       border:
                         isSelected
                           ? "1.5px solid #1b4797"
+                          : hasBookmarked
+                            ? "1.5px solid rgba(27,71,151,0.28)"
                           : hasSub
                             ? "1.5px solid rgba(27,71,151,0.16)"
                             : isTod
@@ -1329,6 +1406,8 @@ export default function SubsidyCalendar() {
                               : "1px solid #eef3f8",
                       background: isSelected
                         ? "linear-gradient(180deg, #1b4797 0%, #234f9f 100%)"
+                        : hasBookmarked
+                          ? "linear-gradient(180deg, #f5f9ff 0%, #eaf2ff 100%)"
                         : hasSub
                           ? "linear-gradient(180deg, #fbfdff 0%, #f1f6ff 100%)"
                           : isTod
@@ -1368,6 +1447,8 @@ export default function SubsidyCalendar() {
                               ? "rgba(255,255,255,0.18)"
                               : hasUrgent
                                 ? "#fff2ef"
+                                : hasBookmarked
+                                  ? "#dfe9fb"
                                 : "#e9f1ff",
                             color: isSelected
                               ? "#ffffff"
@@ -1417,6 +1498,8 @@ export default function SubsidyCalendar() {
                               borderRadius: "50%",
                               background: isSelected
                                 ? "rgba(255,255,255,0.8)"
+                                : bookmarks.includes(s.id)
+                                  ? "#1b4797"
                                 : CAT_MAP[s.category]?.color || "#1b4797",
                             }}
                           />
@@ -1596,13 +1679,16 @@ export default function SubsidyCalendar() {
               const expired = dday < 0;
               const urgent = dday >= 0 && dday <= 7; // D-7 이내 = 긴급
               const isBookmarked = bookmarks.includes(s.id);
+              const expanded = expandedSubsidyId === s.id;
+              const applyStatus = getApplyStatus(s);
+              const canApply = Boolean(s.apply_url || s.url) && !expired;
               return (
                 <div
                   key={s.id}
                   style={{
                     background: "#fff",
                     borderRadius: "16px",
-                    padding: "14px",
+                    padding: "12px 12px 11px",
                     boxShadow: urgent
                       ? "0 0 0 2px #e74c3c40"
                       : "var(--shadow-sm)",
@@ -1614,39 +1700,60 @@ export default function SubsidyCalendar() {
                     position: "relative",
                   }}
                 >
-                  {/* 뱃지 줄 */}
                   <div
                     style={{
                       display: "flex",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       justifyContent: "space-between",
+                      gap: "10px",
                       marginBottom: "8px",
                     }}
                   >
-                    <span
+                    <div
                       style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: cat.color,
-                        background: cat.bg,
-                        padding: "3px 10px",
-                        borderRadius: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        flexWrap: "wrap",
                       }}
                     >
-                      {s.category}
-                    </span>
-                    <div
+                      <span
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: cat.color,
+                          background: cat.bg,
+                          padding: "3px 8px",
+                          borderRadius: "999px",
                         }}
                       >
-                      {/* 북마크 버튼 */}
+                        {s.category}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: applyStatus.color,
+                          background: applyStatus.bg,
+                          padding: "3px 8px",
+                          borderRadius: "999px",
+                        }}
+                      >
+                        {applyStatus.label}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        flexShrink: 0,
+                      }}
+                    >
                       <button
                         onClick={() => toggleBookmark(s.id)}
                         style={{
-                          height: "30px",
+                          height: "28px",
                           padding: "0 10px",
                           borderRadius: "999px",
                           border: isBookmarked
@@ -1655,7 +1762,7 @@ export default function SubsidyCalendar() {
                           background: isBookmarked ? "#eef5ff" : "#f8fafc",
                           color: isBookmarked ? "#1b4797" : "#64748b",
                           cursor: "pointer",
-                          fontSize: "12px",
+                          fontSize: "11px",
                           fontWeight: 800,
                           lineHeight: 1,
                           transition: "all 0.15s",
@@ -1667,96 +1774,140 @@ export default function SubsidyCalendar() {
                     </div>
                   </div>
 
-                  {/* 제목 */}
                   <div
                     style={{
-                      fontSize: "15px",
+                      fontSize: "14px",
                       fontWeight: 700,
                       color: "var(--color-gray-900)",
-                      marginBottom: "5px",
+                      marginBottom: "4px",
                       lineHeight: 1.35,
                     }}
                   >
                     {s.title}
                   </div>
 
-                  {/* 신청기간 + 대상 */}
-                  {(s.start_date || s.end_date) && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "10px",
+                      marginBottom: expanded ? "8px" : "0",
+                    }}
+                  >
                     <div
-                        style={{
-                          fontSize: "12px",
-                          color: "var(--color-gray-500)",
-                          marginBottom: "3px",
-                        }}
+                      style={{
+                        minWidth: 0,
+                        fontSize: "12px",
+                        color: "var(--color-gray-500)",
+                        lineHeight: 1.45,
+                      }}
                     >
-                      📅 신청기간:{" "}
-                      {s.start_date
-                        ? `${s.start_date.slice(5).replace("-", ".")} ~ `
-                        : ""}
-                      {s.end_date.slice(5).replace("-", ".")}
+                      {s.target || "대상 조건은 공고문에서 확인하세요"}
                     </div>
-                  )}
-                  {s.target && (
-                    <div
-                        style={{
-                          fontSize: "12px",
-                          color: "var(--color-gray-500)",
-                          marginBottom: "3px",
-                        }}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedSubsidyId((prev) => (prev === s.id ? null : s.id))
+                      }
+                      style={{
+                        flexShrink: 0,
+                        height: "28px",
+                        padding: "0 10px",
+                        borderRadius: "999px",
+                        border: "1px solid #dbe5f1",
+                        background: "#fff",
+                        color: "#475569",
+                        cursor: "pointer",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                      }}
                     >
-                      👥 대상: {s.target}
-                    </div>
-                  )}
+                      {expanded ? "접기" : "상세보기"}
+                    </button>
+                  </div>
+
                   {s.amount && (
                     <div
-                        style={{
-                          fontSize: "12px",
-                          color: "var(--color-primary)",
-                          fontWeight: 600,
-                          marginBottom: "6px",
-                        }}
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--color-primary)",
+                        fontWeight: 700,
+                        marginTop: "6px",
+                      }}
                     >
                       💰 {s.amount}
                     </div>
                   )}
 
-                  {/* 설명 */}
-                  {s.description && (
+                  {expanded && (
                     <div
-                        style={{
-                          fontSize: "12px",
-                          color: "var(--color-gray-700)",
-                          lineHeight: 1.5,
-                          marginBottom: "10px",
-                          paddingTop: "8px",
-                          borderTop: "1px solid var(--color-gray-200)",
-                        }}
+                      style={{
+                        marginTop: "10px",
+                        paddingTop: "10px",
+                        borderTop: "1px solid var(--color-gray-200)",
+                      }}
                     >
-                      {s.description}
+                      {(s.start_date || s.end_date) && (
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--color-gray-500)",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          📅 신청기간:{" "}
+                          {s.start_date
+                            ? `${s.start_date.slice(5).replace("-", ".")} ~ `
+                            : ""}
+                          {s.end_date.slice(5).replace("-", ".")}
+                        </div>
+                      )}
+                      {s.target && (
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--color-gray-500)",
+                            marginBottom: s.description ? "6px" : "0",
+                          }}
+                        >
+                          👥 대상: {s.target}
+                        </div>
+                      )}
+                      {s.description ? (
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--color-gray-700)",
+                            lineHeight: 1.55,
+                          }}
+                        >
+                          {s.description}
+                        </div>
+                      ) : null}
                     </div>
                   )}
 
-                  {/* 버튼 */}
                   <div
                     style={{
                       display: "flex",
                       gap: "8px",
-                      marginTop: s.description ? "0" : "10px",
+                      marginTop: expanded ? "10px" : "9px",
                     }}
                   >
-                    {(s.apply_url || s.url) ? (
+                    {canApply ? (
                       <a
                         href={s.apply_url || s.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
                           flex: 1,
-                          padding: "10px 12px",
+                          padding: "9px 12px",
                           borderRadius: "10px",
                           textAlign: "center",
                           background: "var(--color-primary)",
                           color: "#fff",
-                          fontSize: "13px",
+                          fontSize: "12px",
                           fontWeight: 700,
                           textDecoration: "none",
                           display: "block",
@@ -1768,7 +1919,7 @@ export default function SubsidyCalendar() {
                       <div
                         style={{
                           flex: 1,
-                          padding: "10px 12px",
+                          padding: "9px 12px",
                           borderRadius: "10px",
                           textAlign: "center",
                           background: "var(--color-gray-100)",
@@ -1792,12 +1943,12 @@ export default function SubsidyCalendar() {
                           else alert(delData.error || "삭제에 실패했습니다");
                         }}
                         style={{
-                          padding: "10px 12px",
+                          padding: "9px 10px",
                           borderRadius: "10px",
                           border: "none",
                           background: "#fff0f0",
                           color: "var(--color-danger)",
-                          fontSize: "12px",
+                          fontSize: "11px",
                           fontWeight: 700,
                           cursor: "pointer",
                         }}
@@ -1856,7 +2007,7 @@ export default function SubsidyCalendar() {
             {
               icon: "🏛️",
               name: "중소벤처기업부",
-              desc: "정책자금·창업지원 공고",
+              desc: "소상공인 지원사업 공고",
               url: "https://www.mss.go.kr",
               color: "#f39c12",
             },
@@ -1874,30 +2025,33 @@ export default function SubsidyCalendar() {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                display: "flex",
+                display: "grid",
+                gridTemplateColumns: "40px 1fr",
                 alignItems: "center",
                 gap: "10px",
-                padding: "12px 14px",
+                padding: "12px",
                 borderRadius: "14px",
                 background: "#fff",
                 border: "1.5px solid var(--color-gray-200)",
                 textDecoration: "none",
                 transition: "border-color 0.15s, box-shadow 0.15s",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                minHeight: "86px",
+                minHeight: "82px",
                 boxSizing: "border-box",
               }}
             >
               <span
                 style={{
-                  width: "34px",
-                  height: "34px",
+                  width: "40px",
+                  height: "40px",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "22px",
+                  fontSize: "21px",
                   lineHeight: 1,
                   flexShrink: 0,
+                  borderRadius: "12px",
+                  background: "#f8fafc",
                 }}
               >
                 {link.icon}

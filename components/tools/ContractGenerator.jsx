@@ -347,7 +347,15 @@ export default function ContractGenerator() {
     try {
       const r = await fetch('/api/contract/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...d, contractPeriod, businessName: d.businessName, workerName: d.workerName, wage: d.wage, endDate: d.payday }),
+        body: JSON.stringify({
+          ...d,
+          address: d.bizAddress,
+          contractPeriod,
+          businessName: d.businessName,
+          workerName: d.workerName,
+          wage: d.wage,
+          endDate: d.payday,
+        }),
       });
       const res = await r.json();
       if (res.success) setStep(4);

@@ -9,8 +9,13 @@ export async function POST(request) {
 
     const body = await request.json();
 
-    const required = ['businessName', 'ceoName', 'address', 'workerName', 'endDate', 'wage'];
-    const missing  = required.filter(k => !body[k]);
+    const payload = {
+      ...body,
+      address: body.address || body.bizAddress || '',
+    };
+
+    const required = ['businessName', 'ceoName', 'workerName', 'endDate', 'wage'];
+    const missing  = required.filter(k => !payload[k]);
 
     if (missing.length) {
       return NextResponse.json({ success: false, error: `미입력 항목: ${missing.join(', ')}` }, { status: 400 });

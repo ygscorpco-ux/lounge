@@ -47,23 +47,28 @@ function AnimatedNum({ value }) {
 }
 
 // 토글 스위치
-function Toggle({ on, onChange }) {
+function Toggle({ on, onChange, disabled = false }) {
   return (
     <button
       type="button"
       aria-pressed={on}
-      onClick={() => onChange(!on)}
+      aria-disabled={disabled}
+      disabled={disabled}
+      onClick={() => {
+        if (!disabled) onChange(!on);
+      }}
       style={{
         width: '50px',
         height: '30px',
         borderRadius: '999px',
-        border: '1px solid rgba(27,71,151,0.12)',
-        background: on ? '#1b4797' : '#d9e0ea',
+        border: disabled ? '1px solid #d5dde7' : '1px solid rgba(27,71,151,0.12)',
+        background: disabled ? '#e8edf3' : on ? '#1b4797' : '#d9e0ea',
         position: 'relative',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         flexShrink: 0,
         padding: 0,
-        boxShadow: on ? '0 6px 14px rgba(27,71,151,0.18)' : 'none',
+        opacity: disabled ? 0.72 : 1,
+        boxShadow: !disabled && on ? '0 6px 14px rgba(27,71,151,0.18)' : 'none',
         transition: 'background 0.18s ease, box-shadow 0.18s ease',
       }}
     >
@@ -75,7 +80,7 @@ function Toggle({ on, onChange }) {
           width: '22px',
           height: '22px',
           borderRadius: '50%',
-          background: '#fff',
+          background: disabled ? '#f8fafc' : '#fff',
           boxShadow: '0 2px 6px rgba(15,23,42,0.18)',
           transition: 'left 0.18s ease',
         }}
@@ -347,6 +352,7 @@ export default function LaborCostCalculator() {
   const wage = parseFloat(String(hourlyWage).replace(/,/g, '')) || 0;
   const weeklyHours = hoursPerDay * selectedDays.length;
   const hasWeeklyAllowance = weeklyHours >= 15;
+  const tax33Disabled = employmentType !== 'regular' || insuranceOn;
 
   // 주휴시간: 주 소정근로시간 / 40 × 8 (최대 8시간)
   const weeklyAllowanceHours = hasWeeklyAllowance
@@ -364,8 +370,7 @@ export default function LaborCostCalculator() {
 
     const grossWage = monthlyBase + monthlyWeeklyAllowance;
 
-    // 단기·일용직 + 보험OFF 시 공제 없음
-    const applyInsurance = insuranceOn && employmentType === 'regular';
+    const applyInsurance = insuranceOn;
     const employeeDeduction    = applyInsurance ? Math.round(grossWage * EMPLOYEE_TOTAL_RATE)  : 0;
     const employerContribution = applyInsurance ? Math.round(grossWage * EMPLOYER_EXTRA_RATE) : 0;
 
@@ -399,6 +404,12 @@ export default function LaborCostCalculator() {
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     );
   }
+
+  useEffect(() => {
+    if (tax33Disabled && tax33On) {
+      setTax33On(false);
+    }
+  }, [tax33Disabled, tax33On]);
 
   const cardStyle = {
     background: '#fff',
@@ -480,56 +491,6 @@ export default function LaborCostCalculator() {
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', padding: '14px 14px 34px', background: 'var(--color-bg)' }}>
-
-      <div style={{
-        background: '#fff',
-        borderRadius: '24px',
-        padding: '18px',
-        border: '1px solid #e6edf5',
-        boxShadow: '0 12px 28px rgba(15,23,42,0.04)',
-        marginBottom: '14px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>빠른 계산</div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-              시급과 근무시간을 넣으면 월 인건비를 바로 봅니다.
-            </div>
-          </div>
-          <div style={{
-            padding: '6px 10px',
-            borderRadius: '999px',
-            background: 'rgba(27,71,151,0.08)',
-            color: '#1b4797',
-            fontSize: '11px',
-            fontWeight: 800,
-            flexShrink: 0,
-          }}>
-            2026 기준
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
-          {[
-            `주 ${selectedDays.length}일`,
-            `하루 ${hoursPerDay}시간`,
-            hasWeeklyAllowance ? '주휴수당 포함' : '주휴수당 미포함',
-          ].map((item) => (
-            <span
-              key={item}
-              style={{
-                padding: '7px 11px',
-                borderRadius: '999px',
-                background: item === '주휴수당 포함' ? 'rgba(27,71,151,0.08)' : '#f4f7fb',
-                color: item === '주휴수당 포함' ? '#1b4797' : '#334155',
-                fontSize: '12px',
-                fontWeight: 700,
-              }}
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
 
       {/* ── Step 1: 기본 정보 ── */}
       <div style={cardStyle}>
@@ -730,18 +691,24 @@ export default function LaborCostCalculator() {
           )}
         </div>
 
-        {/* 3.3% 원천징수 — 고용형태 관계없이 알바 요청 시 적용 가능 */}
-        <div style={{ borderTop: '1px solid var(--color-gray-200)', paddingTop: '14px' }}>
+        {/* 3.3% 원천징수 */}
+        <div
+          style={{
+            borderTop: '1px solid var(--color-gray-200)',
+            paddingTop: '14px',
+            opacity: tax33Disabled ? 0.6 : 1,
+          }}
+        >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-gray-700)' }}>3.3% 원천징수</span>
                 <span style={{ fontSize: '11px', color: 'var(--color-gray-500)', marginLeft: '6px' }}>사업소득세 3% + 지방소득세 0.3%</span>
               </div>
-              <Toggle on={tax33On} onChange={setTax33On} />
+              <Toggle on={tax33On} onChange={setTax33On} disabled={tax33Disabled} />
             </div>
             {tax33On && (
               <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', background: 'var(--color-gray-100)', borderRadius: '8px', padding: '8px 12px', lineHeight: 1.6 }}>
-                알바가 요청하거나 프리랜서 계약 시 적용해요. 사장님이 세금을 대신 납부하고 근로자 실수령액에서 차감해요.
+                프리랜서 계약시 적용해요.
               </div>
             )}
         </div>

@@ -5,6 +5,33 @@ import { NextResponse } from 'next/server';
 
 const MIN_WAGE = getCurrentMinWage();
 
+function normalizeEmploymentType(value) {
+  if (value === '단기' || value === 'temp') return '단기';
+  if (value === '일용' || value === 'daily') return '일용';
+  return '정규';
+}
+
+async function retryAfterEmploymentTypeFix(task) {
+  try {
+    return await task();
+  } catch (error) {
+    if (!/employment_type/i.test(error.message)) {
+      throw error;
+    }
+
+    try {
+      await pool.query(`
+        ALTER TABLE workers
+        MODIFY COLUMN employment_type VARCHAR(10)
+        NOT NULL DEFAULT '정규'
+      `);
+      return await task();
+    } catch {
+      throw error;
+    }
+  }
+}
+
 // 내 직원 목록 조회
 export async function GET() {
   try {
@@ -48,20 +75,22 @@ export async function POST(request) {
     const [[countRow]] = await pool.query('SELECT COUNT(*) as cnt FROM workers WHERE user_id = ? AND is_active=1', [user.id]);
     const autoColor = color || COLORS[countRow.cnt % COLORS.length];
 
-    const [result] = await pool.query(
+    const normalizedEmploymentType = normalizeEmploymentType(employment_type);
+
+    const [result] = await retryAfterEmploymentTypeFix(() => pool.query(
       `INSERT INTO workers
         (user_id, name, phone, birth_date, employment_type, hourly_wage, work_days,
          start_time, end_time, contract_start, contract_end, task_description, color)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         user.id, name, phone || null, birth_date || null,
-        employment_type || '정규', hourly_wage || MIN_WAGE,
+        normalizedEmploymentType, hourly_wage || MIN_WAGE,
         Array.isArray(work_days) ? work_days.join(',') : (work_days || '월,화,수,목,금'),
         start_time || '09:00', end_time || '18:00',
         contract_start || null, contract_end || null,
         task_description || null, autoColor,
       ]
-    );
+    ));
 
     return NextResponse.json({ success: true, data: { id: result.insertId } });
   } catch (error) {

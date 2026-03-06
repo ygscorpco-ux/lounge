@@ -23,6 +23,34 @@ const MIN_WAGE = getCurrentMinWage(); // 연도별 자동 선택
 const pad2 = n => String(n).padStart(2, '0');
 const todayStr = () => { const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`; };
 
+function normalizeEmploymentTypeLabel(value) {
+  if (value === '단기' || value === 'temp') return '단기';
+  if (value === '일용' || value === 'daily') return '일용';
+  return '정규';
+}
+
+function formatDateTextInput(value) {
+  const digits = String(value || '').replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+}
+
+function normalizeDateTextInput(value) {
+  if (!value) return '';
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const digits = String(value).replace(/\D/g, '');
+  if (digits.length !== 8) {
+    return null;
+  }
+
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+}
+
 // 주의 월요일 날짜 계산
 function getWeekStart(date) {
   const d = new Date(date);
@@ -118,10 +146,33 @@ const EMPTY_FORM = {
   task_description: '',
 };
 
+function buildWorkerFormState(initial) {
+  if (!initial) {
+    return { ...EMPTY_FORM };
+  }
+
+  return {
+    ...EMPTY_FORM,
+    ...initial,
+    employment_type: normalizeEmploymentTypeLabel(initial.employment_type),
+    birth_date: initial.birth_date || '',
+    hourly_wage: initial.hourly_wage ? String(initial.hourly_wage) : '',
+    work_days: Array.isArray(initial.work_days)
+      ? initial.work_days
+      : typeof initial.work_days === 'string' && initial.work_days.length > 0
+        ? initial.work_days.split(',').map((day) => day.trim()).filter(Boolean)
+        : [...EMPTY_FORM.work_days],
+  };
+}
+
 function WorkerForm({ initial, onSave, onContract }) {
-  const [f, setF] = useState(initial || EMPTY_FORM);
+  const [f, setF] = useState(() => buildWorkerFormState(initial));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+
+  useEffect(() => {
+    setF(buildWorkerFormState(initial));
+  }, [initial]);
 
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
 
@@ -134,9 +185,21 @@ function WorkerForm({ initial, onSave, onContract }) {
 
   async function handleSave(goContract = false) {
     if (!f.name.trim()) { setErr('이름은 필수입니다'); return; }
+
+    const normalizedBirthDate = normalizeDateTextInput(f.birth_date);
+    if (f.birth_date && !normalizedBirthDate) {
+      setErr('생년월일은 YYYY-MM-DD 형식으로 입력해주세요.');
+      return;
+    }
+
     setSaving(true);
     setErr('');
-    const body = { ...f, hourly_wage: parseInt(f.hourly_wage) || MIN_WAGE };
+    const body = {
+      ...f,
+      birth_date: normalizedBirthDate || null,
+      employment_type: normalizeEmploymentTypeLabel(f.employment_type),
+      hourly_wage: parseInt(f.hourly_wage) || MIN_WAGE,
+    };
     const url = initial?.id ? `/api/workers/${initial.id}` : '/api/workers';
     const method = initial?.id ? 'PUT' : 'POST';
     try {
@@ -148,13 +211,17 @@ function WorkerForm({ initial, onSave, onContract }) {
     setSaving(false);
   }
 
-  const inp = (k, props = {}) => (
-    <input
-      value={f[k]} onChange={e => set(k, e.target.value)}
-      style={{ width: '100%', padding: '10px 12px', fontSize: '14px', border: '1.5px solid var(--color-gray-300)', borderRadius: '8px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
-      {...props}
-    />
-  );
+  const inp = (k, props = {}) => {
+    const { style, ...rest } = props;
+
+    return (
+      <input
+        value={f[k]} onChange={e => set(k, e.target.value)}
+        style={{ width: '100%', padding: '10px 12px', fontSize: '14px', border: '1.5px solid var(--color-gray-300)', borderRadius: '8px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', ...style }}
+        {...rest}
+      />
+    );
+  };
 
   return (
     <div>
@@ -170,7 +237,15 @@ function WorkerForm({ initial, onSave, onContract }) {
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '11px', color: 'var(--color-gray-500)', marginBottom: '4px' }}>생년월일</div>
-          {inp('birth_date', { type: 'date', 'aria-label': '생년월일', title: '생년월일' })}
+          {inp('birth_date', {
+            type: 'text',
+            inputMode: 'numeric',
+            placeholder: '1990-01-01',
+            maxLength: 10,
+            'aria-label': '생년월일',
+            title: '생년월일',
+            onChange: (e) => set('birth_date', formatDateTextInput(e.target.value)),
+          })}
         </div>
       </div>
 
@@ -192,7 +267,7 @@ function WorkerForm({ initial, onSave, onContract }) {
         {parseInt(f.hourly_wage) > 0 && parseInt(f.hourly_wage) < MIN_WAGE && (
           <div style={{ fontSize: '12px', color: '#f39c12', marginTop: '4px' }}>⚠️ 최저시급({MIN_WAGE.toLocaleString()}원) 미만이에요</div>
         )}
-        <button onClick={() => set('hourly_wage', String(MIN_WAGE))} style={{ position: 'absolute', right: '10px', top: '10px', fontSize: '11px', color: 'var(--color-primary)', background: 'var(--color-primary-bg)', border: 'none', borderRadius: '6px', padding: '2px 7px', cursor: 'pointer' }}>최저</button>
+        <button onClick={() => set('hourly_wage', String(MIN_WAGE))} style={{ position: 'absolute', right: '10px', top: '10px', fontSize: '11px', color: 'var(--color-primary)', background: 'var(--color-primary-bg)', border: 'none', borderRadius: '6px', padding: '2px 7px', cursor: 'pointer' }}>최저시급 적용</button>
       </div>
 
       {/* 단기·일용 계약기간 */}

@@ -5,6 +5,33 @@ import { NextResponse } from 'next/server';
 
 const MIN_WAGE = getCurrentMinWage();
 
+function normalizeEmploymentType(value) {
+  if (value === '단기' || value === 'temp') return '단기';
+  if (value === '일용' || value === 'daily') return '일용';
+  return '정규';
+}
+
+async function retryAfterEmploymentTypeFix(task) {
+  try {
+    return await task();
+  } catch (error) {
+    if (!/employment_type/i.test(error.message)) {
+      throw error;
+    }
+
+    try {
+      await pool.query(`
+        ALTER TABLE workers
+        MODIFY COLUMN employment_type VARCHAR(10)
+        NOT NULL DEFAULT '정규'
+      `);
+      return await task();
+    } catch {
+      throw error;
+    }
+  }
+}
+
 export async function GET(request, { params }) {
   try {
     const user = await getCurrentUser();
@@ -43,14 +70,16 @@ export async function PUT(request, { params }) {
       contract_start, contract_end, task_description, color,
     } = body;
 
-    await pool.query(
+    const normalizedEmploymentType = normalizeEmploymentType(employment_type);
+
+    await retryAfterEmploymentTypeFix(() => pool.query(
       `UPDATE workers SET
         name=?, phone=?, birth_date=?, employment_type=?, hourly_wage=?,
         work_days=?, start_time=?, end_time=?, contract_start=?, contract_end=?,
         task_description=?, color=?
        WHERE id = ? AND user_id = ?`,
       [
-        name, phone || null, birth_date || null, employment_type || '정규',
+        name, phone || null, birth_date || null, normalizedEmploymentType,
         hourly_wage || MIN_WAGE,
         Array.isArray(work_days) ? work_days.join(',') : (work_days || '월,화,수,목,금'),
         start_time || '09:00', end_time || '18:00',
@@ -58,7 +87,7 @@ export async function PUT(request, { params }) {
         task_description || null, color || '#1b4797',
         params.id, user.id,
       ]
-    );
+    ));
 
     return NextResponse.json({ success: true });
   } catch (error) {
