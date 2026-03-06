@@ -5,7 +5,7 @@ import CommentItem from "../../../components/CommentItem.jsx";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
 const ANON_NAME = "\uC775\uBA85";
-const AD_IMAGE_SRC = "";
+const AD_IMAGE_SRC = "/ads/post-detail-ad.png";
 const AD_IMAGE_ALT = "\uAC8C\uC2DC\uAE00 \uC0C1\uC138 \uAD11\uACE0";
 
 function formatRelativeTime(dateString) {
@@ -91,6 +91,7 @@ export default function PostDetailPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [poll, setPoll] = useState(null);
   const [voting, setVoting] = useState(false);
+  const [adImageError, setAdImageError] = useState(false);
 
   async function fetchPost() {
     const response = await fetch("/api/posts/" + id);
@@ -300,6 +301,7 @@ export default function PostDetailPage() {
   const childComments = comments.filter((comment) => comment.parentId);
   const displayAuthor = post.author === ADMIN_NAME ? ADMIN_NAME : ANON_NAME;
   const commentInputPlaceholder = replyTo ? "\uB2F5\uAE00\uC744 \uC785\uB825\uD558\uC138\uC694." : "\uB313\uAE00\uC744 \uC785\uB825\uD558\uC138\uC694.";
+  const canShowAdImage = !!AD_IMAGE_SRC && !adImageError;
 
   return (
     <div
@@ -548,11 +550,19 @@ export default function PostDetailPage() {
             {"\uAD11\uACE0"}
           </div>
 
-          {AD_IMAGE_SRC ? (
+          {canShowAdImage ? (
             <img
               src={AD_IMAGE_SRC}
               alt={AD_IMAGE_ALT}
-              style={{ width: "100%", aspectRatio: "4 / 1", objectFit: "cover", borderRadius: 10, display: "block" }}
+              onError={() => setAdImageError(true)}
+              style={{
+                width: "100%",
+                aspectRatio: "4 / 1",
+                objectFit: "cover",
+                borderRadius: 10,
+                display: "block",
+                background: "#edf1f7",
+              }}
             />
           ) : (
             <div
