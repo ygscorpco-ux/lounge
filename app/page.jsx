@@ -137,7 +137,7 @@ const BestUserAvatar = () => (
       width: 34,
       height: 34,
       borderRadius: 10,
-      background: "#f1f4f8",
+      background: "#f2f4f7",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -548,9 +548,7 @@ export default function Home() {
           <div
             style={{
               padding: "16px 16px 12px",
-              background: "#f4f7fc",
-              borderTop: "1px solid #edf1f7",
-              borderBottom: "1px solid #edf1f7",
+              background: "#ffffff",
             }}
           >
             <div
@@ -579,8 +577,8 @@ export default function Home() {
                     borderRadius: "20px",
                     padding: "14px 14px 13px",
                     cursor: "pointer",
-                    border: "1px solid #e5ebf5",
-                    boxShadow: "0 1px 2px rgba(27,71,151,0.04)",
+                    border: "1px solid #e6eaf0",
+                    boxShadow: "0 2px 7px rgba(15,23,42,0.06)",
                   }}
                 >
                   <div
