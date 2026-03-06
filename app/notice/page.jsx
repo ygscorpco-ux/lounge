@@ -17,16 +17,8 @@ export default function NoticePage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [savingPostId, setSavingPostId] = useState(null);
-  const [orderDrafts, setOrderDrafts] = useState({});
+  const [reordering, setReordering] = useState(false);
   const router = useRouter();
-
-  function makeOrderDrafts(items) {
-    const next = {};
-    for (const item of items) {
-      next[item.id] = String(item.noticeOrder ?? 4);
-    }
-    return next;
-  }
 
   async function loadNotices(adminMode) {
     setLoading(true);
@@ -43,9 +35,7 @@ export default function NoticePage() {
       }
 
       const data = await response.json();
-      const list = data.posts || [];
-      setPosts(list);
-      setOrderDrafts(makeOrderDrafts(list));
+      setPosts(data.posts || []);
     } catch (error) {
       console.error(error);
       setPosts([]);
@@ -73,20 +63,24 @@ export default function NoticePage() {
     bootstrap();
   }, []);
 
-  async function updateNotice(postId, payload) {
+  async function updateNoticeVisibility(postId, visible) {
     setSavingPostId(postId);
     try {
       const response = await fetch("/api/admin/notices", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, ...payload }),
+        body: JSON.stringify({ postId, noticeVisible: visible }),
       });
       const data = await response.json();
       if (!response.ok) {
         alert(data.error || "업데이트에 실패했습니다.");
         return;
       }
-      await loadNotices(true);
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, noticeVisible: visible } : post,
+        ),
+      );
     } catch (error) {
       console.error(error);
       alert("업데이트 중 오류가 발생했습니다.");
@@ -94,14 +88,41 @@ export default function NoticePage() {
     setSavingPostId(null);
   }
 
-  async function applyOrder(postId) {
-    const raw = orderDrafts[postId];
-    const parsed = Number(raw);
-    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 4) {
-      alert("순서는 1~4 정수로 입력해주세요.");
-      return;
+  async function persistOrder(nextPosts) {
+    setReordering(true);
+    try {
+      const orderedIds = nextPosts.map((post) => post.id);
+      const response = await fetch("/api/admin/notices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || "순서 저장에 실패했습니다.");
+        await loadNotices(true);
+      } else {
+        setPosts(nextPosts);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("순서 저장 중 오류가 발생했습니다.");
+      await loadNotices(true);
     }
-    await updateNotice(postId, { noticeOrder: parsed });
+    setReordering(false);
+  }
+
+  function movePost(index, direction) {
+    if (reordering) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= posts.length) return;
+
+    const nextPosts = [...posts];
+    const tmp = nextPosts[index];
+    nextPosts[index] = nextPosts[targetIndex];
+    nextPosts[targetIndex] = tmp;
+    setPosts(nextPosts);
+    persistOrder(nextPosts);
   }
 
   return (
@@ -138,7 +159,7 @@ export default function NoticePage() {
             color: "#4f5c70",
           }}
         >
-          {"\uACF5\uC9C0 \uAD00\uB9AC: \uB178\uCD9C OFF \uC2DC \uC0AC\uC6A9\uC790\uC5D0\uAC8C \uC228\uAE40, \uC21C\uC11C 1~4 \uC22B\uC790\uB85C \uD648 \uACF5\uC9C0 \uC601\uC5ED \uB178\uCD9C \uC6B0\uC120\uC21C\uC704\uB97C \uC815\uD569\uB2C8\uB2E4."}
+          {"\uACF5\uC9C0 \uAD00\uB9AC: \uB178\uCD9C OFF \uC2DC \uC0AC\uC6A9\uC790\uC5D0\uAC8C \uC228\uAE40, \uC704/\uC544\uB798 \uBC84\uD2BC\uC73C\uB85C \uC21C\uC11C \uC815\uB82C (\uD648\uC5D0\uC11C\uB294 \uC815\uB82C \uB41C \uC21C\uC11C \uC0C1\uC704 4\uAC1C\uB9CC \uB178\uCD9C)."}
         </div>
       )}
 
@@ -147,7 +168,7 @@ export default function NoticePage() {
       )}
 
       {!loading &&
-        posts.map((post) => (
+        posts.map((post, index) => (
           <article
             key={post.id}
             onClick={() => router.push("/post/" + post.id)}
@@ -247,46 +268,54 @@ export default function NoticePage() {
                   <input
                     type="checkbox"
                     checked={!!post.noticeVisible}
-                    disabled={savingPostId === post.id}
+                    disabled={savingPostId === post.id || reordering}
                     onChange={(event) =>
-                      updateNotice(post.id, {
-                        noticeVisible: event.target.checked,
-                      })
+                      updateNoticeVisibility(post.id, event.target.checked)
                     }
                     style={{ accentColor: "#1b4797" }}
                   />
                   {"\uB178\uCD9C"}
                 </label>
 
-                <div style={{ display: "flex", gap: 6 }}>
-                  <input
-                    type="number"
-                    min={1}
-                    max={4}
-                    value={orderDrafts[post.id] ?? ""}
-                    disabled={savingPostId === post.id}
-                    onChange={(event) =>
-                      setOrderDrafts((prev) => ({
-                        ...prev,
-                        [post.id]: event.target.value,
-                      }))
-                    }
-                    onBlur={() => applyOrder(post.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.currentTarget.blur();
-                      }
-                    }}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
+                  <button
+                    type="button"
+                    disabled={index === 0 || reordering}
+                    onClick={() => movePost(index, -1)}
                     style={{
-                      width: "100%",
                       border: "1px solid #dfe5ee",
+                      background: "#fff",
                       borderRadius: 8,
                       padding: "6px 8px",
                       fontSize: 12,
-                      color: "#1f2430",
-                      background: "#fff",
+                      color: index === 0 || reordering ? "#b8c0cc" : "#516072",
+                      cursor: index === 0 || reordering ? "default" : "pointer",
                     }}
-                  />
+                  >
+                    {"\uC704"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === posts.length - 1 || reordering}
+                    onClick={() => movePost(index, 1)}
+                    style={{
+                      border: "1px solid #dfe5ee",
+                      background: "#fff",
+                      borderRadius: 8,
+                      padding: "6px 8px",
+                      fontSize: 12,
+                      color:
+                        index === posts.length - 1 || reordering
+                          ? "#b8c0cc"
+                          : "#516072",
+                      cursor:
+                        index === posts.length - 1 || reordering
+                          ? "default"
+                          : "pointer",
+                    }}
+                  >
+                    {"\uC544\uB798"}
+                  </button>
                 </div>
               </div>
             )}

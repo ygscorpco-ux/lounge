@@ -105,7 +105,7 @@ export async function GET(request) {
         commentCount: row.comment_count,
         createdAt: row.created_at,
         noticeVisible: !!row.notice_visible,
-        noticeOrder: Number(row.notice_order ?? 4),
+        noticeOrder: Number(row.notice_order ?? 1000),
         hasImages: imageList.length > 0,
         thumbnailUrl,
         hasPoll: !!row.has_poll,
