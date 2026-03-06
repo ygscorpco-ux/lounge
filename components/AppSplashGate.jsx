@@ -2,18 +2,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import {
+  HOME_BOOTSTRAP_KEY,
+  NOTIFICATIONS_BOOTSTRAP_KEY,
+  setBootstrapPromise,
+  writeBootstrapCache,
+} from "../lib/app-bootstrap.js";
 
-const MIN_SPLASH_MS = 320;
-const MAX_SPLASH_MS = 1200;
+const MIN_SPLASH_MS = 420;
+const MAX_SPLASH_MS = 1800;
 const EXIT_ANIMATION_MS = 220;
 
-function warmGet(url, signal) {
-  return fetch(url, {
-    method: "GET",
-    cache: "no-store",
-    credentials: "include",
-    signal,
-  }).catch(() => null);
+async function warmJson(url, signal) {
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "include",
+      signal,
+    });
+    if (!response.ok) return null;
+    return await response.json().catch(() => null);
+  } catch (error) {
+    return null;
+  }
 }
 
 export default function AppSplashGate() {
@@ -33,10 +45,35 @@ export default function AppSplashGate() {
     const abortController = new AbortController();
     setVisible(true);
 
-    // Keep preload lightweight to avoid duplicating heavy feed queries.
-    const preload = Promise.allSettled([
-      warmGet("/api/auth/me", abortController.signal),
-    ]);
+    const preload = (async () => {
+      const [auth, homeFeed, notifications] = await Promise.allSettled([
+        warmJson("/api/auth/me", abortController.signal),
+        warmJson("/api/home/feed?sort=latest", abortController.signal),
+        warmJson("/api/notifications", abortController.signal),
+      ]);
+
+      const snapshot = {
+        auth: auth.status === "fulfilled" ? auth.value : null,
+        homeFeed: homeFeed.status === "fulfilled" ? homeFeed.value : null,
+        notifications:
+          notifications.status === "fulfilled" ? notifications.value : null,
+      };
+
+      if (snapshot.homeFeed) {
+        writeBootstrapCache(HOME_BOOTSTRAP_KEY, snapshot.homeFeed);
+      }
+
+      if (snapshot.notifications) {
+        writeBootstrapCache(
+          NOTIFICATIONS_BOOTSTRAP_KEY,
+          snapshot.notifications,
+        );
+      }
+
+      return snapshot;
+    })();
+
+    setBootstrapPromise(preload);
 
     const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_SPLASH_MS));
     const maxDelay = new Promise((resolve) => setTimeout(resolve, MAX_SPLASH_MS));

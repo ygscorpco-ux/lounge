@@ -4,6 +4,11 @@ import { useRouter } from "next/navigation";
 import Header from "../components/Header.jsx";
 import PostCard from "../components/PostCard.jsx";
 import WriteButton from "../components/WriteButton.jsx";
+import {
+  HOME_BOOTSTRAP_KEY,
+  consumeBootstrapCache,
+  getBootstrapPromise,
+} from "../lib/app-bootstrap.js";
 import { savePostSeed } from "../lib/post-seed.js";
 
 function QuickIcon({ type, accent }) {
@@ -357,6 +362,22 @@ export default function Home() {
     return deduped;
   }, []);
 
+  const applyHomeFeedData = useCallback((data) => {
+    const incomingPosts = Array.isArray(data?.posts) ? data.posts : [];
+    const incomingNotices = Array.isArray(data?.noticePosts) ? data.noticePosts : [];
+    const incomingBest = Array.isArray(data?.bestPosts) ? data.bestPosts : [];
+    const incomingCursor = typeof data?.nextCursor === "string" ? data.nextCursor : null;
+
+    setPosts(incomingPosts);
+    setNoticePosts(incomingNotices);
+    setBestPosts(incomingBest);
+    setNextCursor(incomingCursor);
+    nextCursorRef.current = incomingCursor;
+    setHasMore(Boolean(incomingCursor));
+    setLoading(false);
+    return data;
+  }, []);
+
   const fetchHomeFeed = useCallback(async (s) => {
     setLoading(true);
     try {
@@ -372,18 +393,7 @@ export default function Home() {
         };
       }
       const data = await res.json();
-      const incomingPosts = Array.isArray(data.posts) ? data.posts : [];
-      const incomingNotices = Array.isArray(data.noticePosts) ? data.noticePosts : [];
-      const incomingBest = Array.isArray(data.bestPosts) ? data.bestPosts : [];
-      const incomingCursor = typeof data.nextCursor === "string" ? data.nextCursor : null;
-
-      setPosts(incomingPosts);
-      setNoticePosts(incomingNotices);
-      setBestPosts(incomingBest);
-      setNextCursor(incomingCursor);
-      nextCursorRef.current = incomingCursor;
-      setHasMore(Boolean(incomingCursor));
-      return data;
+      return applyHomeFeedData(data);
     } catch (err) {
       console.error(err);
       return {
@@ -396,7 +406,38 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applyHomeFeedData]);
+
+  const hydrateFromBootstrap = useCallback(async (s) => {
+    if (s !== "latest" || typeof window === "undefined") return false;
+
+    const cached = consumeBootstrapCache(HOME_BOOTSTRAP_KEY);
+    if (cached && Array.isArray(cached.posts)) {
+      applyHomeFeedData(cached);
+      return true;
+    }
+
+    const bootstrapPromise = getBootstrapPromise();
+    if (!bootstrapPromise) return false;
+
+    try {
+      const snapshot = await bootstrapPromise;
+      const nextCached =
+        snapshot?.homeFeed && Array.isArray(snapshot.homeFeed.posts)
+          ? snapshot.homeFeed
+          : consumeBootstrapCache(HOME_BOOTSTRAP_KEY);
+
+      if (!nextCached || !Array.isArray(nextCached.posts)) {
+        return false;
+      }
+
+      applyHomeFeedData(nextCached);
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }, [applyHomeFeedData]);
 
   const fetchPosts = useCallback(async (cursor, s) => {
     if (!cursor) return { posts: [], nextCursor: null, pageSize: 0 };
@@ -526,8 +567,19 @@ export default function Home() {
       return;
     }
 
-    fetchHomeFeed(sort);
-  }, [sort, fetchHomeFeed]);
+    let cancelled = false;
+
+    async function hydrateFeed() {
+      const usedBootstrap = await hydrateFromBootstrap(sort);
+      if (cancelled || usedBootstrap) return;
+      fetchHomeFeed(sort);
+    }
+
+    hydrateFeed();
+    return () => {
+      cancelled = true;
+    };
+  }, [sort, fetchHomeFeed, hydrateFromBootstrap]);
 
   const loadMore = useCallback(async () => {
     if (loadingNextPageRef.current || loading || !hasMore) return;

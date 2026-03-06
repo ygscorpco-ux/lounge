@@ -1,12 +1,24 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  NOTIFICATIONS_BOOTSTRAP_KEY,
+  readBootstrapCache,
+} from '../lib/app-bootstrap.js';
 
 export default function Header() {
   const [unread, setUnread] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
+    const bootstrapped = readBootstrapCache(NOTIFICATIONS_BOOTSTRAP_KEY);
+    const bootstrappedUnread = Number(bootstrapped?.unreadCount);
+    const hasBootstrappedUnread = Number.isFinite(bootstrappedUnread);
+
+    if (hasBootstrappedUnread) {
+      setUnread(bootstrappedUnread);
+    }
+
     async function checkNotifications() {
       try {
         const res = await fetch('/api/notifications');
@@ -16,9 +28,21 @@ export default function Header() {
         }
       } catch (e) {}
     }
-    checkNotifications();
+
+    let refreshTimeout = null;
+    if (hasBootstrappedUnread) {
+      refreshTimeout = window.setTimeout(checkNotifications, 10000);
+    } else {
+      checkNotifications();
+    }
+
     const interval = setInterval(checkNotifications, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (refreshTimeout) {
+        window.clearTimeout(refreshTimeout);
+      }
+    };
   }, []);
 
   return (
