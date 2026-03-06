@@ -1,8 +1,8 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 16px 120px;
+  gap: 12px;
+  padding: 14px 14px 112px;
   background:
     linear-gradient(180deg, #f6f8fc 0%, #f4f7fb 52%, #f8fafc 100%);
 }
@@ -10,8 +10,8 @@
 .card {
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(222, 232, 244, 0.88);
-  border-radius: 28px;
-  padding: 20px;
+  border-radius: 26px;
+  padding: 18px;
   box-shadow:
     0 14px 36px rgba(15, 23, 42, 0.045),
     0 2px 8px rgba(15, 23, 42, 0.02);
@@ -52,109 +52,58 @@
   font-weight: 600;
 }
 
-.heroLayout {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  margin-top: 16px;
-}
-
-.heroCopy {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.heroCompact {
+  margin-top: 14px;
 }
 
 .heroTitle {
   color: #0f172a;
-  font-size: 29px;
+  font-size: 28px;
   line-height: 1.14;
   letter-spacing: -0.05em;
 }
 
 .heroDescription {
+  margin-top: 10px;
   color: #556173;
   font-size: 14px;
-  line-height: 1.72;
+  line-height: 1.62;
 }
 
-.heroChipRow {
-  display: flex;
-  flex-wrap: wrap;
+.quickSummaryRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-}
-
-.heroChip {
-  display: inline-flex;
-  align-items: center;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(223, 231, 242, 0.95);
-  color: #415065;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.previewCard {
-  padding: 16px;
-  border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(246, 249, 255, 0.98) 100%);
-  border: 1px solid rgba(223, 231, 242, 0.94);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.previewHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.previewLabel {
-  color: #7a8799;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.previewPlatform {
-  color: #1b4797;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.previewRows {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   margin-top: 14px;
 }
 
-.previewRow {
+.quickSummaryItem {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(222, 231, 242, 0.98);
 }
 
-.previewRowLabel {
-  color: #7a8799;
-  font-size: 12px;
-  font-weight: 600;
+.quickSummaryItemAccent {
+  background: linear-gradient(180deg, rgba(244, 248, 255, 0.98) 0%, rgba(236, 243, 255, 1) 100%);
+  border-color: rgba(27, 71, 151, 0.22);
 }
 
-.previewRowValue {
+.quickSummaryLabel {
+  color: #78869a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.quickSummaryValue {
   color: #0f172a;
   font-size: 15px;
-  font-weight: 700;
+  line-height: 1.25;
+  font-weight: 800;
   letter-spacing: -0.03em;
-}
-
-.previewRowValueStrong {
-  color: #1b4797;
-  font-size: 18px;
 }
 
 .notice {
@@ -173,61 +122,10 @@
   color: #35548b;
 }
 
-.presetCard {
-  padding-top: 18px;
-}
-
-.presetHeader {
-  margin-bottom: 14px;
-}
-
-.presetTitle {
-  color: #0f172a;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.presetDescription {
-  margin-top: 4px;
-  color: #6a7688;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.presetGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.presetItem {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 84px;
-  padding: 14px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #fbfdff 0%, #f5f8fd 100%);
-  border: 1px solid rgba(225, 233, 244, 0.94);
-}
-
-.presetLabel {
-  color: #8290a2;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.presetValue {
-  color: #0f172a;
-  font-size: 15px;
-  line-height: 1.45;
-  letter-spacing: -0.03em;
-}
-
 .sectionHeader {
   display: flex;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .sectionBadge {
@@ -256,10 +154,10 @@
 }
 
 .sectionDescription {
-  margin-top: 5px;
+  margin-top: 4px;
   color: #6a7688;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .platformGrid {
@@ -270,7 +168,7 @@
 
 .platformCard {
   position: relative;
-  padding: 16px 14px 14px;
+  padding: 14px 13px 13px;
   border: 1.5px solid #e3ebf5;
   border-radius: 22px;
   background: #ffffff;
@@ -346,8 +244,8 @@
 .platformCaption {
   margin-top: 4px;
   color: #6b778a;
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .platformSkeleton {
@@ -464,7 +362,6 @@
 .tierList,
 .fieldStack,
 .settingList,
-.previewRows,
 .legendList,
 .compareList,
 .extraContent {
@@ -533,29 +430,7 @@
   flex-shrink: 0;
 }
 
-.inputLead {
-  margin-bottom: 14px;
-  padding: 14px 16px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #fbfdff 0%, #f6f9fd 100%);
-  border: 1px solid rgba(225, 233, 244, 0.95);
-}
-
-.inputLeadTitle {
-  color: #0f172a;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.inputLeadDescription {
-  margin-top: 4px;
-  color: #6d798b;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
 .compactFieldGrid,
-.metricGrid,
 .ratioGrid,
 .projectionGrid {
   display: grid;
@@ -663,14 +538,15 @@
   margin-top: 14px;
   padding: 14px 16px;
   border-radius: 20px;
-  background: #f2f6fc;
-  color: #6d798b;
+  background: #eef4ff;
+  color: #4c6287;
   font-size: 13px;
   line-height: 1.55;
+  border: 1px solid rgba(27, 71, 151, 0.12);
 }
 
 .settingSummary strong {
-  color: #0f172a;
+  color: #1b4797;
   font-size: 14px;
 }
 
@@ -726,10 +602,11 @@
 .resultHeroPanel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 18px;
+  gap: 14px;
+  padding: 16px;
   border-radius: 24px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  background: linear-gradient(180deg, #f9fbff 0%, #f1f6ff 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .resultHeroCopy,
@@ -756,9 +633,9 @@
 }
 
 .resultValue {
-  margin-top: 8px;
-  color: #0f172a;
-  font-size: 36px;
+  margin-top: 6px;
+  color: #163b82;
+  font-size: 38px;
   line-height: 1.06;
   letter-spacing: -0.055em;
   font-weight: 800;
@@ -819,30 +696,24 @@
 }
 
 .resultStoryCard {
-  margin-top: 14px;
-  padding: 16px 18px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #f7fbff 0%, #eef4ff 100%);
 }
 
 .resultStoryTitle {
   color: #0f172a;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-}
-
-.resultStoryDescription {
-  margin-top: 8px;
-  color: #5d6980;
-  font-size: 13px;
-  line-height: 1.7;
 }
 
 .resultStoryAction {
-  margin-top: 10px;
+  margin-top: 6px;
   color: #1b4797;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.55;
 }
 
 .ratioCard,
@@ -857,7 +728,7 @@
 }
 
 .ratioCard {
-  min-height: 88px;
+  min-height: 78px;
 }
 
 .ratioCardGray {
@@ -886,15 +757,15 @@
 
 .ratioValue {
   color: #0f172a;
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.15;
   letter-spacing: -0.03em;
 }
 
 .breakdownPanel {
-  margin-top: 14px;
-  padding: 17px;
-  border-radius: 22px;
+  margin-top: 12px;
+  padding: 15px;
+  border-radius: 20px;
   background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
 }
 
@@ -944,30 +815,11 @@
   border-radius: 50%;
 }
 
-.metricGrid {
-  margin-top: 14px;
-}
-
-.metricCard {
-  background: linear-gradient(180deg, #fbfdff 0%, #f5f8fd 100%);
-}
-
-.metricValue,
 .projectionValue {
   color: #0f172a;
   font-size: 18px;
   line-height: 1.18;
   letter-spacing: -0.03em;
-}
-
-.compareWrap {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid #eaf0f7;
-}
-
-.compareHeader {
-  margin-bottom: 12px;
 }
 
 .compareTitle {
@@ -983,14 +835,37 @@
   line-height: 1.58;
 }
 
-.compareInsight {
-  padding: 13px 15px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #f8fbff 0%, #f3f7fd 100%);
-  color: #3f5f93;
-  font-size: 13px;
-  line-height: 1.62;
-  margin-bottom: 12px;
+.compareDetails {
+  margin-top: 14px;
+  border: 1px solid #e6edf6;
+  border-radius: 20px;
+  background: #fbfdff;
+  overflow: hidden;
+}
+
+.compareSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 15px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.compareSummary::-webkit-details-marker {
+  display: none;
+}
+
+.compareSummaryValue {
+  color: #1b4797;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.compareDetails .compareList {
+  padding: 0 12px 12px;
 }
 
 .compareRow {
@@ -998,8 +873,8 @@
   grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 14px;
-  border-radius: 20px;
+  padding: 12px;
+  border-radius: 18px;
   border: 1px solid rgba(226, 234, 244, 0.94);
   background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
 }
@@ -1317,15 +1192,17 @@
 }
 
 @media (max-width: 380px) {
-  .presetGrid,
   .compactFieldGrid,
-  .metricGrid,
   .ratioGrid,
   .projectionGrid {
     grid-template-columns: 1fr;
   }
 
   .platformGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .quickSummaryRow {
     grid-template-columns: 1fr;
   }
 

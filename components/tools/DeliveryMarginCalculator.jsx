@@ -559,20 +559,17 @@ export default function DeliveryMarginCalculator() {
       ]
     : [];
 
-  const presetItems = [
-    { label: "배달앱", value: selectedPlatformName },
-    { label: "매출 구간", value: selectedTierName || "기본 구간" },
-    { label: "총 수수료", value: formatPercent(totalFeeRate) },
+  const quickSummaryItems = [
+    { label: "현재 앱", value: selectedPlatformName },
     {
-      label: "설정",
-      value: `${cardFeeOn ? "카드 포함" : "카드 제외"} · ${vatOn ? "부가세 포함" : "부가세 제외"}`,
+      label: "수수료",
+      value: formatPercent(totalFeeRate),
     },
-  ];
-
-  const previewRows = [
-    { label: "판매가", value: calc ? formatCurrency(calc.price) : "입력 대기" },
-    { label: "총 차감액", value: calc ? formatCurrency(calc.totalDeductions) : "자동 계산" },
-    { label: "남는 금액", value: calc ? formatCurrency(calc.margin) : "결과 확인", emphasis: true },
+    {
+      label: "현재 상태",
+      value: calc ? formatCurrency(calc.margin) : "입력 후 확인",
+      accent: true,
+    },
   ];
 
   function handleNumericChange(setter) {
@@ -657,39 +654,22 @@ export default function DeliveryMarginCalculator() {
             </span>
           </div>
 
-          <div className={styles.heroLayout}>
-            <div className={styles.heroCopy}>
-              <h1 className={styles.heroTitle}>실마진 계산기</h1>
-              <p className={styles.heroDescription}>
-                배달앱, 매출 구간, 메뉴 원가를 조합해 메뉴 1건당 실제로 남는 금액을
-                빠르게 읽을 수 있게 만든 모바일용 계산 도구입니다.
-              </p>
-              <div className={styles.heroChipRow}>
-                <span className={styles.heroChip}>앱별 비교</span>
-                <span className={styles.heroChip}>즉시 계산</span>
-                <span className={styles.heroChip}>정산 전 점검</span>
-              </div>
-            </div>
+          <div className={styles.heroCompact}>
+            <h1 className={styles.heroTitle}>실마진 계산기</h1>
+            <p className={styles.heroDescription}>
+              메뉴 1건당 실제로 남는 금액만 빠르게 확인할 수 있게 화면을 더 짧고 선명하게 정리했습니다.
+            </p>
 
-            <div className={styles.previewCard}>
-              <div className={styles.previewHeader}>
-                <span className={styles.previewLabel}>현재 계산 미리보기</span>
-                <span className={styles.previewPlatform}>{selectedPlatformName}</span>
-              </div>
-              <div className={styles.previewRows}>
-                {previewRows.map((row) => (
-                  <div key={row.label} className={styles.previewRow}>
-                    <span className={styles.previewRowLabel}>{row.label}</span>
-                    <strong
-                      className={`${styles.previewRowValue} ${
-                        row.emphasis ? styles.previewRowValueStrong : ""
-                      }`}
-                    >
-                      {row.value}
-                    </strong>
-                  </div>
-                ))}
-              </div>
+            <div className={styles.quickSummaryRow}>
+              {quickSummaryItems.map((item) => (
+                <div
+                  key={item.label}
+                  className={`${styles.quickSummaryItem} ${item.accent ? styles.quickSummaryItemAccent : ""}`}
+                >
+                  <span className={styles.quickSummaryLabel}>{item.label}</span>
+                  <strong className={styles.quickSummaryValue}>{item.value}</strong>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -697,23 +677,6 @@ export default function DeliveryMarginCalculator() {
         {platformError ? (
           <div className={`${styles.notice} ${styles.noticeWarning}`}>{platformError}</div>
         ) : null}
-
-        <section className={`${styles.card} ${styles.presetCard}`}>
-          <div className={styles.presetHeader}>
-            <div className={styles.presetTitle}>현재 계산 조건</div>
-            <div className={styles.presetDescription}>
-              선택 상태를 한 줄로 요약해 보고 계산 흐름을 잃지 않도록 구성했습니다.
-            </div>
-          </div>
-          <div className={styles.presetGrid}>
-            {presetItems.map((item) => (
-              <div key={item.label} className={styles.presetItem}>
-                <span className={styles.presetLabel}>{item.label}</span>
-                <strong className={styles.presetValue}>{item.value}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
 
         <section className={styles.card}>
           <SectionHeader
@@ -812,15 +775,8 @@ export default function DeliveryMarginCalculator() {
           <SectionHeader
             step={selectedPlatformId === "custom" ? "STEP 2" : "STEP 3"}
             title="핵심 입력"
-            description="판매가를 가장 크게 두고, 실제 판단에 필요한 원가와 배달비 부담을 바로 이어서 넣게 했습니다."
+            description="판매가, 원가, 배달비만 바로 넣으면 아래 결과가 즉시 바뀝니다."
           />
-
-          <div className={styles.inputLead}>
-            <div className={styles.inputLeadTitle}>메뉴 1건 기준</div>
-            <div className={styles.inputLeadDescription}>
-              가장 자주 입력하는 숫자만 먼저 배치해서 계산 자체가 빠르고 편하게 느껴지도록 정리했습니다.
-            </div>
-          </div>
 
           <div className={styles.fieldStack}>
             <NumberField
@@ -858,7 +814,7 @@ export default function DeliveryMarginCalculator() {
           <SectionHeader
             step={selectedPlatformId === "custom" ? "STEP 3" : "STEP 4"}
             title="설정"
-            description="핵심 입력과 옵션성 판단을 분리해 계산기 자체가 더 가볍게 느껴지도록 정리했습니다."
+            description="필요한 옵션만 짧게 확인하고 바로 계산할 수 있게 구성했습니다."
           />
 
           <div className={styles.settingList}>
@@ -888,7 +844,7 @@ export default function DeliveryMarginCalculator() {
           <SectionHeader
             step={selectedPlatformId === "custom" ? "STEP 4" : "STEP 5"}
             title="결과 확인"
-            description="계산 결과를 수치, 구조, 해석 순으로 배치해 지금 무엇을 판단해야 하는지 바로 보이게 만들었습니다."
+            description="한 건당 얼마가 남는지 먼저 크게 보여주고, 필요한 정보만 아래에 압축했습니다."
           />
 
           {!calc ? (
@@ -925,7 +881,6 @@ export default function DeliveryMarginCalculator() {
 
               <div className={styles.resultStoryCard}>
                 <div className={styles.resultStoryTitle}>{resultStory.title}</div>
-                <p className={styles.resultStoryDescription}>{resultStory.description}</p>
                 <div className={styles.resultStoryAction}>{resultStory.action}</div>
               </div>
 
@@ -981,49 +936,23 @@ export default function DeliveryMarginCalculator() {
                 </div>
               </div>
 
-              <div className={styles.metricGrid}>
-                <div className={styles.metricCard}>
-                  <span className={styles.metricLabel}>앱 수수료</span>
-                  <strong className={styles.metricValue}>{formatCurrency(calc.appFee)}</strong>
-                </div>
-                <div className={styles.metricCard}>
-                  <span className={styles.metricLabel}>카드 수수료</span>
-                  <strong className={styles.metricValue}>{formatCurrency(calc.cardFee)}</strong>
-                </div>
-                <div className={styles.metricCard}>
-                  <span className={styles.metricLabel}>배달비 부담</span>
-                  <strong className={styles.metricValue}>{formatCurrency(calc.delivery)}</strong>
-                </div>
-                <div className={styles.metricCard}>
-                  <span className={styles.metricLabel}>총 차감액</span>
-                  <strong className={styles.metricValue}>{formatCurrency(calc.totalDeductions)}</strong>
-                </div>
-              </div>
-
               {comparison.length > 1 ? (
-                <div className={styles.compareWrap}>
-                  <div className={styles.compareHeader}>
-                    <div className={styles.compareTitle}>앱별 비교</div>
-                    <div className={styles.compareDescription}>
-                      같은 판매가, 원가, 배달비 조건으로 바로 비교한 결과입니다.
+                <details className={styles.compareDetails}>
+                  <summary className={styles.compareSummary}>
+                    <div>
+                      <div className={styles.compareTitle}>앱별 비교 보기</div>
+                      <div className={styles.compareDescription}>
+                        {bestComparison && currentComparison
+                          ? bestComparison.platformId === currentComparison.platformId
+                            ? "현재 선택한 앱이 가장 유리합니다."
+                            : `${bestComparison.name}이 ${formatCurrency(bestComparison.margin - currentComparison.margin)} 더 유리합니다.`
+                          : "같은 조건으로 앱별 마진을 비교합니다."}
+                      </div>
                     </div>
-                  </div>
-
-                  {bestComparison && currentComparison ? (
-                    <div className={styles.compareInsight}>
-                      {bestComparison.platformId === currentComparison.platformId ? (
-                        <span>현재 선택한 앱이 가장 높은 마진을 보여주고 있습니다.</span>
-                      ) : (
-                        <span>
-                          현재 선택보다 <strong>{bestComparison.name}</strong>이{" "}
-                          <strong>
-                            {formatCurrency(bestComparison.margin - currentComparison.margin)}
-                          </strong>{" "}
-                          더 유리합니다.
-                        </span>
-                      )}
-                    </div>
-                  ) : null}
+                    <span className={styles.compareSummaryValue}>
+                      {bestComparison ? `${bestComparison.name} ${formatCurrency(bestComparison.margin)}` : ""}
+                    </span>
+                  </summary>
 
                   <div className={styles.compareList}>
                     {comparison.map((item, index) => {
@@ -1070,7 +999,7 @@ export default function DeliveryMarginCalculator() {
                       );
                     })}
                   </div>
-                </div>
+                </details>
               ) : null}
             </>
           )}
