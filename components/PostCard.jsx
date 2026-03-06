@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
@@ -24,17 +25,28 @@ const CommentIcon = ({ color = "#42bcc4" }) => (
 
 export default function PostCard({ post }) {
   const router = useRouter();
+  const [pressed, setPressed] = useState(false);
   const displayAuthor = post.author === ADMIN_NAME ? ADMIN_NAME : ANON_NAME;
   const hasComments = !post.isNotice && (post.commentCount || 0) > 0;
 
+  function openPost() {
+    router.push("/post/" + post.id);
+  }
+
   return (
     <article
-      onClick={() => router.push("/post/" + post.id)}
+      onClick={openPost}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
       style={{
         borderBottom: "1px solid #ececec",
-        background: "#fff",
+        background: pressed ? "#f4f6f9" : "#fff",
         padding: "14px 16px",
         cursor: "pointer",
+        transform: pressed ? "scale(0.997)" : "scale(1)",
+        transition: "background-color 120ms ease, transform 120ms ease",
       }}
     >
       <div

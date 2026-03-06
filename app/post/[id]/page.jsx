@@ -298,6 +298,14 @@ export default function PostDetailPage() {
     setVoting(false);
   }
 
+  function handleBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  }
+
   if (loading) return <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>;
   if (!post) return <div className="empty">{"\uAC8C\uC2DC\uAE00\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>;
 
@@ -324,7 +332,7 @@ export default function PostDetailPage() {
       }}
     >
       <div className="top-bar" style={{ flexShrink: 0, justifyContent: "space-between" }}>
-        <button className="top-bar-back" onClick={() => router.push("/")}>
+        <button className="top-bar-back" onClick={handleBack}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
