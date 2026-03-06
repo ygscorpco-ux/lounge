@@ -163,7 +163,7 @@ const BestCommentIcon = () => (
   </svg>
 );
 
-const FEED_CACHE_KEY = "lounge-home-feed-cache-v1";
+const FEED_CACHE_KEY = "lounge-home-feed-cache-v2";
 const FEED_RETURN_KEY = "lounge-home-feed-return-v1";
 const FEED_SCROLL_KEY = "lounge-home-feed-scroll-v1";
 const FEED_CACHE_TTL_MS = 1000 * 60 * 30;
@@ -204,7 +204,7 @@ export default function Home() {
   const [noticePosts, setNoticePosts] = useState([]);
   const [bestPosts, setBestPosts] = useState([]);
   const [sort, setSort] = useState("latest");
-  const [page, setPage] = useState(1);
+  const [nextCursor, setNextCursor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
@@ -213,7 +213,7 @@ export default function Home() {
   const feedHydratedRef = useRef(false);
   const shouldRestoreScrollRef = useRef(false);
   const expectedSectionsRef = useRef({ notice: 0, best: 0 });
-  const pageRef = useRef(1);
+  const nextCursorRef = useRef(null);
   const loadingNextPageRef = useRef(false);
   const [virtualRange, setVirtualRange] = useState({ start: 0, end: 20 });
 
@@ -261,7 +261,7 @@ export default function Home() {
             posts,
             noticePosts,
             bestPosts,
-            page,
+            nextCursor,
             hasMore,
             sort,
             savedAt: Date.now(),
@@ -272,75 +272,89 @@ export default function Home() {
       }
     }
     router.push("/post/" + postId + "?from=home", { scroll: false });
-  }, [router, posts, noticePosts, bestPosts, page, hasMore, sort]);
+  }, [router, posts, noticePosts, bestPosts, nextCursor, hasMore, sort]);
 
-  const fetchPosts = useCallback(async (p, s, reset) => {
+  const mergeUniquePosts = useCallback((prev, incoming) => {
+    const merged = [...prev, ...incoming];
+    const deduped = [];
+    const seen = new Set();
+    for (const item of merged) {
+      if (!item || seen.has(item.id)) continue;
+      seen.add(item.id);
+      deduped.push(item);
+    }
+    return deduped;
+  }, []);
+
+  const fetchHomeFeed = useCallback(async (s) => {
     setLoading(true);
     try {
-      const url =
-        "/api/posts?page=" +
-        p +
-        "&sort=" +
-        s +
-        "&excludeNotice=1&t=" +
-        Date.now();
+      const url = "/api/home/feed?sort=" + encodeURIComponent(s || "latest");
       const res = await fetch(url);
-      const data = await res.json();
-      if (reset) {
-        setPosts(data.posts || []);
-      } else {
-        setPosts((prev) => {
-          const incoming = data.posts || [];
-          const merged = [...prev, ...incoming];
-          const deduped = [];
-          const seen = new Set();
-          for (const item of merged) {
-            if (!item || seen.has(item.id)) continue;
-            seen.add(item.id);
-            deduped.push(item);
-          }
-          return deduped;
-        });
+      if (!res.ok) {
+        return {
+          posts: [],
+          noticePosts: [],
+          bestPosts: [],
+          pageSize: 0,
+          nextCursor: null,
+        };
       }
-      setHasMore((data.posts || []).length >= data.pageSize);
+      const data = await res.json();
+      const incomingPosts = Array.isArray(data.posts) ? data.posts : [];
+      const incomingNotices = Array.isArray(data.noticePosts) ? data.noticePosts : [];
+      const incomingBest = Array.isArray(data.bestPosts) ? data.bestPosts : [];
+      const incomingCursor = typeof data.nextCursor === "string" ? data.nextCursor : null;
+
+      setPosts(incomingPosts);
+      setNoticePosts(incomingNotices);
+      setBestPosts(incomingBest);
+      setNextCursor(incomingCursor);
+      nextCursorRef.current = incomingCursor;
+      setHasMore(Boolean(incomingCursor));
       return data;
     } catch (err) {
       console.error(err);
-      return { posts: [], pageSize: 0 };
+      return {
+        posts: [],
+        noticePosts: [],
+        bestPosts: [],
+        pageSize: 0,
+        nextCursor: null,
+      };
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const fetchNotices = useCallback(async () => {
+  const fetchPosts = useCallback(async (cursor, s) => {
+    if (!cursor) return { posts: [], nextCursor: null, pageSize: 0 };
+    setLoading(true);
     try {
-      const res = await fetch(
-        "/api/posts?noticeOnly=1&sort=latest&page=1&t=" + Date.now(),
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      const notices = (data.posts || []).slice(0, 4);
-      setNoticePosts(notices);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
-  const fetchBest = useCallback(async () => {
-    try {
-      const res = await fetch("/api/posts/best?t=" + Date.now());
-      if (res.ok) {
-        const data = await res.json();
-        setBestPosts(data.posts || []);
+      const url =
+        "/api/posts?sort=" +
+        encodeURIComponent(s || "latest") +
+        "&excludeNotice=1&cursor=" +
+        encodeURIComponent(cursor);
+      const res = await fetch(url);
+      if (!res.ok) {
+        return { posts: [], nextCursor: null, pageSize: 0 };
       }
+      const data = await res.json();
+      const incomingPosts = Array.isArray(data.posts) ? data.posts : [];
+      const incomingCursor = typeof data.nextCursor === "string" ? data.nextCursor : null;
+      setPosts((prev) => mergeUniquePosts(prev, incomingPosts));
+      setNextCursor(incomingCursor);
+      nextCursorRef.current = incomingCursor;
+      setHasMore(Boolean(incomingCursor));
+      return data;
     } catch (e) {
       console.error(e);
+      return { posts: [], nextCursor: null, pageSize: 0 };
+    } finally {
+      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    pageRef.current = page;
-  }, [page]);
+  }, [mergeUniquePosts]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -353,9 +367,10 @@ export default function Home() {
       const isFresh = Date.now() - Number(cached.savedAt || 0) <= FEED_CACHE_TTL_MS;
       if (!isFresh || !Array.isArray(cached.posts) || cached.posts.length === 0) return;
 
-      const restoredPage = Math.max(Number(cached.page || 1), 1);
       const restoredSort = typeof cached.sort === "string" ? cached.sort : "latest";
       const restoredHasMore = Boolean(cached.hasMore);
+      const restoredCursor =
+        typeof cached.nextCursor === "string" ? cached.nextCursor : null;
       const restoredNoticePosts = Array.isArray(cached.noticePosts) ? cached.noticePosts : [];
       const restoredBestPosts = Array.isArray(cached.bestPosts) ? cached.bestPosts : [];
 
@@ -368,8 +383,8 @@ export default function Home() {
       setPosts(cached.posts);
       setNoticePosts(restoredNoticePosts);
       setBestPosts(restoredBestPosts);
-      setPage(restoredPage);
-      pageRef.current = restoredPage;
+      setNextCursor(restoredCursor);
+      nextCursorRef.current = restoredCursor;
       setSort(restoredSort);
       setHasMore(restoredHasMore);
       setLoading(false);
@@ -416,7 +431,7 @@ export default function Home() {
             posts,
             noticePosts,
             bestPosts,
-            page,
+            nextCursor,
             hasMore,
             sort,
             savedAt: Date.now(),
@@ -425,7 +440,7 @@ export default function Home() {
     } catch (error) {
       console.error(error);
     }
-  }, [posts, noticePosts, bestPosts, page, hasMore, sort]);
+  }, [posts, noticePosts, bestPosts, nextCursor, hasMore, sort]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -440,23 +455,20 @@ export default function Home() {
       return;
     }
 
-    setPage(1);
-    pageRef.current = 1;
-    fetchPosts(1, sort, true);
-    fetchNotices();
-    fetchBest();
-  }, [sort, fetchPosts, fetchNotices, fetchBest]);
+    fetchHomeFeed(sort);
+  }, [sort, fetchHomeFeed]);
 
   const loadMore = useCallback(async () => {
     if (loadingNextPageRef.current || loading || !hasMore) return;
+    const cursor = nextCursorRef.current;
+    if (!cursor) {
+      setHasMore(false);
+      return;
+    }
     loadingNextPageRef.current = true;
 
-    const nextPage = pageRef.current + 1;
-    pageRef.current = nextPage;
-    setPage(nextPage);
-
     try {
-      await fetchPosts(nextPage, sort, false);
+      await fetchPosts(cursor, sort);
     } finally {
       loadingNextPageRef.current = false;
     }

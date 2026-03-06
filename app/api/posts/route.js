@@ -6,6 +6,7 @@ import { getCurrentUser } from "../../../lib/auth.js";
 import { containsBannedWord } from "../../../lib/utils.js";
 import { PAGE_SIZE } from "../../../lib/constants.js";
 import { ensureNoticeSettingsColumns } from "../../../lib/notice-settings.js";
+import { fetchPostsPage } from "../../../lib/posts-query.js";
 import {
   clearIdempotencyKey,
   completeIdempotencyKey,
@@ -16,20 +17,17 @@ import { withApiMonitoring } from "../../../lib/monitoring.js";
 import { NextResponse } from "next/server";
 
 const ADMIN_DISPLAY_NAME = "\uC5FC\uAD11\uC0AC";
-const ANON_DISPLAY_NAME = "\uC775\uBA85";
 
 export async function GET(request) {
   return withApiMonitoring("posts.GET", async () => {
     try {
-      await ensureNoticeSettingsColumns();
-
       const { searchParams } = new URL(request.url);
       const page = parseInt(searchParams.get("page"), 10) || 1;
       const category = searchParams.get("category");
       const sort = searchParams.get("sort") || "latest";
       const noticeOnly = searchParams.get("noticeOnly") === "1";
       const excludeNotice = searchParams.get("excludeNotice") === "1";
-      const offset = (page - 1) * PAGE_SIZE;
+      const cursorToken = searchParams.get("cursor") || "";
 
       const user = await getCurrentUser();
       const isAdminUser = !!(user && user.role === "admin");
@@ -43,93 +41,37 @@ export async function GET(request) {
         blockedIds = blocks.map((row) => row.blocked_user_id);
       }
 
-      let query = `
-      SELECT
-        p.id, p.user_id, p.category, p.title, p.content, p.is_notice,
-        p.like_count, p.comment_count, p.created_at, p.images, p.has_poll,
-        p.notice_visible, p.notice_order, p.notice_start_at, p.notice_end_at, u.role
-      FROM posts p
-      JOIN users u ON p.user_id = u.id
-      WHERE p.is_hidden = FALSE
-    `;
-      const params = [];
+      const runQuery = () =>
+        fetchPostsPage({
+          page,
+          pageSize: PAGE_SIZE,
+          category,
+          sort,
+          noticeOnly,
+          excludeNotice,
+          blockedIds,
+          isAdminUser,
+          cursorToken,
+        });
 
-      if (blockedIds.length > 0) {
-        query += ` AND p.user_id NOT IN (${blockedIds.map(() => "?").join(",")})`;
-        params.push(...blockedIds);
-      }
-
-      if (!isAdminUser) {
-        query +=
-          " AND (p.is_notice = FALSE OR (p.notice_visible = TRUE AND (p.notice_start_at IS NULL OR p.notice_start_at <= NOW()) AND (p.notice_end_at IS NULL OR p.notice_end_at >= NOW())))";
-      }
-
-      if (category) {
-        query += " AND p.category = ?";
-        params.push(category);
-      }
-
-      if (noticeOnly) {
-        if (isAdminUser) {
-          query += " AND p.is_notice = TRUE";
-        } else {
-          query +=
-            " AND p.is_notice = TRUE AND p.notice_visible = TRUE AND (p.notice_start_at IS NULL OR p.notice_start_at <= NOW()) AND (p.notice_end_at IS NULL OR p.notice_end_at >= NOW())";
+      let result;
+      try {
+        result = await runQuery();
+      } catch (queryError) {
+        if (queryError?.code !== "ER_BAD_FIELD_ERROR") {
+          throw queryError;
         }
-      } else if (excludeNotice) {
-        query += " AND p.is_notice = FALSE";
+        // Run one-time migration only when legacy schema is detected.
+        await ensureNoticeSettingsColumns();
+        result = await runQuery();
       }
 
-      if (noticeOnly) {
-        query += " ORDER BY p.notice_order ASC, p.created_at DESC";
-      } else if (sort === "likes") {
-        query += " ORDER BY p.is_notice DESC, p.like_count DESC, p.created_at DESC";
-      } else if (sort === "comments") {
-        query +=
-          " ORDER BY p.is_notice DESC, p.comment_count DESC, p.created_at DESC";
-      } else {
-        query += " ORDER BY p.is_notice DESC, p.created_at DESC";
-      }
-
-      query += " LIMIT ? OFFSET ?";
-      params.push(PAGE_SIZE, offset);
-
-      const [rows] = await pool.query(query, params);
-
-      const posts = rows.map((row) => {
-        let imageList = [];
-        try {
-          if (row.images) {
-            const parsed = JSON.parse(row.images);
-            if (Array.isArray(parsed)) imageList = parsed;
-          }
-        } catch (error) {
-          console.error("list image parse error:", error);
-        }
-
-        const thumbnailUrl = imageList.length > 0 ? imageList[0] : null;
-
-        return {
-          id: row.id,
-          category: row.category,
-          title: row.title,
-          content: (row.content || "").substring(0, 120),
-          author: row.role === "admin" ? ADMIN_DISPLAY_NAME : ANON_DISPLAY_NAME,
-          isNotice: !!row.is_notice,
-          likeCount: row.like_count,
-          commentCount: row.comment_count,
-          createdAt: row.created_at,
-          noticeVisible: !!row.notice_visible,
-          noticeOrder: Number(row.notice_order ?? 1000),
-          noticeStartAt: row.notice_start_at,
-          noticeEndAt: row.notice_end_at,
-          hasImages: imageList.length > 0,
-          thumbnailUrl,
-          hasPoll: !!row.has_poll,
-        };
+      return NextResponse.json({
+        posts: result.posts,
+        page: result.page,
+        pageSize: result.pageSize,
+        nextCursor: result.nextCursor,
       });
-
-      return NextResponse.json({ posts, page, pageSize: PAGE_SIZE });
     } catch (error) {
       console.error("posts list error:", error);
       return NextResponse.json({ error: "server error" }, { status: 500 });

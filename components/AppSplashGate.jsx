@@ -33,12 +33,9 @@ export default function AppSplashGate() {
     const abortController = new AbortController();
     setVisible(true);
 
+    // Keep preload lightweight to avoid duplicating heavy feed queries.
     const preload = Promise.allSettled([
       warmGet("/api/auth/me", abortController.signal),
-      warmGet("/api/notifications", abortController.signal),
-      warmGet("/api/posts?noticeOnly=1&sort=latest&page=1", abortController.signal),
-      warmGet("/api/posts/best", abortController.signal),
-      warmGet("/api/posts?page=1&sort=latest&excludeNotice=1", abortController.signal),
     ]);
 
     const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_SPLASH_MS));
@@ -82,4 +79,3 @@ export default function AppSplashGate() {
     </div>
   );
 }
-
