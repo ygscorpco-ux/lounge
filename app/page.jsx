@@ -180,6 +180,7 @@ export default function Home() {
   const loadMoreTriggerRef = useRef(null);
   const feedHydratedRef = useRef(false);
   const shouldRestoreScrollRef = useRef(false);
+  const expectedSectionsRef = useRef({ notice: 0, best: 0 });
   const pageRef = useRef(1);
   const loadingNextPageRef = useRef(false);
 
@@ -225,6 +226,8 @@ export default function Home() {
           FEED_CACHE_KEY,
           JSON.stringify({
             posts,
+            noticePosts,
+            bestPosts,
             page,
             hasMore,
             sort,
@@ -236,7 +239,7 @@ export default function Home() {
       }
     }
     router.push("/post/" + postId, { scroll: false });
-  }, [router, posts, page, hasMore, sort]);
+  }, [router, posts, noticePosts, bestPosts, page, hasMore, sort]);
 
   const fetchPosts = useCallback(async (p, s, reset) => {
     setLoading(true);
@@ -320,10 +323,18 @@ export default function Home() {
       const restoredPage = Math.max(Number(cached.page || 1), 1);
       const restoredSort = typeof cached.sort === "string" ? cached.sort : "latest";
       const restoredHasMore = Boolean(cached.hasMore);
+      const restoredNoticePosts = Array.isArray(cached.noticePosts) ? cached.noticePosts : [];
+      const restoredBestPosts = Array.isArray(cached.bestPosts) ? cached.bestPosts : [];
 
       feedHydratedRef.current = true;
       shouldRestoreScrollRef.current = true;
+      expectedSectionsRef.current = {
+        notice: restoredNoticePosts.length,
+        best: restoredBestPosts.length,
+      };
       setPosts(cached.posts);
+      setNoticePosts(restoredNoticePosts);
+      setBestPosts(restoredBestPosts);
       setPage(restoredPage);
       pageRef.current = restoredPage;
       setSort(restoredSort);
@@ -337,6 +348,8 @@ export default function Home() {
   useEffect(() => {
     if (!shouldRestoreScrollRef.current || posts.length === 0) return;
     if (typeof window === "undefined") return;
+    const expected = expectedSectionsRef.current;
+    if (noticePosts.length < expected.notice || bestPosts.length < expected.best) return;
 
     const targetY = Number(sessionStorage.getItem(FEED_SCROLL_KEY) || "0");
     const safeY = Number.isFinite(targetY) ? targetY : 0;
@@ -359,25 +372,27 @@ export default function Home() {
     };
 
     window.requestAnimationFrame(restore);
-  }, [posts]);
+  }, [posts, noticePosts, bestPosts]);
 
   useEffect(() => {
     if (typeof window === "undefined" || posts.length === 0) return;
     try {
       sessionStorage.setItem(
-        FEED_CACHE_KEY,
-        JSON.stringify({
-          posts,
-          page,
-          hasMore,
-          sort,
-          savedAt: Date.now(),
-        }),
+          FEED_CACHE_KEY,
+          JSON.stringify({
+            posts,
+            noticePosts,
+            bestPosts,
+            page,
+            hasMore,
+            sort,
+            savedAt: Date.now(),
+          }),
       );
     } catch (error) {
       console.error(error);
     }
-  }, [posts, page, hasMore, sort]);
+  }, [posts, noticePosts, bestPosts, page, hasMore, sort]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -389,8 +404,6 @@ export default function Home() {
   useEffect(() => {
     if (feedHydratedRef.current) {
       feedHydratedRef.current = false;
-      fetchNotices();
-      fetchBest();
       return;
     }
 
