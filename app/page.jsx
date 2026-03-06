@@ -122,6 +122,47 @@ function QuickIcon({ type, accent }) {
   );
 }
 
+function formatBestDate(dateString) {
+  const date = new Date(dateString);
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mi = String(date.getMinutes()).padStart(2, "0");
+  return `${mm}/${dd} ${hh}:${mi}`;
+}
+
+const BestUserAvatar = () => (
+  <div
+    style={{
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      background: "#eef1f4",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    }}
+  >
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="#b6bec7">
+      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+    </svg>
+  </div>
+);
+
+const BestLikeIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#e5483b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 9V5a3 3 0 0 0-3-3l-1 5-3 4v9h11.1a2 2 0 0 0 2-1.7l1.4-9a2 2 0 0 0-2-2.3H14z" />
+    <path d="M7 21H3a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h4" />
+  </svg>
+);
+
+const BestCommentIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#4bb8be" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [noticePosts, setNoticePosts] = useState([]);
@@ -507,54 +548,59 @@ export default function Home() {
           <div style={{ padding: "16px 16px 12px" }}>
             <div
               style={{
-                fontSize: "16px",
+                fontSize: "18px",
                 fontWeight: 800,
                 color: "#1a1a1a",
                 marginBottom: "12px",
               }}
             >
-              {"\uC774\uBC88 \uC8FC \uC778\uAE30 \uAC8C\uC2DC\uAE00"}
+              {"\uC2E4\uC2DC\uAC04 \uC778\uAE30 \uAE00"}
             </div>
             <div
-              className="best-scroll"
               style={{
                 display: "flex",
-                gap: "10px",
-                overflowX: "auto",
-                msOverflowStyle: "none",
-                scrollbarWidth: "none",
+                flexDirection: "column",
+                gap: "12px",
               }}
             >
-              {bestPosts.map((post, i) => (
-                <div
+              {bestPosts.slice(0, 2).map((post) => (
+                <article
                   key={post.id}
                   onClick={() => router.push("/post/" + post.id)}
                   style={{
-                    minWidth: "180px",
-                    background: "#f8f9fa",
-                    borderRadius: "12px",
-                    padding: "14px",
+                    background: "#f7f8fa",
+                    borderRadius: "20px",
+                    padding: "14px 14px 13px",
                     cursor: "pointer",
-                    flex: "0 0 auto",
-                    border: "1px solid #f0f0f0",
+                    border: "1px solid #eceff3",
                   }}
                 >
                   <div
                     style={{
-                      fontSize: "11px",
-                      color: "#1b4797",
-                      fontWeight: 700,
-                      marginBottom: "6px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "10px",
                     }}
                   >
-                    #{i + 1}
+                    <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                      <BestUserAvatar />
+                      <span style={{ fontSize: "16px", fontWeight: 800, color: "#23262d" }}>
+                        {post.author || "\uC775\uBA85"}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "13px", color: "#a6acb4", fontWeight: 500 }}>
+                      {formatBestDate(post.createdAt)}
+                    </span>
                   </div>
+
                   <div
                     style={{
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      color: "#1a1a1a",
-                      marginBottom: "8px",
+                      fontSize: "18px",
+                      fontWeight: 800,
+                      color: "#1f232a",
+                      lineHeight: 1.35,
+                      marginBottom: "3px",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -562,18 +608,44 @@ export default function Home() {
                   >
                     {post.title}
                   </div>
+
                   <div
                     style={{
-                      fontSize: "11px",
-                      color: "#999",
-                      display: "flex",
-                      gap: "8px",
+                      fontSize: "16px",
+                      color: "#3d4048",
+                      lineHeight: 1.4,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
                     }}
                   >
-                    <span>{"\uC88B\uC544\uC694 "}{post.likeCount}</span>
-                    <span>{"\uB313\uAE00 "}{post.commentCount}</span>
+                    {post.content}
                   </div>
-                </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginTop: "10px",
+                    }}
+                  >
+                    <span style={{ fontSize: "13px", color: "#a6acb4" }}>
+                      {"\uC790\uC720\uAC8C\uC2DC\uD310"}
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#e5483b", fontSize: "14px", fontWeight: 700 }}>
+                        <BestLikeIcon />
+                        {post.likeCount}
+                      </span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#4bb8be", fontSize: "14px", fontWeight: 700 }}>
+                        <BestCommentIcon />
+                        {post.commentCount}
+                      </span>
+                    </div>
+                  </div>
+                </article>
               ))}
             </div>
           </div>
