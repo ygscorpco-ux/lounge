@@ -123,12 +123,6 @@ function getTierMetaItems(tier) {
   return items;
 }
 
-function getPlatformTotalRate(platform) {
-  const tier = getDefaultTier(platform);
-  if (!tier) return null;
-  return Number(tier.fee_rate || 0) + Number(tier.payment_fee_rate || 0);
-}
-
 function getMarginTone(rate) {
   if (rate >= 25) {
     return {
@@ -253,7 +247,7 @@ function NumberField({
   );
 }
 
-function PlatformCard({ platform, active, displayRate, onSelect }) {
+function PlatformCard({ platform, active, onSelect }) {
   const logoSrc = PLATFORM_LOGOS[platform.platform_id];
 
   return (
@@ -261,11 +255,10 @@ function PlatformCard({ platform, active, displayRate, onSelect }) {
       type="button"
       className={`${styles.platformCard} ${active ? styles.platformCardActive : ""}`}
       onClick={onSelect}
+      aria-pressed={active}
+      aria-label={platform.name}
+      title={platform.name}
     >
-      {active ? (
-        <span className={styles.platformSelectBadge}>선택</span>
-      ) : null}
-
       <span className={styles.platformLogoStage}>
         <span className={styles.platformLogoBox}>
           {logoSrc ? (
@@ -279,13 +272,6 @@ function PlatformCard({ platform, active, displayRate, onSelect }) {
           ) : (
             <span className={styles.platformFallback}>{platform.name.slice(0, 1)}</span>
           )}
-        </span>
-      </span>
-
-      <span className={styles.platformCardMeta}>
-        <span className={styles.platformName}>{platform.name}</span>
-        <span className={styles.platformFeeText}>
-          {displayRate !== null ? `총 수수료 ${formatPercent(displayRate)}` : "수수료 정보 준비 중"}
         </span>
       </span>
     </button>
@@ -851,7 +837,6 @@ export default function DeliveryMarginCalculator() {
                     key={platform.platform_id}
                     platform={platform}
                     active={selectedPlatformId === platform.platform_id}
-                    displayRate={getPlatformTotalRate(platform)}
                     onSelect={() => setSelectedPlatformId(platform.platform_id)}
                   />
                 ))}

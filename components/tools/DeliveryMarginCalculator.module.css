@@ -129,84 +129,50 @@
 
 .platformCard {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
   aspect-ratio: 1 / 1;
   min-height: 0;
-  padding: 14px;
+  padding: 12px;
   border: 1.5px solid #dfe8f3;
   border-radius: 22px;
   background: #ffffff;
-  text-align: left;
-  justify-content: space-between;
+  text-align: center;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    outline-color 0.2s ease;
 }
 
 .platformCardActive {
-  border-color: rgba(27, 71, 151, 0.42);
-  background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
-  box-shadow: 0 14px 26px rgba(27, 71, 151, 0.12);
-  transform: translateY(-1px);
-}
-
-.platformStatus,
-.platformRateChip {
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 9px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.platformStatus {
-  background: #f2f5fa;
-  color: #6e7c90;
-}
-
-.platformStatusActive {
-  background: rgba(27, 71, 151, 0.1);
-  color: #1b4797;
-}
-
-.platformRateChip {
-  background: #f7f9fc;
-  color: #57667c;
-}
-
-.platformSelectBadge {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  height: 24px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: rgba(27, 71, 151, 0.1);
-  color: #1b4797;
-  font-size: 11px;
-  font-weight: 800;
+  border-color: rgba(27, 71, 151, 0.46);
+  outline: 2px solid rgba(27, 71, 151, 0.16);
+  outline-offset: -1px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow:
+    0 16px 28px rgba(27, 71, 151, 0.14),
+    0 0 0 1px rgba(27, 71, 151, 0.06);
+  transform: translateY(-3px);
 }
 
 .platformLogoStage {
   display: flex;
-  flex: 1;
+  width: 100%;
+  height: 100%;
   align-items: center;
   justify-content: center;
-  padding: 4px 0;
+  padding: 0;
 }
 
 .platformLogoBox {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 24px;
+  width: 102px;
+  height: 102px;
+  border-radius: 28px;
   background: #f4f7fb;
   border: 1px solid #edf2f7;
   overflow: hidden;
@@ -214,8 +180,8 @@
 }
 
 .platformLogo {
-  width: 100%;
-  height: 100%;
+  width: 94%;
+  height: 94%;
   object-fit: contain;
 }
 
@@ -225,17 +191,21 @@
   font-weight: 800;
 }
 
-.platformCardMeta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
+.platformStatus {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #f2f5fa;
+  color: #6e7c90;
+  font-size: 11px;
+  font-weight: 800;
 }
 
-.platformNameRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.platformStatusActive {
+  background: rgba(27, 71, 151, 0.1);
+  color: #1b4797;
 }
 
 .platformName {
@@ -245,11 +215,16 @@
   letter-spacing: -0.03em;
 }
 
-.platformFeeText {
-  color: #748195;
-  font-size: 11px;
-  line-height: 1.4;
-  font-weight: 700;
+@media (hover: hover) {
+  .platformCard:hover {
+    border-color: rgba(27, 71, 151, 0.3);
+    box-shadow: 0 12px 22px rgba(27, 71, 151, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+.platformCard:active {
+  transform: translateY(-1px) scale(0.99);
 }
 
 .platformSkeleton {
@@ -1548,14 +1523,14 @@
   }
 
   .platformLogoBox {
-    width: 68px;
-    height: 68px;
-    border-radius: 22px;
+    width: 88px;
+    height: 88px;
+    border-radius: 24px;
   }
 
   .platformLogo {
-    width: 100%;
-    height: 100%;
+    width: 94%;
+    height: 94%;
   }
 
   .resultValue {
