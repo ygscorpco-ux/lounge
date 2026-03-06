@@ -481,16 +481,30 @@ export default function Home() {
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        gap: "3px",
                         fontSize: "10px",
                         fontWeight: 700,
                         color: "#1b4797",
                         background: "#ebf2ff",
                         borderRadius: "999px",
-                        padding: "2px 6px",
+                        padding: "2px 7px",
                         flexShrink: 0,
                       }}
                     >
-                      {`\uACE0\uC815${post.noticePinSlot}`}
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="10"
+                        height="10"
+                        fill="none"
+                        stroke="#1b4797"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 17v5" />
+                        <path d="M5 4h14l-3 6v3H8v-3L5 4z" />
+                      </svg>
+                      {"\uACE0\uC815"}
                     </span>
                   )}
                   <span
