@@ -439,6 +439,7 @@ export default function WorkerScheduler() {
   const [toast, setToast]       = useState('');
   const workersCacheRef         = useRef(null);
   const schedulesCacheRef       = useRef(new Map());
+  const deletingWorkerIdsRef    = useRef(new Set());
 
   // 월/주 네비게이션
   const [year, setYear]   = useState(today.getFullYear());
@@ -536,10 +537,39 @@ export default function WorkerScheduler() {
   // ── 삭제 확인 ──
   async function deleteWorker(id) {
     if (!confirm('정말 삭제할까요? 스케줄 기록은 유지됩니다.')) return;
-    await fetch(`/api/workers/${id}`, { method: 'DELETE' });
+    if (deletingWorkerIdsRef.current.has(id)) return;
+    deletingWorkerIdsRef.current.add(id);
+    const previousWorkers = workers;
+    const previousFilter = filterWorker;
+
+    setWorkers((prev) => prev.filter((worker) => worker.id !== id));
+    if (String(previousFilter) === String(id)) {
+      setFilterWorker('all');
+    }
+
+    let response;
+    try {
+      response = await fetch(`/api/workers/${id}`, { method: 'DELETE' });
+    } catch (error) {
+      setWorkers(previousWorkers);
+      setFilterWorker(previousFilter);
+      deletingWorkerIdsRef.current.delete(id);
+      alert('\uC9C1\uC6D0 \uC0AD\uC81C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
+      return;
+    }
+
+    if (!response.ok) {
+      setWorkers(previousWorkers);
+      setFilterWorker(previousFilter);
+      deletingWorkerIdsRef.current.delete(id);
+      alert('\uC9C1\uC6D0 \uC0AD\uC81C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
+      return;
+    }
     workersCacheRef.current = null;
+    schedulesCacheRef.current.clear();
     showToast('직원이 삭제되었습니다');
     loadWorkers(true);
+    deletingWorkerIdsRef.current.delete(id);
   }
 
   // ── 빈 상태 컴포넌트 ──

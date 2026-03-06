@@ -90,6 +90,143 @@ function getSeededPost(postId) {
   };
 }
 
+function normalizePollOption(option) {
+  if (!option) return null;
+  const voteCount = Number(option.voteCount ?? option.vote_count ?? 0);
+  return {
+    id: option.id,
+    text: option.text,
+    voteCount,
+    percent: Number(option.percent ?? 0),
+  };
+}
+
+function normalizePollData(rawPoll) {
+  if (!rawPoll) return null;
+  const options = Array.isArray(rawPoll.options)
+    ? rawPoll.options.map(normalizePollOption).filter(Boolean)
+    : [];
+  const totalVotes = Number(
+    rawPoll.totalVotes ?? options.reduce((sum, option) => sum + Number(option.voteCount || 0), 0),
+  );
+
+  return {
+    ...rawPoll,
+    totalVotes,
+    votedOptionId: rawPoll.votedOptionId ?? null,
+    pendingVote: false,
+    options: options.map((option) => ({
+      ...option,
+      percent:
+        totalVotes > 0
+          ? Math.round((Number(option.voteCount || 0) / totalVotes) * 100)
+          : 0,
+    })),
+  };
+}
+
+function buildOptimisticPollVote(rawPoll, optionId) {
+  const poll = normalizePollData(rawPoll);
+  if (!poll || poll.votedOptionId) return poll;
+
+  const nextOptions = poll.options.map((option) => ({
+    ...option,
+    voteCount: Number(option.voteCount || 0) + (option.id === optionId ? 1 : 0),
+  }));
+  const totalVotes = nextOptions.reduce(
+    (sum, option) => sum + Number(option.voteCount || 0),
+    0,
+  );
+
+  return {
+    ...poll,
+    votedOptionId: optionId,
+    totalVotes,
+    pendingVote: true,
+    options: nextOptions.map((option) => ({
+      ...option,
+      percent:
+        totalVotes > 0
+          ? Math.round((Number(option.voteCount || 0) / totalVotes) * 100)
+          : 0,
+    })),
+  };
+}
+
+function PostDetailSkeleton() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%",
+        maxWidth: "480px",
+        height: "100dvh",
+        background: "#fff",
+        zIndex: 100,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div className="top-bar" style={{ flexShrink: 0, justifyContent: "space-between" }}>
+        <div className="app-skeleton" style={{ width: 36, height: 36, borderRadius: 12 }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+          <div className="app-skeleton" style={{ width: 92, height: 18, borderRadius: 8 }} />
+          <div className="app-skeleton" style={{ width: 70, height: 12, borderRadius: 999 }} />
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div className="app-skeleton" style={{ width: 36, height: 36, borderRadius: 12 }} />
+          <div className="app-skeleton" style={{ width: 36, height: 36, borderRadius: 12 }} />
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflow: "hidden", padding: "16px" }}>
+        <div
+          style={{
+            padding: "16px",
+            borderRadius: 20,
+            border: "1px solid #edf1f6",
+            background: "#fff",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <div className="app-skeleton" style={{ width: 42, height: 42, borderRadius: 14 }} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="app-skeleton" style={{ width: 92, height: 16, borderRadius: 8 }} />
+              <div className="app-skeleton" style={{ width: 120, height: 12, borderRadius: 999 }} />
+            </div>
+          </div>
+          <div className="app-skeleton" style={{ width: "78%", height: 26, borderRadius: 10, marginBottom: 12 }} />
+          <div className="app-skeleton" style={{ width: "100%", height: 15, borderRadius: 8, marginBottom: 8 }} />
+          <div className="app-skeleton" style={{ width: "92%", height: 15, borderRadius: 8, marginBottom: 8 }} />
+          <div className="app-skeleton" style={{ width: "68%", height: 15, borderRadius: 8 }} />
+        </div>
+
+        <div className="app-skeleton" style={{ width: "100%", height: 208, borderRadius: 18, marginTop: 16 }} />
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 10,
+            marginTop: 16,
+          }}
+        >
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="app-skeleton"
+              style={{ height: 52, borderRadius: 16 }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PostDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -106,8 +243,9 @@ export default function PostDetailPage() {
   const [replyTo, setReplyTo] = useState(null);
   const [loading, setLoading] = useState(!initialSeedRef.current);
   const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarkSyncing, setBookmarkSyncing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [poll, setPoll] = useState(initialSeedRef.current?.poll || null);
+  const [poll, setPoll] = useState(normalizePollData(initialSeedRef.current?.poll || null));
   const [voting, setVoting] = useState(false);
   const [adImageError, setAdImageError] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
@@ -166,7 +304,7 @@ export default function PostDetailPage() {
     const data = await response.json();
     setPost(data.post);
     savePostSeed(data.post);
-    setPoll(data.post?.poll || null);
+    setPoll(normalizePollData(data.post?.poll || null));
     if (data.post?.isNotice) {
       setComments([]);
     } else {
@@ -197,7 +335,7 @@ export default function PostDetailPage() {
     const seededPost = getSeededPost(id);
     if (seededPost) {
       setPost(seededPost);
-      setPoll(seededPost.poll || null);
+      setPoll(normalizePollData(seededPost.poll || null));
       setLoading(false);
     } else {
       setPost(null);
@@ -288,14 +426,31 @@ export default function PostDetailPage() {
   }
 
   async function handleBookmark() {
-    const response = await fetch("/api/bookmarks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ postId: parseInt(id, 10) }),
-    });
-    if (!response.ok) return;
-    const data = await response.json();
-    setBookmarked(data.bookmarked);
+    if (bookmarkSyncing) return;
+
+    const previousBookmarked = bookmarked;
+    setBookmarked(!previousBookmarked);
+    setBookmarkSyncing(true);
+
+    try {
+      const response = await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId: parseInt(id, 10) }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "스크랩 처리에 실패했습니다.");
+      }
+
+      setBookmarked(Boolean(data.bookmarked));
+    } catch (error) {
+      setBookmarked(previousBookmarked);
+      alert(error.message || "스크랩 처리 중 오류가 발생했습니다.");
+    } finally {
+      setBookmarkSyncing(false);
+    }
   }
 
   async function handleBlockPostAuthor() {
@@ -541,6 +696,10 @@ export default function PostDetailPage() {
 
   async function handleVote(optionId) {
     if (voting || !poll || poll.votedOptionId) return;
+    const previousPoll = normalizePollData(poll);
+    const optimisticPoll = buildOptimisticPollVote(previousPoll, optionId);
+
+    setPoll(optimisticPoll);
     setVoting(true);
     try {
       const response = await fetch("/api/posts/" + id + "/poll", {
@@ -550,18 +709,21 @@ export default function PostDetailPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        alert(data.error || "\uD22C\uD45C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
-      } else {
-        setPoll((prev) => ({
-          ...prev,
+        throw new Error(data.error || "\uD22C\uD45C\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+      }
+
+      setPoll(
+        normalizePollData({
+          ...previousPoll,
           votedOptionId: data.votedOptionId,
           options: data.options,
           totalVotes: data.totalVotes,
-        }));
-      }
+        }),
+      );
     } catch (error) {
       console.error(error);
-      alert("\uD22C\uD45C \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
+      setPoll(previousPoll);
+      alert(error.message || "\uD22C\uD45C \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
     }
     setVoting(false);
   }
@@ -587,21 +749,7 @@ export default function PostDetailPage() {
   }
 
   if (loading && !post) {
-    return (
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "100%",
-          maxWidth: "480px",
-          height: "100dvh",
-          background: "#fff",
-          zIndex: 100,
-        }}
-      />
-    );
+    return <PostDetailSkeleton />;
   }
   if (!post) return <div className="empty">{"\uAC8C\uC2DC\uAE00\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>;
 
@@ -748,7 +896,9 @@ export default function PostDetailPage() {
                 {"\uD22C\uD45C"}
               </div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>{poll.question}</div>
-              <div style={{ fontSize: 12, color: "#8f96a1", marginTop: 4 }}>{`${poll.totalVotes}\uBA85 \uCC38\uC5EC`}</div>
+              <div style={{ fontSize: 12, color: "#8f96a1", marginTop: 4 }}>
+                {`${poll.totalVotes}\uBA85 \uCC38\uC5EC${poll.pendingVote ? " · 반영 중" : ""}`}
+              </div>
             </div>
 
             <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -852,6 +1002,7 @@ export default function PostDetailPage() {
             )}
             <button
               onClick={handleBookmark}
+              disabled={bookmarkSyncing}
               style={{
                 border: "none",
                 background: "none",
@@ -862,6 +1013,7 @@ export default function PostDetailPage() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 6,
+                opacity: bookmarkSyncing ? 0.68 : 1,
               }}
             >
               <BookmarkIcon active={bookmarked} />

@@ -164,6 +164,67 @@ const BestCommentIcon = () => (
   </svg>
 );
 
+function NoticeSectionSkeleton() {
+  return (
+    <div style={{ border: "1px solid #eceff4", borderRadius: "14px", overflow: "hidden", background: "#fff" }}>
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div
+          key={index}
+          style={{
+            padding: "12px 14px",
+            borderBottom: index === 1 ? "none" : "1px solid #f1f3f6",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div className="app-skeleton" style={{ width: 36, height: 20, borderRadius: 999 }} />
+            <div className="app-skeleton" style={{ flex: 1, height: 14, borderRadius: 8 }} />
+            <div className="app-skeleton" style={{ width: 38, height: 12, borderRadius: 999 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BestPostSkeleton() {
+  return (
+    <div
+      className="app-skeleton"
+      style={{
+        borderRadius: "20px",
+        height: 148,
+        border: "1px solid #e6eaf0",
+      }}
+    />
+  );
+}
+
+function FeedPostSkeleton() {
+  return (
+    <div
+      style={{
+        borderBottom: "1px solid #ececec",
+        background: "#fff",
+        padding: "14px 16px",
+      }}
+    >
+      <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="app-skeleton" style={{ width: "74%", height: 18, borderRadius: 8, marginBottom: "10px" }} />
+          <div className="app-skeleton" style={{ width: "100%", height: 13, borderRadius: 8, marginBottom: "7px" }} />
+          <div className="app-skeleton" style={{ width: "88%", height: 13, borderRadius: 8, marginBottom: "10px" }} />
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div className="app-skeleton" style={{ width: 34, height: 12, borderRadius: 999 }} />
+            <div className="app-skeleton" style={{ width: 38, height: 12, borderRadius: 999 }} />
+            <div className="app-skeleton" style={{ width: 46, height: 12, borderRadius: 999 }} />
+          </div>
+        </div>
+        <div className="app-skeleton" style={{ width: 84, height: 84, borderRadius: 12, flexShrink: 0 }} />
+      </div>
+    </div>
+  );
+}
+
 const FEED_CACHE_KEY = "lounge-home-feed-cache-v2";
 const FEED_RETURN_KEY = "lounge-home-feed-return-v1";
 const FEED_SCROLL_KEY = "lounge-home-feed-scroll-v1";
@@ -565,6 +626,11 @@ export default function Home() {
   const bottomSpacerHeight = shouldVirtualize
     ? Math.max((posts.length - safeEnd) * POST_ROW_ESTIMATE_PX, 0)
     : 0;
+  const initialLoading =
+    loading
+    && posts.length === 0
+    && noticePosts.length === 0
+    && bestPosts.length === 0;
 
   return (
     <div>
@@ -720,84 +786,88 @@ export default function Home() {
           </button>
         </div>
 
-        <div
-          style={{
-            border: "1px solid #eceff4",
-            borderRadius: "14px",
-            overflow: "hidden",
-            background: "#fff",
-          }}
-        >
-          {noticePosts.length === 0 ? (
-            <div
-              style={{
-                padding: "16px",
-                fontSize: "13px",
-                color: "#8b94a1",
-              }}
-            >
-              {"\uB4F1\uB85D\uB41C \uACF5\uC9C0\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."}
-            </div>
-          ) : (
-            noticePosts.map((post, index) => (
-              <button
-                key={post.id}
-                onClick={() => openPostDetail(post.id)}
+        {initialLoading ? (
+          <NoticeSectionSkeleton />
+        ) : (
+          <div
+            style={{
+              border: "1px solid #eceff4",
+              borderRadius: "14px",
+              overflow: "hidden",
+              background: "#fff",
+            }}
+          >
+            {noticePosts.length === 0 ? (
+              <div
                 style={{
-                  width: "100%",
-                  border: "none",
-                  borderBottom:
-                    index === noticePosts.length - 1 ? "none" : "1px solid #f1f3f6",
-                  background: "none",
-                  textAlign: "left",
-                  padding: "12px 14px",
-                  cursor: "pointer",
+                  padding: "16px",
+                  fontSize: "13px",
+                  color: "#8b94a1",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      color: "#fff",
-                      background: "#ff5f5f",
-                      borderRadius: "999px",
-                      padding: "2px 6px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {"\uACF5\uC9C0"}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      color: "#1f2430",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      flex: 1,
-                    }}
-                  >
-                    {post.title}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#9aa3af", flexShrink: 0 }}>
-                    {new Date(post.createdAt).toLocaleDateString("ko-KR", {
-                      month: "2-digit",
-                      day: "2-digit",
-                    })}
-                  </span>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
+                {"\uB4F1\uB85D\uB41C \uACF5\uC9C0\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."}
+              </div>
+            ) : (
+              noticePosts.map((post, index) => (
+                <button
+                  key={post.id}
+                  onClick={() => openPostDetail(post.id)}
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    borderBottom:
+                      index === noticePosts.length - 1 ? "none" : "1px solid #f1f3f6",
+                    background: "none",
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        color: "#fff",
+                        background: "#ff5f5f",
+                        borderRadius: "999px",
+                        padding: "2px 6px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {"\uACF5\uC9C0"}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        color: "#1f2430",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        flex: 1,
+                      }}
+                    >
+                      {post.title}
+                    </span>
+                    <span style={{ fontSize: "12px", color: "#9aa3af", flexShrink: 0 }}>
+                      {new Date(post.createdAt).toLocaleDateString("ko-KR", {
+                        month: "2-digit",
+                        day: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      {bestPosts.length > 0 && (
+      {(initialLoading || bestPosts.length > 0) && (
         <>
           <div className="section-divider" />
           <div
@@ -809,13 +879,13 @@ export default function Home() {
             <div
               style={{
                 fontSize: "18px",
-                fontWeight: 800,
-                color: "#1a1a1a",
-                marginBottom: "12px",
-              }}
-            >
-              {"\uC2E4\uC2DC\uAC04 \uC778\uAE30 \uAE00"}
-            </div>
+              fontWeight: 800,
+              color: "#1a1a1a",
+              marginBottom: "12px",
+            }}
+          >
+            {"\uC2E4\uC2DC\uAC04 \uC778\uAE30 \uAE00"}
+          </div>
             <div
               style={{
                 display: "flex",
@@ -823,91 +893,93 @@ export default function Home() {
                 gap: "12px",
               }}
             >
-              {bestPosts.slice(0, 2).map((post) => (
-                <article
-                  key={post.id}
-                  onClick={() => openPostDetail(post.id)}
-                  style={{
-                    background: "#ffffff",
-                    borderRadius: "20px",
-                    padding: "14px 14px 13px",
-                    cursor: "pointer",
-                    border: "1px solid #e6eaf0",
-                    boxShadow: "0 2px 7px rgba(15,23,42,0.06)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-                      <BestUserAvatar />
-                      <span style={{ fontSize: "16px", fontWeight: 800, color: "#23262d" }}>
-                        {post.author || "\uC775\uBA85"}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: "13px", color: "#a6acb4", fontWeight: 500 }}>
-                      {formatBestDate(post.createdAt)}
-                    </span>
-                  </div>
+              {initialLoading
+                ? Array.from({ length: 2 }).map((_, index) => <BestPostSkeleton key={index} />)
+                : bestPosts.slice(0, 2).map((post) => (
+                    <article
+                      key={post.id}
+                      onClick={() => openPostDetail(post.id)}
+                      style={{
+                        background: "#ffffff",
+                        borderRadius: "20px",
+                        padding: "14px 14px 13px",
+                        cursor: "pointer",
+                        border: "1px solid #e6eaf0",
+                        boxShadow: "0 2px 7px rgba(15,23,42,0.06)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                          <BestUserAvatar />
+                          <span style={{ fontSize: "16px", fontWeight: 800, color: "#23262d" }}>
+                            {post.author || "\uC775\uBA85"}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: "13px", color: "#a6acb4", fontWeight: 500 }}>
+                          {formatBestDate(post.createdAt)}
+                        </span>
+                      </div>
 
-                  <div
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 800,
-                      color: "#1f232a",
-                      lineHeight: 1.35,
-                      marginBottom: "3px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {post.title}
-                  </div>
+                      <div
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: 800,
+                          color: "#1f232a",
+                          lineHeight: 1.35,
+                          marginBottom: "3px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {post.title}
+                      </div>
 
-                  <div
-                    style={{
-                      fontSize: "16px",
-                      color: "#39404a",
-                      lineHeight: 1.4,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {post.content}
-                  </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          color: "#39404a",
+                          lineHeight: 1.4,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {post.content}
+                      </div>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginTop: "10px",
-                    }}
-                  >
-                    <span style={{ fontSize: "13px", color: "#8f9aa8" }}>
-                      {"\uC790\uC720\uAC8C\uC2DC\uD310"}
-                    </span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#e5483b", fontSize: "14px", fontWeight: 700 }}>
-                        <BestLikeIcon />
-                        {post.likeCount}
-                      </span>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#4bb8be", fontSize: "14px", fontWeight: 700 }}>
-                        <BestCommentIcon />
-                        {post.commentCount}
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginTop: "10px",
+                        }}
+                      >
+                        <span style={{ fontSize: "13px", color: "#8f9aa8" }}>
+                          {"\uC790\uC720\uAC8C\uC2DC\uD310"}
+                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#e5483b", fontSize: "14px", fontWeight: 700 }}>
+                            <BestLikeIcon />
+                            {post.likeCount}
+                          </span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "#4bb8be", fontSize: "14px", fontWeight: 700 }}>
+                            <BestCommentIcon />
+                            {post.commentCount}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
             </div>
           </div>
         </>
@@ -940,14 +1012,20 @@ export default function Home() {
 
       <div>
         <div ref={freeBoardListRef} data-testid="free-board-list">
-          {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
-          {renderedPosts.map((post) => (
-            <PostCard key={post.id} post={post} onOpen={openPostDetail} />
-          ))}
-          {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
+          {initialLoading ? (
+            Array.from({ length: 4 }).map((_, index) => <FeedPostSkeleton key={index} />)
+          ) : (
+            <>
+              {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
+              {renderedPosts.map((post) => (
+                <PostCard key={post.id} post={post} onOpen={openPostDetail} />
+              ))}
+              {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
+            </>
+          )}
         </div>
         <div ref={loadMoreTriggerRef} style={{ height: 1 }} />
-        {loading && <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>}
+        {loading && !initialLoading && <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>}
         {!loading && posts.length === 0 && (
           <div className="empty">{"\uC544\uC9C1 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>
         )}
