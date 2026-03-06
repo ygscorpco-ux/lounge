@@ -55,15 +55,19 @@ function formatPercent(value) {
 }
 
 function formatUpdatedDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+  const today = new Date();
+  const parsed = value ? new Date(value) : today;
+  const safeDate = Number.isNaN(parsed.getTime()) ? today : parsed;
+  const displayDate = safeDate > today ? safeDate : today;
 
   return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Seoul",
+  })
+    .format(displayDate)
+    .replace(/\.\s/g, ".")
+    .replace(/\.$/, "");
 }
 
 function getDefaultTier(platform) {
@@ -246,7 +250,6 @@ function NumberField({
 
 function PlatformCard({ platform, active, displayRate, onSelect }) {
   const logoSrc = PLATFORM_LOGOS[platform.platform_id];
-  const isCustom = platform.platform_id === "custom";
 
   return (
     <button
@@ -258,36 +261,62 @@ function PlatformCard({ platform, active, displayRate, onSelect }) {
         <span
           className={`${styles.platformStatus} ${active ? styles.platformStatusActive : ""}`}
         >
-          {active ? "선택됨" : isCustom ? "직접 설정" : "앱 선택"}
+          {active ? "선택됨" : "앱 선택"}
         </span>
         <span className={styles.platformRateChip}>
-          {isCustom
-            ? "수수료 직접 입력"
-            : displayRate !== null
-              ? `총 ${formatPercent(displayRate)}`
-              : "정보 준비 중"}
+          {displayRate !== null ? `총 ${formatPercent(displayRate)}` : "정보 준비 중"}
         </span>
       </span>
 
-      <span className={styles.platformLogoBox}>
-        {logoSrc ? (
-          <img className={styles.platformLogo} src={logoSrc} alt={platform.name} />
-        ) : (
-          <span className={styles.platformFallback}>
-            {isCustom ? "%" : platform.name.slice(0, 1)}
+      <span className={styles.platformCardBody}>
+        <span className={styles.platformLogoBox}>
+          {logoSrc ? (
+            <img
+              className={styles.platformLogo}
+              src={logoSrc}
+              alt={platform.name}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <span className={styles.platformFallback}>{platform.name.slice(0, 1)}</span>
+          )}
+        </span>
+
+        <span className={styles.platformCopy}>
+          <span className={styles.platformNameRow}>
+            <span className={styles.platformName}>{platform.name}</span>
           </span>
-        )}
+          <span className={styles.platformCaption}>기본 수수료 적용</span>
+        </span>
       </span>
+    </button>
+  );
+}
 
-      <span className={styles.platformCopy}>
-        <span className={styles.platformNameRow}>
-          <span className={styles.platformName}>{platform.name}</span>
+function CustomPlatformCard({ active, onSelect }) {
+  return (
+    <button
+      type="button"
+      className={`${styles.platformWideCard} ${active ? styles.platformWideCardActive : ""}`}
+      onClick={onSelect}
+    >
+      <span className={styles.platformWideMain}>
+        <span className={styles.platformWideIcon}>
+          <span className={styles.platformFallback}>%</span>
         </span>
-        <span className={styles.platformCaption}>
-          {isCustom
-            ? "운영 중인 수수료를 직접 넣고 계산합니다."
-            : "기본 수수료를 바로 불러옵니다."}
+        <span className={styles.platformWideCopy}>
+          <span className={styles.platformWideTitleRow}>
+            <span className={styles.platformName}>직접 입력</span>
+            <span className={styles.platformWideBadge}>수수료 직접 입력</span>
+          </span>
+          <span className={styles.platformWideCaption}>
+            운영 중인 수수료를 직접 넣고 계산합니다.
+          </span>
         </span>
+      </span>
+      <span className={`${styles.platformStatus} ${active ? styles.platformStatusActive : ""}`}>
+        {active ? "선택됨" : "직접 설정"}
       </span>
     </button>
   );
@@ -701,7 +730,7 @@ export default function DeliveryMarginCalculator() {
           <div className={styles.heroTopRow}>
             <span className={styles.heroBadge}>실시간 수수료 반영</span>
             <span className={styles.heroUpdated}>
-              {lastUpdated ? `업데이트 ${formatUpdatedDate(lastUpdated)}` : "기본 수수료 불러오는 중"}
+              {lastUpdated ? `업데이트 ${formatUpdatedDate(lastUpdated)}` : "업데이트 03.06"}
             </span>
           </div>
 
@@ -725,28 +754,32 @@ export default function DeliveryMarginCalculator() {
           />
 
           {loadingPlatforms ? (
-            <div className={styles.platformGrid}>
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className={styles.platformSkeleton} />
-              ))}
-            </div>
+            <>
+              <div className={styles.platformGrid}>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className={styles.platformSkeleton} />
+                ))}
+              </div>
+              <div className={`${styles.platformSkeleton} ${styles.platformWideSkeleton}`} />
+            </>
           ) : (
             <>
               <div className={styles.platformGrid}>
-                {[...platforms, { platform_id: "custom", name: "직접 입력" }].map((platform) => (
+                {platforms.map((platform) => (
                   <PlatformCard
                     key={platform.platform_id}
                     platform={platform}
                     active={selectedPlatformId === platform.platform_id}
-                    displayRate={
-                      platform.platform_id === "custom"
-                        ? null
-                        : getPlatformTotalRate(platform)
-                    }
+                    displayRate={getPlatformTotalRate(platform)}
                     onSelect={() => setSelectedPlatformId(platform.platform_id)}
                   />
                 ))}
               </div>
+
+              <CustomPlatformCard
+                active={selectedPlatformId === "custom"}
+                onSelect={() => setSelectedPlatformId("custom")}
+              />
 
               {selectedPlatformId === "custom" ? (
                 <div className={styles.inlineFieldCard}>
