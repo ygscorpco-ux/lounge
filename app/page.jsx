@@ -5,6 +5,123 @@ import Header from "../components/Header.jsx";
 import PostCard from "../components/PostCard.jsx";
 import WriteButton from "../components/WriteButton.jsx";
 
+function QuickIcon({ type, accent }) {
+  const stroke = accent || "#1b4797";
+
+  const common = {
+    width: 42,
+    height: 42,
+    viewBox: "0 0 48 48",
+    fill: "none",
+    xmlns: "http://www.w3.org/2000/svg",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      display: "block",
+      filter: "drop-shadow(0 2px 2px rgba(16,24,40,0.22))",
+    },
+  };
+
+  if (type === "home") {
+    return (
+      <svg {...common}>
+        <defs>
+          <linearGradient id="q-home-roof" x1="9" y1="11" x2="39" y2="11" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ff7676" />
+            <stop offset="1" stopColor="#ff3f3f" />
+          </linearGradient>
+          <linearGradient id="q-home-body" x1="11" y1="19" x2="35" y2="40" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#f7fbff" />
+            <stop offset="1" stopColor="#cbe4ff" />
+          </linearGradient>
+        </defs>
+        <path d="M8 22L24 9L40 22V40H8V22Z" fill="url(#q-home-body)" stroke={stroke} strokeWidth="2.1" />
+        <path d="M5.5 22L24 7L42.5 22H5.5Z" fill="url(#q-home-roof)" stroke={stroke} strokeWidth="2.1" />
+        <rect x="19.5" y="28" width="9" height="12" rx="1.8" fill="#1b4797" />
+        <rect x="12" y="27" width="5.8" height="5.8" rx="1.2" fill="#8be9ff" stroke={stroke} strokeWidth="1.4" />
+        <rect x="30.2" y="14.5" width="3.5" height="6.6" rx="1" fill="#ff5656" stroke={stroke} strokeWidth="1.4" />
+        <path d="M13 20.8H35.8" stroke="#ffffff" strokeWidth="1.3" opacity="0.8" />
+      </svg>
+    );
+  }
+
+  if (type === "scooter") {
+    return (
+      <svg {...common}>
+        <defs>
+          <linearGradient id="q-scooter-body" x1="14" y1="23" x2="35" y2="23" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ff8d4d" />
+            <stop offset="1" stopColor="#ff4c4c" />
+          </linearGradient>
+          <linearGradient id="q-scooter-wheel" x1="11" y1="31" x2="18" y2="38" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#c8f6ff" />
+            <stop offset="1" stopColor="#78dff7" />
+          </linearGradient>
+        </defs>
+        <circle cx="14" cy="35" r="5.1" fill="url(#q-scooter-wheel)" stroke={stroke} strokeWidth="2" />
+        <circle cx="33.6" cy="35" r="5.1" fill="url(#q-scooter-wheel)" stroke={stroke} strokeWidth="2" />
+        <path d="M18 35h9l4.8-10.3H20.9L17.6 19H12" stroke={stroke} strokeWidth="2.3" />
+        <path d="M27.5 24.7H35v5.2h-9.5Z" fill="url(#q-scooter-body)" stroke={stroke} strokeWidth="1.8" />
+        <rect x="31.4" y="21.5" width="5.8" height="2.5" rx="1.2" fill="#1b4797" />
+        <path d="M36.8 24h2.4a2 2 0 0 1 2 2v2.7" stroke={stroke} strokeWidth="2" />
+        <circle cx="36.5" cy="27.5" r="1.1" fill="#fff4b0" stroke={stroke} strokeWidth="1.2" />
+      </svg>
+    );
+  }
+
+  if (type === "briefcase") {
+    return (
+      <svg {...common}>
+        <defs>
+          <linearGradient id="q-brief-main" x1="8" y1="18" x2="40" y2="38" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#87efb1" />
+            <stop offset="1" stopColor="#35d985" />
+          </linearGradient>
+        </defs>
+        <rect x="7" y="16" width="34" height="23" rx="4" fill="url(#q-brief-main)" stroke={stroke} strokeWidth="2.1" />
+        <path d="M19 16V12.6A2.2 2.2 0 0 1 21.2 10.4h5.6A2.2 2.2 0 0 1 29 12.6V16" stroke={stroke} strokeWidth="2" />
+        <path d="M7 25H41" stroke={stroke} strokeWidth="2" />
+        <rect x="21.5" y="23.7" width="5" height="3.5" rx="1.2" fill="#1b4797" />
+        <path d="M12.2 20.6H19" stroke="#ffffff" strokeWidth="1.3" opacity="0.8" />
+      </svg>
+    );
+  }
+
+  if (type === "calendar") {
+    return (
+      <svg {...common}>
+        <defs>
+          <linearGradient id="q-cal-body" x1="10" y1="13" x2="38" y2="39" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ffe995" />
+            <stop offset="1" stopColor="#ffc83e" />
+          </linearGradient>
+        </defs>
+        <rect x="9" y="10" width="30" height="29" rx="4" fill="url(#q-cal-body)" stroke={stroke} strokeWidth="2.1" />
+        <rect x="9" y="10" width="30" height="8.2" rx="4" fill="#1b4797" />
+        <path d="M16.5 7.5V13M31.5 7.5V13" stroke={stroke} strokeWidth="2" />
+        <rect x="14" y="22.5" width="6" height="6" rx="1.1" fill="#ff6e6e" stroke={stroke} strokeWidth="1.3" />
+        <rect x="23.5" y="22.5" width="6" height="6" rx="1.1" fill="#fff1b6" stroke={stroke} strokeWidth="1.3" />
+        <rect x="14" y="31" width="6" height="4.8" rx="1" fill="#fff8db" stroke={stroke} strokeWidth="1.1" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <defs>
+        <linearGradient id="q-clip-body" x1="12" y1="11" x2="36" y2="39" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#d2ccff" />
+          <stop offset="1" stopColor="#9b8fff" />
+        </linearGradient>
+      </defs>
+      <rect x="12" y="7.5" width="24" height="32" rx="3.5" fill="url(#q-clip-body)" stroke={stroke} strokeWidth="2.1" />
+      <rect x="17.5" y="10.3" width="13" height="4.2" rx="1.8" fill="#1b4797" />
+      <path d="M17.6 20.4H30.4M17.6 25.5H30.4M17.6 30.6H26.8" stroke="#ffffff" strokeWidth="1.7" />
+      <path d="M17.6 18.4H28.2" stroke="#8faeff" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
 function formatBestDate(dateString) {
   const date = new Date(dateString);
   const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -105,31 +222,31 @@ export default function Home() {
       label: "\uC5FC\uAD11\uC0AC \uD648",
       url: "https://www.\uC5FC\uAD11\uC0AC.com",
       external: true,
-      icon: "/icons/quick/home.webp",
+      type: "home",
     },
     {
       label: "\uB9C8\uC9C4\uACC4\uC0B0\uAE30",
       url: "/tools/delivery-margin",
       external: false,
-      icon: "/icons/quick/scooter.webp",
+      type: "scooter",
     },
     {
       label: "\uC778\uAC74\uBE44\uACC4\uC0B0",
       url: "/tools/labor-cost",
       external: false,
-      icon: "/icons/quick/briefcase.webp",
+      type: "briefcase",
     },
     {
       label: "\uC9C0\uC6D0\uAE08\uC77C\uC815",
       url: "/tools/subsidy-calendar",
       external: false,
-      icon: "/icons/quick/calendar.webp",
+      type: "calendar",
     },
     {
       label: "\uC54C\uBC14\uAD00\uB9AC",
       url: "/tools/worker-scheduler",
       external: false,
-      icon: "/icons/quick/clipboard.webp",
+      type: "clipboard",
     },
   ];
 
@@ -525,27 +642,14 @@ export default function Home() {
               >
                 <div
                   style={{
-                    width: "52px",
-                    height: "52px",
+                    width: "48px",
+                    height: "46px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <img
-                    src={item.icon}
-                    alt=""
-                    width={50}
-                    height={50}
-                    loading="lazy"
-                    decoding="async"
-                    style={{
-                      width: "50px",
-                      height: "50px",
-                      objectFit: "contain",
-                      display: "block",
-                    }}
-                  />
+                  <QuickIcon type={item.type} accent="#1b4797" />
                 </div>
                 <span
                   style={{
