@@ -5,6 +5,7 @@ import pool from "../../../lib/db.js";
 import { getCurrentUser } from "../../../lib/auth.js";
 import { containsBannedWord } from "../../../lib/utils.js";
 import { PAGE_SIZE } from "../../../lib/constants.js";
+import { ensureNoticeSettingsColumns } from "../../../lib/notice-settings.js";
 import { NextResponse } from "next/server";
 
 const ADMIN_DISPLAY_NAME = "\uC5FC\uAD11\uC0AC";
@@ -12,6 +13,8 @@ const ANON_DISPLAY_NAME = "\uC775\uBA85";
 
 export async function GET(request) {
   try {
+    await ensureNoticeSettingsColumns();
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page"), 10) || 1;
     const category = searchParams.get("category");
@@ -21,6 +24,7 @@ export async function GET(request) {
     const offset = (page - 1) * PAGE_SIZE;
 
     const user = await getCurrentUser();
+    const isAdminUser = !!(user && user.role === "admin");
     let blockedIds = [];
 
     if (user) {
@@ -34,7 +38,8 @@ export async function GET(request) {
     let query = `
       SELECT
         p.id, p.user_id, p.category, p.title, p.content, p.is_notice,
-        p.like_count, p.comment_count, p.created_at, p.images, p.has_poll, u.role
+        p.like_count, p.comment_count, p.created_at, p.images, p.has_poll,
+        p.notice_visible, p.notice_pin_slot, p.notice_order, u.role
       FROM posts p
       JOIN users u ON p.user_id = u.id
       WHERE p.is_hidden = FALSE
@@ -46,29 +51,30 @@ export async function GET(request) {
       params.push(...blockedIds);
     }
 
+    if (!isAdminUser) {
+      query += " AND (p.is_notice = FALSE OR p.notice_visible = TRUE)";
+    }
+
     if (category) {
       query += " AND p.category = ?";
       params.push(category);
     }
 
     if (noticeOnly) {
-      query += " AND p.is_notice = TRUE";
+      query += " AND p.is_notice = TRUE AND p.notice_visible = TRUE";
     } else if (excludeNotice) {
       query += " AND p.is_notice = FALSE";
     }
 
-    if (sort === "likes") {
-      query += noticeOnly
-        ? " ORDER BY p.like_count DESC, p.created_at DESC"
-        : " ORDER BY p.is_notice DESC, p.like_count DESC, p.created_at DESC";
+    if (noticeOnly) {
+      query +=
+        " ORDER BY CASE WHEN p.notice_pin_slot IS NULL THEN 1 ELSE 0 END, p.notice_pin_slot ASC, p.notice_order ASC, p.created_at DESC";
+    } else if (sort === "likes") {
+      query += " ORDER BY p.is_notice DESC, p.like_count DESC, p.created_at DESC";
     } else if (sort === "comments") {
-      query += noticeOnly
-        ? " ORDER BY p.comment_count DESC, p.created_at DESC"
-        : " ORDER BY p.is_notice DESC, p.comment_count DESC, p.created_at DESC";
+      query += " ORDER BY p.is_notice DESC, p.comment_count DESC, p.created_at DESC";
     } else {
-      query += noticeOnly
-        ? " ORDER BY p.created_at DESC"
-        : " ORDER BY p.is_notice DESC, p.created_at DESC";
+      query += " ORDER BY p.is_notice DESC, p.created_at DESC";
     }
 
     query += " LIMIT ? OFFSET ?";
@@ -95,10 +101,14 @@ export async function GET(request) {
         title: row.title,
         content: (row.content || "").substring(0, 120),
         author: row.role === "admin" ? ADMIN_DISPLAY_NAME : ANON_DISPLAY_NAME,
-        isNotice: row.is_notice === 1,
+        isNotice: !!row.is_notice,
         likeCount: row.like_count,
         commentCount: row.comment_count,
         createdAt: row.created_at,
+        noticeVisible: !!row.notice_visible,
+        noticePinSlot:
+          row.notice_pin_slot === null ? null : Number(row.notice_pin_slot),
+        noticeOrder: Number(row.notice_order ?? 1000),
         hasImages: imageList.length > 0,
         thumbnailUrl,
         hasPoll: !!row.has_poll,

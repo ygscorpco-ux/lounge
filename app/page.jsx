@@ -475,6 +475,24 @@ export default function Home() {
                   >
                     {"\uACF5\uC9C0"}
                   </span>
+                  {post.noticePinSlot && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        color: "#1b4797",
+                        background: "#ebf2ff",
+                        borderRadius: "999px",
+                        padding: "2px 6px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {`\uACE0\uC815${post.noticePinSlot}`}
+                    </span>
+                  )}
                   <span
                     style={{
                       fontSize: "14px",
