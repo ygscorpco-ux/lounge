@@ -1,546 +1,471 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
 
-// 숫자 → 천단위 콤마 문자열
-function formatNumber(val) {
-  const num = val.replace(/[^0-9]/g, "");
-  return num ? Number(num).toLocaleString() : "";
-}
-function parseNum(val) {
-  return parseFloat(String(val).replace(/,/g, "")) || 0;
-}
-function getMarginStatus(rate) {
-  if (rate >= 30)
-    return {
-      emoji: "😊",
-      label: "양호",
-      bg: "rgba(46,204,113,0.25)",
-      color: "#27ae60",
-    };
-  if (rate >= 10)
-    return {
-      emoji: "🤔",
-      label: "보통",
-      bg: "rgba(243,156,18,0.25)",
-      color: "#e67e22",
-    };
-  return {
-    emoji: "😨",
-    label: "위험",
-    bg: "rgba(231,76,60,0.25)",
-    color: "#e74c3c",
-  };
+import { useEffect, useMemo, useState } from "react";
+import styles from "./DeliveryMarginCalculator.module.css";
+
+const PLATFORM_LOGOS = {
+  baemin: "/logos/baemin.png",
+  coupang: "/logos/coupang.png",
+  yogiyo: "/logos/yogiyo.png",
+  ddangyo: "/logos/ddangyo.png",
+};
+
+const ANALYSIS_INDUSTRIES = ["한식", "치킨", "분식", "카페", "중식", "피자"];
+
+const numberFormatter = new Intl.NumberFormat("ko-KR");
+const percentFormatter = new Intl.NumberFormat("ko-KR", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+function formatNumberInput(value) {
+  const digits = value.replace(/[^\d]/g, "");
+  return digits ? numberFormatter.format(Number(digits)) : "";
 }
 
-// 공유 텍스트 생성
-function buildShareText({
-  appName,
-  price,
-  margin,
-  marginRate,
-  dailyOrders,
-  monthlyMargin,
-}) {
-  const status =
-    marginRate >= 30 ? "😊 양호" : marginRate >= 10 ? "🤔 보통" : "😨 위험";
-  return `📊 실마진 계산 결과 (${appName})\n━━━━━━━━━━━━━\n💰 판매가: ${price.toLocaleString()}원\n✅ 실마진: ${margin.toLocaleString()}원 (${marginRate.toFixed(1)}%) ${status}${dailyOrders ? `\n📦 하루 ${dailyOrders}건 기준 월 마진: ${monthlyMargin.toLocaleString()}원` : ""}\n━━━━━━━━━━━━━\n[LOUNGE 실마진 계산기]`;
-}
+function sanitizePercentInput(value) {
+  const cleaned = value.replace(/[^\d.]/g, "");
+  const parts = cleaned.split(".");
+  const integer = (parts[0] || "").slice(0, 3);
 
-// 툴팁
-function Tooltip({ text }) {
-  const [show, setShow] = useState(false);
-  return (
-    <span
-      style={{
-        position: "relative",
-        display: "inline-flex",
-        alignItems: "center",
-        marginLeft: "5px",
-      }}
-    >
-      <span
-        onMouseEnter={() => setShow(true)}
-        onMouseLeave={() => setShow(false)}
-        onTouchStart={(e) => {
-          e.preventDefault();
-          setShow((v) => !v);
-        }}
-        style={{
-          width: "17px",
-          height: "17px",
-          borderRadius: "50%",
-          background: "#dce7f9",
-          color: "var(--color-primary)",
-          fontSize: "10px",
-          fontWeight: 800,
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          border: "1px solid #b8ccf0",
-        }}
-      >
-        ?
-      </span>
-      {show && (
-        <span
-          style={{
-            position: "absolute",
-            bottom: "24px",
-            left: 0,
-            background: "var(--color-gray-900)",
-            color: "#fff",
-            fontSize: "12px",
-            padding: "8px 12px",
-            borderRadius: "10px",
-            whiteSpace: "normal",
-            maxWidth: "200px",
-            width: "max-content",
-            zIndex: 200,
-            lineHeight: 1.6,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-            pointerEvents: "none",
-          }}
-        >
-          {text}
-          <span
-            style={{
-              position: "absolute",
-              bottom: "-5px",
-              left: "6px",
-              width: "10px",
-              height: "10px",
-              background: "var(--color-gray-900)",
-              transform: "rotate(45deg)",
-              borderRadius: "2px",
-            }}
-          />
-        </span>
-      )}
-    </span>
-  );
-}
-
-// 토글 스위치
-function Toggle({ on, onChange }) {
-  return (
-    <div
-      onClick={() => onChange(!on)}
-      style={{
-        width: "44px",
-        height: "24px",
-        borderRadius: "12px",
-        background: on ? "var(--color-primary)" : "var(--color-gray-300)",
-        position: "relative",
-        cursor: "pointer",
-        flexShrink: 0,
-        transition: "background 0.2s ease",
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: "3px",
-          left: on ? "23px" : "3px",
-          width: "18px",
-          height: "18px",
-          borderRadius: "50%",
-          background: "#fff",
-          transition: "left 0.2s ease",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-        }}
-      />
-    </div>
-  );
-}
-
-// 배달앱 로고 — Google favicon 우선, 실패하면 브랜드 컬러 원으로 fallback
-// 1:1 로고 버튼 — 별도 컴포넌트로 분리해야 useState를 map 안에서 써도 규칙 위반 없음
-function PlatformIconButton({ p, active, logoUrl, onSelect }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "5px",
-      }}
-    >
-      <button
-        onClick={onSelect}
-        style={{
-          width: "100%",
-          aspectRatio: "1",
-          borderRadius: "16px",
-          cursor: "pointer",
-          padding: 0,
-          border: active ? `3px solid ${p.color}` : "2px solid #e8eaf0",
-          overflow: "hidden",
-          transition: "all 0.15s ease",
-          boxShadow: active
-            ? `0 4px 16px ${p.color}40`
-            : "0 1px 5px rgba(0,0,0,0.06)",
-          background: "#fff",
-        }}
-      >
-        {logoUrl && !failed ? (
-          <img
-            src={logoUrl}
-            alt={p.name}
-            onError={() => setFailed(true)}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              display: "block",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              background: p.color,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <span style={{ color: "#fff", fontSize: "22px", fontWeight: 800 }}>
-              {p.name.charAt(0)}
-            </span>
-          </div>
-        )}
-      </button>
-      <span
-        style={{
-          fontSize: "11px",
-          fontWeight: active ? 700 : 500,
-          color: active ? p.color : "#555",
-        }}
-      >
-        {p.name}
-      </span>
-    </div>
-  );
-}
-
-// AI 분석 섹션
-function AiAnalysisSection({ calc, platformName, feeRate }) {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState("");
-  const [industry, setIndustry] = useState("");
-  const INDUSTRIES = ["카페", "치킨", "피자", "한식", "분식", "중식"];
-
-  async function handleAnalyze() {
-    if (!calc) return;
-    setLoading(true);
-    setError("");
-    setResult(null);
-    try {
-      const res = await fetch("/api/tools/margin-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          platform: platformName,
-          feeRate,
-          menuPrice: calc.price,
-          menuCost: calc.cost,
-          deliveryFee: calc.delivery,
-          marginRate: calc.marginRate,
-          margin: calc.margin,
-          industry,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) setResult(data.data);
-      else setError(data.error || "AI 분석을 사용할 수 없습니다");
-    } catch {
-      setError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-    }
-    setLoading(false);
+  if (parts.length === 1) {
+    return integer;
   }
 
-  if (!calc) return null;
+  const decimal = (parts[1] || "").slice(0, 2);
+  return `${integer}.${decimal}`;
+}
+
+function parseNumber(value) {
+  return Number(String(value).replace(/,/g, "")) || 0;
+}
+
+function formatCurrency(value) {
+  return `${numberFormatter.format(Math.round(value || 0))}원`;
+}
+
+function formatPercent(value) {
+  return `${percentFormatter.format(value || 0)}%`;
+}
+
+function formatUpdatedDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+}
+
+function getDefaultTier(platform) {
+  const tiers = platform?.tiers || [];
+  return tiers.find((tier) => tier.is_default) || tiers[0] || null;
+}
+
+function getSelectedTier(platform, selectedTierId) {
+  if (!platform) return null;
+  const tiers = platform.tiers || [];
+
   return (
-    <div style={{ marginTop: "12px" }}>
-      <div
-        style={{
-          display: "flex",
-          gap: "6px",
-          marginBottom: "10px",
-          flexWrap: "wrap",
-        }}
-      >
-        {INDUSTRIES.map((ind) => (
-          <button
-            key={ind}
-            onClick={() => setIndustry(ind === industry ? "" : ind)}
-            style={{
-              padding: "5px 12px",
-              borderRadius: "20px",
-              fontSize: "12px",
-              fontWeight: 600,
-              border:
-                industry === ind ? "1.5px solid #7c3aed" : "1.5px solid #ddd",
-              background: industry === ind ? "#7c3aed" : "#fff",
-              color: industry === ind ? "#fff" : "#666",
-              cursor: "pointer",
-            }}
-          >
-            {ind}
-          </button>
-        ))}
+    tiers.find((tier) => String(tier.id) === String(selectedTierId)) ||
+    getDefaultTier(platform)
+  );
+}
+
+function getTierTitle(tier) {
+  if (!tier) return "";
+  if (tier.tier_label?.trim()) return tier.tier_label.trim();
+
+  const min = Number(tier.delivery_min || 0);
+  const max = Number(tier.delivery_max || 0);
+
+  if (min && max) {
+    return `월 ${numberFormatter.format(min)}원 - ${numberFormatter.format(max)}원`;
+  }
+  if (min) {
+    return `월 ${numberFormatter.format(min)}원 이상`;
+  }
+
+  return "기본 구간";
+}
+
+function getTierDescription(tier) {
+  if (!tier) return "";
+
+  const parts = [`중개 ${formatPercent(Number(tier.fee_rate || 0))}`];
+  const paymentRate = Number(tier.payment_fee_rate || 0);
+
+  if (paymentRate) {
+    parts.push(`결제 ${formatPercent(paymentRate)}`);
+  }
+
+  parts.push(tier.vat_included ? "부가세 포함" : "부가세 별도");
+  return parts.join(" · ");
+}
+
+function getTierBadge(tier) {
+  if (!tier) return "";
+  if (tier.is_default) return "기본";
+  if (tier.memo?.trim()) return tier.memo.trim();
+  return "";
+}
+
+function getPlatformTotalRate(platform) {
+  const tier = getDefaultTier(platform);
+  if (!tier) return null;
+  return Number(tier.fee_rate || 0) + Number(tier.payment_fee_rate || 0);
+}
+
+function getMarginTone(rate) {
+  if (rate >= 25) {
+    return { label: "여유 있음", toneClass: styles.ratePositive };
+  }
+  if (rate >= 10) {
+    return { label: "점검 필요", toneClass: styles.rateNeutral };
+  }
+  return { label: rate >= 0 ? "타이트함" : "손실 구간", toneClass: styles.rateWarning };
+}
+
+function buildShareText({
+  platformName,
+  tierName,
+  calc,
+  cardFeeOn,
+  vatOn,
+  dailyOrders,
+  projection,
+}) {
+  const lines = [
+    "실마진 계산 결과",
+    tierName ? `${platformName} · ${tierName}` : platformName,
+    `판매가 ${formatCurrency(calc.price)}`,
+    `예상 마진 ${formatCurrency(calc.margin)} (${formatPercent(calc.marginRate)})`,
+    `앱 수수료 ${formatCurrency(calc.appFee)}`,
+    `원가 ${formatCurrency(calc.cost)}`,
+    `배달비 부담 ${formatCurrency(calc.delivery)}`,
+    `카드 수수료 ${cardFeeOn ? formatCurrency(calc.cardFee) : "미포함"}`,
+    `부가세 ${vatOn ? formatCurrency(calc.vatAmount) : "미포함"}`,
+  ];
+
+  if (dailyOrders && projection) {
+    lines.push(`일 ${dailyOrders}건 기준 월 예상 ${formatCurrency(projection.monthlyMargin)}`);
+  }
+
+  lines.push("LOUNGE 실마진 계산기");
+  return lines.join("\n");
+}
+
+function SectionHeader({ step, title, description }) {
+  return (
+    <div className={styles.sectionHeader}>
+      <span className={styles.sectionBadge}>{step}</span>
+      <div>
+        <h2 className={styles.sectionTitle}>{title}</h2>
+        <p className={styles.sectionDescription}>{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function NumberField({
+  label,
+  hint,
+  value,
+  onChange,
+  placeholder,
+  suffix = "원",
+  help,
+  compact = false,
+}) {
+  return (
+    <label
+      className={`${styles.fieldGroup} ${compact ? styles.fieldGroupCompact : ""}`}
+    >
+      <span className={styles.fieldLabelWrap}>
+        <span className={styles.fieldLabel}>{label}</span>
+        {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
+      </span>
+      <span className={styles.fieldInputShell}>
+        <input
+          type="text"
+          inputMode="numeric"
+          className={styles.fieldInput}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+        />
+        <span className={styles.fieldSuffix}>{suffix}</span>
+      </span>
+      {help ? <span className={styles.fieldHelp}>{help}</span> : null}
+    </label>
+  );
+}
+
+function PlatformCard({ platform, active, displayRate, onSelect }) {
+  const logoSrc = PLATFORM_LOGOS[platform.platform_id];
+  const isCustom = platform.platform_id === "custom";
+
+  return (
+    <button
+      type="button"
+      className={`${styles.platformCard} ${active ? styles.platformCardActive : ""}`}
+      onClick={onSelect}
+    >
+      <span className={styles.platformCardCheck}>{active ? "선택됨" : ""}</span>
+      <span className={styles.platformCardBody}>
+        <span className={styles.platformLogoBox}>
+          {logoSrc ? (
+            <img className={styles.platformLogo} src={logoSrc} alt={platform.name} />
+          ) : (
+            <span className={styles.platformFallback}>
+              {isCustom ? "%" : platform.name.slice(0, 1)}
+            </span>
+          )}
+        </span>
+        <span className={styles.platformCopy}>
+          <span className={styles.platformName}>{platform.name}</span>
+          <span className={styles.platformCaption}>
+            {isCustom
+              ? "수수료를 직접 입력"
+              : displayRate !== null
+                ? `기본 총 수수료 ${formatPercent(displayRate)}`
+                : "수수료 정보 준비 중"}
+          </span>
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function ToggleRow({ label, description, checked, onToggle }) {
+  return (
+    <div className={styles.settingRow}>
+      <div className={styles.settingCopy}>
+        <div className={styles.settingLabel}>{label}</div>
+        <div className={styles.settingDescription}>{description}</div>
       </div>
       <button
-        onClick={handleAnalyze}
-        disabled={loading}
-        style={{
-          width: "100%",
-          padding: "14px",
-          borderRadius: "14px",
-          border: "none",
-          background: loading
-            ? "#ccc"
-            : "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
-          color: "#fff",
-          fontSize: "15px",
-          fontWeight: 700,
-          cursor: loading ? "default" : "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-        }}
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        className={`${styles.switch} ${checked ? styles.switchActive : ""}`}
+        onClick={onToggle}
       >
-        {loading ? (
-          <>
-            <span className="fee-typing-dot" />
-            <span
-              className="fee-typing-dot"
-              style={{ animationDelay: "0.2s" }}
-            />
-            <span
-              className="fee-typing-dot"
-              style={{ animationDelay: "0.4s" }}
-            />
-            <span style={{ marginLeft: "4px" }}>AI 분석 중...</span>
-          </>
-        ) : (
-          "🤖 AI 분석 받기"
-        )}
+        <span className={styles.switchThumb} />
       </button>
-      {error && (
-        <div
-          style={{
-            marginTop: "10px",
-            padding: "12px 14px",
-            background: "#fff8e1",
-            border: "1px solid #f39c12",
-            color: "#7d5a00",
-            borderRadius: "10px",
-            fontSize: "13px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            justifyContent: "space-between",
-          }}
-        >
-          <span>⚠️ {error}</span>
-          <button
-            onClick={handleAnalyze}
-            style={{
-              background: "none",
-              border: "1px solid #f39c12",
-              color: "#7d5a00",
-              borderRadius: "6px",
-              padding: "3px 10px",
-              fontSize: "12px",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            다시 시도
-          </button>
-        </div>
-      )}
-      {result && (
-        <div
-          style={{
-            marginTop: "12px",
-            background: "#1a1a2e",
-            borderRadius: "16px",
-            padding: "20px",
-            animation: "fadeSlideUp 0.3s ease",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "12px",
-            }}
-          >
-            <span style={{ fontSize: "18px" }}>🤖</span>
-            <span
-              style={{ fontSize: "13px", fontWeight: 700, color: "#a78bfa" }}
-            >
-              AI 수익성 분석
-            </span>
-            {result.cached && (
-              <span
-                style={{
-                  fontSize: "10px",
-                  padding: "2px 8px",
-                  borderRadius: "10px",
-                  background: "rgba(167,139,250,0.2)",
-                  color: "#a78bfa",
-                  marginLeft: "auto",
-                }}
-              >
-                캐시됨
-              </span>
-            )}
-          </div>
-          <p
-            style={{
-              fontSize: "14px",
-              color: "#e0e0e0",
-              lineHeight: 1.7,
-              margin: 0,
-              whiteSpace: "pre-line",
-            }}
-          >
-            {result.text}
-          </p>
-          <p
-            style={{
-              fontSize: "11px",
-              color: "#556",
-              marginTop: "10px",
-              marginBottom: 0,
-            }}
-          >
-            ⚠️ AI 분석은 참고용이며 실제 수익을 보장하지 않아요. 정확한 수익 계산은 실제 정산서를 기준으로 확인하세요.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
 
 export default function DeliveryMarginCalculator() {
-  // 플랫폼 데이터 (API에서 동적 로드)
   const [platforms, setPlatforms] = useState([]);
   const [loadingPlatforms, setLoadingPlatforms] = useState(true);
+  const [platformError, setPlatformError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState("");
 
-  // 선택 상태
   const [selectedPlatformId, setSelectedPlatformId] = useState("baemin");
-  const [selectedTierId, setSelectedTierId] = useState(null); // null = default tier 사용
+  const [selectedTierId, setSelectedTierId] = useState("");
   const [customFee, setCustomFee] = useState("");
 
-  // 입력값
   const [menuPrice, setMenuPrice] = useState("");
   const [menuCost, setMenuCost] = useState("");
   const [deliveryFee, setDeliveryFee] = useState("");
   const [cardFeeOn, setCardFeeOn] = useState(true);
   const [vatOn, setVatOn] = useState(false);
-  const [dailyOrders, setDailyOrders] = useState("");
-  const [fixedCost, setFixedCost] = useState(""); // BEP용 월 고정비
-  const [shareMsg, setShareMsg] = useState("");
-  const [showCompare, setShowCompare] = useState(false);
 
-  // /api/delivery-fees 로드
+  const [dailyOrders, setDailyOrders] = useState("");
+  const [fixedCost, setFixedCost] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
+
+  const [analysisIndustry, setAnalysisIndustry] = useState("");
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
+  const [analysisResult, setAnalysisResult] = useState(null);
+
   useEffect(() => {
-    fetch("/api/delivery-fees")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success && d.data?.length) {
-          setPlatforms(d.data);
+    let cancelled = false;
+
+    async function loadPlatforms() {
+      setLoadingPlatforms(true);
+      setPlatformError("");
+
+      try {
+        const response = await fetch("/api/delivery-fees");
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "수수료 정보를 불러오지 못했습니다.");
         }
-      })
-      .catch(() => {})
-      .finally(() => setLoadingPlatforms(false));
+
+        if (cancelled) return;
+
+        setPlatforms(Array.isArray(data.data) ? data.data : []);
+        setLastUpdated(data.lastUpdated || "");
+
+        if (!data.data?.length) {
+          setPlatformError("활성화된 수수료 데이터가 없어 직접 입력 모드로만 계산할 수 있습니다.");
+        }
+      } catch (error) {
+        if (cancelled) return;
+        setPlatforms([]);
+        setPlatformError(error.message || "수수료 정보를 불러오지 못했습니다.");
+      } finally {
+        if (!cancelled) {
+          setLoadingPlatforms(false);
+        }
+      }
+    }
+
+    loadPlatforms();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // 선택된 플랫폼 객체
+  useEffect(() => {
+    if (!loadingPlatforms && !platforms.length && selectedPlatformId !== "custom") {
+      setSelectedPlatformId("custom");
+    }
+  }, [loadingPlatforms, platforms, selectedPlatformId]);
+
+  useEffect(() => {
+    if (!platforms.length) return;
+    if (selectedPlatformId === "custom") return;
+
+    const hasSelectedPlatform = platforms.some(
+      (platform) => platform.platform_id === selectedPlatformId,
+    );
+
+    if (!hasSelectedPlatform) {
+      setSelectedPlatformId(platforms[0].platform_id);
+    }
+  }, [platforms, selectedPlatformId]);
+
   const selectedPlatform = useMemo(
-    () => platforms.find((p) => p.platform_id === selectedPlatformId) || null,
+    () => platforms.find((platform) => platform.platform_id === selectedPlatformId) || null,
     [platforms, selectedPlatformId],
   );
 
-  // 선택된 티어 (selectedTierId → 없으면 is_default=1 → 없으면 첫번째)
-  const selectedTier = useMemo(() => {
-    if (!selectedPlatform) return null;
-    const tiers = selectedPlatform.tiers || [];
-    if (selectedTierId)
-      return (
-        tiers.find((t) => t.id === selectedTierId) ||
-        tiers.find((t) => t.is_default) ||
-        tiers[0]
-      );
-    return tiers.find((t) => t.is_default) || tiers[0] || null;
-  }, [selectedPlatform, selectedTierId]);
+  useEffect(() => {
+    if (selectedPlatformId === "custom") {
+      if (selectedTierId) setSelectedTierId("");
+      return;
+    }
 
-  // 수수료율 계산
-  const feeRate =
+    if (!selectedPlatform) return;
+
+    const nextTier = getSelectedTier(selectedPlatform, selectedTierId);
+    const nextTierId = nextTier ? String(nextTier.id) : "";
+
+    if (nextTierId !== String(selectedTierId || "")) {
+      setSelectedTierId(nextTierId);
+    }
+  }, [selectedPlatform, selectedPlatformId, selectedTierId]);
+
+  useEffect(() => {
+    setAnalysisError("");
+    setAnalysisResult(null);
+  }, [selectedPlatformId, selectedTierId, customFee, menuPrice, menuCost, deliveryFee, cardFeeOn, vatOn]);
+
+  const selectedTier = useMemo(() => {
+    if (selectedPlatformId === "custom") return null;
+    return getSelectedTier(selectedPlatform, selectedTierId);
+  }, [selectedPlatform, selectedPlatformId, selectedTierId]);
+
+  const appFeeRate =
     selectedPlatformId === "custom"
-      ? parseFloat(customFee) || 0
-      : parseFloat(selectedTier?.fee_rate || 0);
-  const payFeeRate =
-    selectedPlatformId === "custom"
-      ? 0
-      : parseFloat(selectedTier?.payment_fee_rate || 0);
-  // 카드수수료 토글: custom이면 1.5% 사용, API 데이터 있으면 payFeeRate 사용
-  const effectivePayRate = cardFeeOn
+      ? Number(customFee) || 0
+      : Number(selectedTier?.fee_rate || 0);
+
+  const paymentFeeRate = cardFeeOn
     ? selectedPlatformId === "custom"
       ? 1.5
-      : payFeeRate
+      : Number(selectedTier?.payment_fee_rate || 0)
     : 0;
 
-  // 실시간 계산
+  const totalFeeRate = appFeeRate + paymentFeeRate;
+
   const calc = useMemo(() => {
-    const price = parseNum(menuPrice);
-    const cost = parseNum(menuCost);
-    const delivery = parseNum(deliveryFee);
+    const price = parseNumber(menuPrice);
     if (!price) return null;
 
-    const appFee = Math.round((price * feeRate) / 100); // 중개 수수료
-    const cardFee = Math.round((price * effectivePayRate) / 100); // 결제 수수료
+    const cost = parseNumber(menuCost);
+    const delivery = parseNumber(deliveryFee);
+    const appFee = Math.round((price * appFeeRate) / 100);
+    const cardFee = Math.round((price * paymentFeeRate) / 100);
     const vatAmount = vatOn ? Math.round(price * 0.1) : 0;
-    const margin = price - appFee - cardFee - delivery - cost - vatAmount;
+    const totalDeductions = cost + delivery + appFee + cardFee + vatAmount;
+    const margin = price - totalDeductions;
     const marginRate = price > 0 ? (margin / price) * 100 : 0;
-
-    const costRatio = Math.max(0, (cost / price) * 100);
-    const feeRatio = Math.max(0, ((appFee + cardFee) / price) * 100);
-    const otherRatio = Math.max(0, ((delivery + vatAmount) / price) * 100);
-    const marginRatio = Math.max(0, (margin / price) * 100);
 
     return {
       price,
+      cost,
+      delivery,
       appFee,
       cardFee,
       vatAmount,
-      delivery,
-      cost,
+      totalDeductions,
       margin,
       marginRate,
-      costRatio,
-      feeRatio,
-      otherRatio,
-      marginRatio,
     };
-  }, [menuPrice, menuCost, deliveryFee, feeRate, effectivePayRate, vatOn]);
+  }, [menuPrice, menuCost, deliveryFee, appFeeRate, paymentFeeRate, vatOn]);
 
-  // 월 시뮬레이션
-  const simulation = useMemo(() => {
-    if (!calc || !dailyOrders) return null;
-    const orders = parseInt(dailyOrders) || 0;
-    if (!orders) return null;
+  const meterSegments = useMemo(() => {
+    if (!calc) return [];
+
+    const base = Math.max(calc.price, calc.totalDeductions || 0);
+    if (!base) return [];
+
+    return [
+      { key: "cost", value: calc.cost, color: "#d6ddea" },
+      { key: "fees", value: calc.appFee + calc.cardFee, color: "#b8c8e9" },
+      { key: "etc", value: calc.delivery + calc.vatAmount, color: "#e3eaf6" },
+      { key: "margin", value: Math.max(calc.margin, 0), color: "#1b4797" },
+    ]
+      .filter((segment) => segment.value > 0)
+      .map((segment) => ({
+        ...segment,
+        width: `${(segment.value / base) * 100}%`,
+      }));
+  }, [calc]);
+
+  const comparison = useMemo(() => {
+    if (!calc || !platforms.length) return [];
+
+    return platforms
+      .map((platform) => {
+        const defaultTier = getDefaultTier(platform);
+        if (!defaultTier) return null;
+
+        const feeRate = Number(defaultTier.fee_rate || 0);
+        const payRate = cardFeeOn ? Number(defaultTier.payment_fee_rate || 0) : 0;
+        const appFee = Math.round((calc.price * feeRate) / 100);
+        const cardFee = Math.round((calc.price * payRate) / 100);
+        const vatAmount = vatOn ? Math.round(calc.price * 0.1) : 0;
+        const margin =
+          calc.price - calc.cost - calc.delivery - appFee - cardFee - vatAmount;
+
+        return {
+          platformId: platform.platform_id,
+          name: platform.name,
+          margin,
+          marginRate: calc.price > 0 ? (margin / calc.price) * 100 : 0,
+          totalRate: feeRate + payRate,
+        };
+      })
+      .filter(Boolean)
+      .sort((left, right) => right.margin - left.margin);
+  }, [calc, platforms, cardFeeOn, vatOn]);
+
+  const projection = useMemo(() => {
+    const orders = parseNumber(dailyOrders);
+    if (!calc || !orders) return null;
+
     return {
       orders,
       dailyMargin: calc.margin * orders,
@@ -549,1433 +474,590 @@ export default function DeliveryMarginCalculator() {
     };
   }, [calc, dailyOrders]);
 
-  // 배달앱별 마진 비교 (API 데이터 기반)
-  const comparison = useMemo(() => {
-    const price = parseNum(menuPrice);
-    const cost = parseNum(menuCost);
-    const delivery = parseNum(deliveryFee);
-    if (!price || !platforms.length) return null;
+  const breakEvenOrders = useMemo(() => {
+    const fixed = parseNumber(fixedCost);
+    if (!calc || calc.margin <= 0 || !fixed) return null;
+    return Math.ceil(fixed / calc.margin);
+  }, [calc, fixedCost]);
 
-    return platforms.map((platform) => {
-      const defaultTier =
-        platform.tiers?.find((t) => t.is_default) || platform.tiers?.[0];
-      const pFee = parseFloat(defaultTier?.fee_rate || 0);
-      const pPay = cardFeeOn
-        ? parseFloat(defaultTier?.payment_fee_rate || 0)
-        : 0;
-      const appFee = Math.round((price * pFee) / 100);
-      const cardFee = Math.round((price * pPay) / 100);
-      const vat = vatOn ? Math.round(price * 0.1) : 0;
-      const margin = price - appFee - cardFee - delivery - cost - vat;
-      const rate = price > 0 ? (margin / price) * 100 : 0;
-      return { platform, margin, rate, feeRate: pFee, payRate: pPay };
-    });
-  }, [menuPrice, menuCost, deliveryFee, platforms, cardFeeOn, vatOn]);
+  const resultTone = calc ? getMarginTone(calc.marginRate) : null;
+  const selectedPlatformName = selectedPlatform?.name || "직접 입력";
+  const selectedTierName =
+    selectedPlatformId === "custom" ? "수수료 직접 입력" : getTierTitle(selectedTier);
 
-  function handleShare() {
+  const compareStep = selectedPlatformId === "custom" ? "STEP 2" : "STEP 3";
+  const settingStep = selectedPlatformId === "custom" ? "STEP 3" : "STEP 4";
+  const resultStep = selectedPlatformId === "custom" ? "STEP 4" : "STEP 5";
+
+  function handleNumericChange(setter) {
+    return (event) => {
+      setter(formatNumberInput(event.target.value));
+    };
+  }
+
+  async function handleShare() {
     if (!calc) return;
+
     const text = buildShareText({
-      appName: selectedPlatform?.name || "직접입력",
-      price: calc.price,
-      margin: calc.margin,
-      marginRate: calc.marginRate,
-      dailyOrders: parseInt(dailyOrders) || 0,
-      monthlyMargin: simulation?.monthlyMargin || 0,
+      platformName: selectedPlatformName,
+      tierName: selectedTierName,
+      calc,
+      cardFeeOn,
+      vatOn,
+      dailyOrders,
+      projection,
     });
+
     try {
       if (navigator.share) {
-        navigator.share({ title: "실마진 계산 결과", text });
-        setShareMsg("공유 완료!");
+        await navigator.share({
+          title: "실마진 계산 결과",
+          text,
+        });
+        setShareMessage("공유 창을 열었습니다.");
       } else {
-        navigator.clipboard.writeText(text);
-        setShareMsg("클립보드에 복사됐어요!");
+        await navigator.clipboard.writeText(text);
+        setShareMessage("결과를 클립보드에 복사했습니다.");
       }
     } catch {
-      setShareMsg("공유를 취소했습니다");
+      setShareMessage("공유를 취소했습니다.");
     }
-    setTimeout(() => setShareMsg(""), 2500);
+
+    window.setTimeout(() => setShareMessage(""), 2200);
   }
 
-  function handleNumInput(setter) {
-    return (e) => setter(formatNumber(e.target.value));
-  }
+  async function handleAnalyze() {
+    if (!calc) return;
 
-  const inputStyle = {
-    textAlign: "right",
-    padding: "11px 14px",
-    fontSize: "15px",
-    fontWeight: 600,
-    border: "1.5px solid var(--color-gray-300)",
-    borderRadius: "var(--radius-sm)",
-    background: "#fff",
-    outline: "none",
-    fontFamily: "inherit",
-    width: "100%",
-    transition: "border-color 0.15s",
-  };
-  const labelStyle = {
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "var(--color-gray-700)",
-    display: "flex",
-    alignItems: "center",
-  };
-  const rowStyle = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "14px",
-  };
+    setAnalysisLoading(true);
+    setAnalysisError("");
+    setAnalysisResult(null);
 
-  // 플랫폼 버튼에 표시할 총 수수료율 (default 구간 기준)
-  function getPlatformDisplayRate(platform) {
-    const tier =
-      platform.tiers?.find((t) => t.is_default) || platform.tiers?.[0];
-    if (!tier) return null;
-    return (
-      parseFloat(tier.fee_rate) + parseFloat(tier.payment_fee_rate)
-    ).toFixed(1);
-  }
+    try {
+      const response = await fetch("/api/tools/margin-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: selectedPlatformName,
+          feeRate: totalFeeRate,
+          menuPrice: calc.price,
+          menuCost: calc.cost,
+          deliveryFee: calc.delivery,
+          marginRate: calc.marginRate,
+          margin: calc.margin,
+          industry: analysisIndustry,
+        }),
+      });
 
-  // 플랫폼별 로컬 로고 경로 (public/logos/ 폴더)
-  const FAVICON_DOMAINS = {
-    baemin: "/logos/baemin.png",
-    coupang: "/logos/coupang.png",
-    yogiyo: "/logos/yogiyo.png",
-    ddangyo: "/logos/ddangyo.png",
-  };
+      const data = await response.json();
 
-  // 티어 선택이 필요한 플랫폼 (구간이 2개 이상)
-  const hasTiers =
-    selectedPlatform && (selectedPlatform.tiers?.length || 0) > 1;
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "AI 분석을 불러오지 못했습니다.");
+      }
 
-  // 티어 라벨 단축 — 괄호 안 내용 우선, 없으면 첫 단어
-  function shortTierLabel(label) {
-    const match = label.match(/\(([^)]+)\)/);
-    if (match) return match[1];
-    return label.split(" ")[0];
+      setAnalysisResult(data.data);
+    } catch (error) {
+      setAnalysisError(error.message || "AI 분석을 불러오지 못했습니다.");
+    } finally {
+      setAnalysisLoading(false);
+    }
   }
 
   return (
-    <div
-      style={{
-        maxWidth: "480px",
-        margin: "0 auto",
-        padding: "0 0 40px",
-        background: "var(--color-bg)",
-        minHeight: "100%",
-      }}
-    >
-      <div style={{ padding: "16px 16px 0" }}>
-        {/* ── 입력 카드 ── */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: "20px",
-            padding: "24px",
-            boxShadow: "0 4px 20px rgba(27,71,151,0.08)",
-            marginBottom: "16px",
-          }}
-        >
-          {/* ① 배달앱 선택 (API 데이터 기반) */}
-          <div
-            style={{
-              fontSize: "13px",
-              fontWeight: 600,
-              color: "var(--color-gray-700)",
-              marginBottom: "10px",
-            }}
-          >
-            배달앱 선택
+    <div className={styles.page}>
+      <section className={`${styles.card} ${styles.heroCard}`}>
+        <span className={styles.heroBadge}>실시간 수수료 반영</span>
+        <h1 className={styles.heroTitle}>실마진 계산기</h1>
+        <p className={styles.heroDescription}>
+          배달앱과 매출 구간을 고른 뒤, 메뉴 1건당 실제로 얼마가 남는지 빠르게
+          확인할 수 있도록 흐름을 단순하게 재구성했습니다.
+        </p>
+        <div className={styles.heroHighlights}>
+          <div className={styles.heroHighlight}>
+            <span className={styles.heroHighlightLabel}>앱별 비교</span>
+            <strong className={styles.heroHighlightValue}>한 화면에서 확인</strong>
           </div>
-          {loadingPlatforms ? (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "8px",
-                marginBottom: "20px",
-              }}
-            >
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  style={{
-                    height: "68px",
-                    borderRadius: "14px",
-                    background: "var(--color-gray-100)",
-                    animation: "shimmer 1.2s infinite",
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div style={{ marginBottom: hasTiers ? "12px" : "20px" }}>
-              {/* 1:1 로고 버튼 그리드 — 고정 크기로 너무 커지지 않게 */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(0, 120px))",
-                  gap: "10px",
-                  marginBottom: "8px",
-                  justifyContent: "center",
-                }}
-              >
-                {platforms.map((p) => (
-                  <PlatformIconButton
-                    key={p.platform_id}
-                    p={p}
-                    active={selectedPlatformId === p.platform_id}
-                    logoUrl={FAVICON_DOMAINS[p.platform_id] || null}
-                    onSelect={() => {
-                      setSelectedPlatformId(p.platform_id);
-                      setSelectedTierId(null);
-                    }}
-                  />
-                ))}
-              </div>
-              {/* 직접입력 — 아래 한 줄 전체 너비 */}
-              <button
-                onClick={() => {
-                  setSelectedPlatformId("custom");
-                  setSelectedTierId(null);
-                }}
-                style={{
-                  width: "100%",
-                  padding: "11px",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  border:
-                    selectedPlatformId === "custom"
-                      ? "2px solid #1b4797"
-                      : "1.5px solid #e8eaf0",
-                  background:
-                    selectedPlatformId === "custom" ? "#eef2fb" : "#fafafa",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M9.5 1.5L12.5 4.5L5 12H2V9L9.5 1.5Z"
-                    stroke={
-                      selectedPlatformId === "custom" ? "#1b4797" : "#888"
-                    }
-                    strokeWidth="1.4"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: selectedPlatformId === "custom" ? "#1b4797" : "#555",
-                  }}
-                >
-                  직접입력
-                </span>
-              </button>
-            </div>
-          )}
-
-          {/* ② 수수료 구간 선택 — 토스 스타일 세그먼트 탭 */}
-          {hasTiers &&
-            selectedPlatformId !== "custom" &&
-            (() => {
-              const activeTier =
-                selectedPlatform.tiers.find((t) =>
-                  selectedTierId ? t.id === selectedTierId : t.is_default,
-                ) || selectedPlatform.tiers[0];
-              return (
-                <div style={{ marginBottom: "16px" }}>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      color: "var(--color-gray-600)",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    내 매출 구간 선택
-                  </div>
-                  {/* 세그먼트 컨트롤 컨테이너 — 회색 트랙 위에 흰 pill이 슬라이드 */}
-                  <div
-                    style={{
-                      display: "flex",
-                      background: "#f0f1f5",
-                      borderRadius: "12px",
-                      padding: "4px",
-                      gap: "2px",
-                    }}
-                  >
-                    {selectedPlatform.tiers.map((tier) => {
-                      const isActive = tier.id === activeTier.id;
-                      const total = (
-                        parseFloat(tier.fee_rate) +
-                        parseFloat(tier.payment_fee_rate)
-                      ).toFixed(1);
-                      const short = shortTierLabel(tier.tier_label);
-                      return (
-                        <button
-                          key={tier.id}
-                          onClick={() => setSelectedTierId(tier.id)}
-                          style={{
-                            flex: 1,
-                            padding: "8px 4px",
-                            border: "none",
-                            cursor: "pointer",
-                            borderRadius: "9px",
-                            transition: "all 0.18s ease",
-                            background: isActive ? "#fff" : "transparent",
-                            boxShadow: isActive
-                              ? "0 1px 6px rgba(0,0,0,0.10)"
-                              : "none",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: "2px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 700,
-                              color: isActive ? selectedPlatform.color : "#888",
-                              lineHeight: 1,
-                            }}
-                          >
-                            {short}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 800,
-                              color: isActive ? selectedPlatform.color : "#555",
-                              fontVariantNumeric: "tabular-nums",
-                            }}
-                          >
-                            {total}%
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {/* 선택된 구간 상세 설명 줄 */}
-                  <div
-                    style={{
-                      marginTop: "7px",
-                      fontSize: "11px",
-                      color: "#888",
-                      textAlign: "center",
-                    }}
-                  >
-                    중개 {activeTier.fee_rate}% + 결제{" "}
-                    {activeTier.payment_fee_rate}% &nbsp;·&nbsp;{" "}
-                    {activeTier.tier_label}
-                  </div>
-                </div>
-              );
-            })()}
-
-          {/* 직접입력 시 수수료율 필드 */}
-          {selectedPlatformId === "custom" && (
-            <div style={{ ...rowStyle, marginBottom: "16px" }}>
-              <label style={labelStyle}>
-                수수료율{" "}
-                <Tooltip text="배달앱에서 청구하는 중개 수수료율을 입력하세요" />
-              </label>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  width: "130px",
-                }}
-              >
-                <input
-                  style={{ ...inputStyle, width: "90px" }}
-                  type="number"
-                  placeholder="0.0"
-                  value={customFee}
-                  onChange={(e) => setCustomFee(e.target.value)}
-                  inputMode="decimal"
-                />
-                <span
-                  style={{
-                    fontSize: "14px",
-                    color: "var(--color-gray-500)",
-                    fontWeight: 600,
-                  }}
-                >
-                  %
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* ③ 입력 필드 3개 */}
-          {[
-            {
-              label: "메뉴 판매가",
-              tip: "고객이 실제로 결제하는 메뉴 가격",
-              placeholder: "15,000",
-              value: menuPrice,
-              setter: setMenuPrice,
-            },
-            {
-              label: "메뉴 원가",
-              tip: "재료비, 포장재 등 해당 메뉴를 만드는 데 드는 비용",
-              placeholder: "5,000",
-              value: menuCost,
-              setter: setMenuCost,
-            },
-            {
-              label: "배달비 부담",
-              tip: "사장님이 직접 부담하는 배달대행비. 고객 부담이면 0원 입력",
-              placeholder: "0",
-              value: deliveryFee,
-              setter: setDeliveryFee,
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              style={{ ...rowStyle, ...(i === 2 ? { marginBottom: 0 } : {}) }}
-            >
-              <label style={labelStyle}>
-                {item.label}
-                <Tooltip text={item.tip} />
-              </label>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  width: "150px",
-                }}
-              >
-                <input
-                  style={inputStyle}
-                  type="text"
-                  inputMode="numeric"
-                  placeholder={item.placeholder}
-                  value={item.value}
-                  onChange={handleNumInput(item.setter)}
-                />
-                <span
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--color-gray-500)",
-                    fontWeight: 600,
-                    flexShrink: 0,
-                  }}
-                >
-                  원
-                </span>
-              </div>
-            </div>
-          ))}
-
-          {/* ④ 토글 스위치 */}
-          <div
-            style={{
-              marginTop: "20px",
-              paddingTop: "18px",
-              borderTop: "1px solid var(--color-gray-200)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: "var(--color-gray-700)",
-                }}
-              >
-                결제(카드)수수료 포함
-                <span
-                  style={{
-                    fontSize: "11px",
-                    color: "var(--color-gray-500)",
-                    marginLeft: "5px",
-                  }}
-                >
-                  (
-                  {selectedPlatformId === "custom"
-                    ? "1.5"
-                    : effectivePayRate.toFixed(1)}
-                  %)
-                </span>
-              </span>
-              <Toggle on={cardFeeOn} onChange={setCardFeeOn} />
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: "var(--color-gray-700)",
-                }}
-              >
-                부가세 포함
-                <span
-                  style={{
-                    fontSize: "11px",
-                    color: "var(--color-gray-500)",
-                    marginLeft: "5px",
-                  }}
-                >
-                  (10%)
-                </span>
-              </span>
-              <Toggle on={vatOn} onChange={setVatOn} />
-            </div>
+          <div className={styles.heroHighlight}>
+            <span className={styles.heroHighlightLabel}>입력 방식</span>
+            <strong className={styles.heroHighlightValue}>숫자 3개 먼저</strong>
+          </div>
+          <div className={styles.heroHighlight}>
+            <span className={styles.heroHighlightLabel}>계산 반영</span>
+            <strong className={styles.heroHighlightValue}>입력 즉시 갱신</strong>
           </div>
         </div>
+        <div className={styles.heroMetaRow}>
+          <span className={styles.heroMetaDot} />
+          <span className={styles.heroMetaText}>
+            {lastUpdated
+              ? `수수료 기준 업데이트 ${formatUpdatedDate(lastUpdated)}`
+              : "기본 수수료 정보를 불러오는 중입니다."}
+          </span>
+        </div>
+      </section>
 
-        {/* ── 결과 카드 ── */}
-        {!calc ? (
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "20px",
-              padding: "28px 24px",
-              boxShadow: "0 4px 20px rgba(27,71,151,0.08)",
-              textAlign: "center",
-              color: "var(--color-gray-500)",
-              fontSize: "14px",
-            }}
-          >
-            <div
-              style={{ fontSize: "18px", marginBottom: "12px", lineHeight: 1 }}
-            >
-              💰
-            </div>
-            메뉴 판매가를 입력하면 마진이 계산됩니다
+      {platformError ? (
+        <div className={`${styles.notice} ${styles.noticeWarning}`}>{platformError}</div>
+      ) : null}
+
+      <section className={styles.card}>
+        <SectionHeader
+          step="STEP 1"
+          title="배달앱 선택"
+          description="자주 쓰는 앱을 고르면 해당 기본 수수료가 자동으로 채워집니다."
+        />
+
+        {loadingPlatforms ? (
+          <div className={styles.platformGrid}>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className={styles.platformSkeleton} />
+            ))}
           </div>
         ) : (
           <>
-            {calc.margin < 0 && (
-              <div
-                style={{
-                  background: "#fff0f0",
-                  border: "2px solid #e74c3c",
-                  borderRadius: "14px",
-                  padding: "14px 18px",
-                  marginBottom: "12px",
-                  display: "flex",
-                  gap: "10px",
-                  alignItems: "flex-start",
-                  animation: "fadeSlideUp 0.25s ease",
-                }}
-              >
-                <span style={{ fontSize: "22px", flexShrink: 0 }}>🚨</span>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: 800,
-                      color: "#e74c3c",
-                      marginBottom: "3px",
-                    }}
-                  >
-                    이 메뉴는 팔수록 손해예요
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#c0392b",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    건당 {Math.abs(calc.margin).toLocaleString()}원 손실이
-                    발생합니다. 판매가를 올리거나 원가를 줄여보세요.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div
-              style={{
-                background:
-                  calc.marginRate >= 30
-                    ? "linear-gradient(135deg, #1b6b3a 0%, #2ecc71 100%)"
-                    : calc.marginRate >= 10
-                      ? "linear-gradient(135deg, #7d5a00 0%, #f39c12 100%)"
-                      : calc.margin < 0
-                        ? "linear-gradient(135deg, #7d1b1b 0%, #e74c3c 100%)"
-                        : "linear-gradient(135deg, #1b4797 0%, #2d5fc4 100%)",
-                borderRadius: "20px",
-                padding: "28px 24px",
-                color: "#fff",
-                animation: "fadeSlideUp 0.25s ease",
-                transition: "background 0.5s ease",
-              }}
-            >
-              {/* 실마진 BIG */}
-              <div
-                style={{ marginBottom: "4px", fontSize: "13px", opacity: 0.8 }}
-              >
-                실수령 마진
-              </div>
-              <div
-                style={{
-                  fontSize: "36px",
-                  fontWeight: 800,
-                  letterSpacing: "-1px",
-                  marginBottom: "10px",
-                }}
-              >
-                ₩ {calc.margin.toLocaleString()}
-              </div>
-
-              {/* 마진율 뱃지 */}
-              {(() => {
-                const status = getMarginStatus(calc.marginRate);
-                return (
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      padding: "5px 12px",
-                      borderRadius: "20px",
-                      background: status.bg,
-                      marginBottom: "20px",
-                    }}
-                  >
-                    <span style={{ fontSize: "14px" }}>{status.emoji}</span>
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        color: "#fff",
-                      }}
-                    >
-                      {calc.marginRate.toFixed(1)}% {status.label}
-                    </span>
-                  </div>
-                );
-              })()}
-
-              <div
-                style={{
-                  height: "1px",
-                  background: "rgba(255,255,255,0.2)",
-                  marginBottom: "18px",
-                }}
-              />
-
-              {/* 항목별 차감 내역 — 중개/결제 수수료 분리 표시 */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  marginBottom: "20px",
-                }}
-              >
-                {[
-                  {
-                    icon: "📦",
-                    label: "판매가",
-                    amount: calc.price,
-                    sign: "+",
-                    sub: null,
-                  },
-                  {
-                    icon: "🏪",
-                    label: "배달앱 수수료",
-                    amount: calc.appFee,
-                    sign: "-",
-                    sub: `중개 ${feeRate.toFixed(1)}%`,
-                  },
-                  ...(cardFeeOn && calc.cardFee > 0
-                    ? [
-                        {
-                          icon: "💳",
-                          label: "결제(카드)수수료",
-                          amount: calc.cardFee,
-                          sign: "-",
-                          sub: `${effectivePayRate.toFixed(1)}%`,
-                        },
-                      ]
-                    : []),
-                  ...(calc.delivery > 0
-                    ? [
-                        {
-                          icon: "🛵",
-                          label: "배달비 부담",
-                          amount: calc.delivery,
-                          sign: "-",
-                          sub: null,
-                        },
-                      ]
-                    : []),
-                  ...(calc.cost > 0
-                    ? [
-                        {
-                          icon: "🥘",
-                          label: "원가",
-                          amount: calc.cost,
-                          sign: "-",
-                          sub: null,
-                        },
-                      ]
-                    : []),
-                  ...(vatOn
-                    ? [
-                        {
-                          icon: "🧾",
-                          label: "부가세",
-                          amount: calc.vatAmount,
-                          sign: "-",
-                          sub: "10%",
-                        },
-                      ]
-                    : []),
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontSize: "14px",
-                    }}
-                  >
-                    <span style={{ opacity: 0.85 }}>
-                      {item.icon} {item.label}
-                      {item.sub && (
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            opacity: 0.6,
-                            marginLeft: "4px",
-                          }}
-                        >
-                          ({item.sub})
-                        </span>
-                      )}
-                    </span>
-                    <span style={{ fontWeight: 600 }}>
-                      {item.sign === "+" ? "+" : "-"}
-                      {item.amount.toLocaleString()}원
-                    </span>
-                  </div>
-                ))}
-                <div
-                  style={{
-                    height: "1px",
-                    background: "rgba(255,255,255,0.2)",
-                    margin: "2px 0",
-                  }}
+            <div className={styles.platformGrid}>
+              {[...platforms, { platform_id: "custom", name: "직접 입력" }].map((platform) => (
+                <PlatformCard
+                  key={platform.platform_id}
+                  platform={platform}
+                  active={selectedPlatformId === platform.platform_id}
+                  displayRate={
+                    platform.platform_id === "custom"
+                      ? null
+                      : getPlatformTotalRate(platform)
+                  }
+                  onSelect={() => setSelectedPlatformId(platform.platform_id)}
                 />
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    fontSize: "15px",
-                    fontWeight: 800,
-                  }}
-                >
-                  <span>✅ 실마진</span>
-                  <span>{calc.margin.toLocaleString()}원</span>
-                </div>
-              </div>
+              ))}
+            </div>
 
-              {/* 시각화 바 */}
-              <div style={{ marginBottom: "20px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    height: "12px",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${calc.costRatio}%`,
-                      background: "#e74c3c",
-                      transition: "width 0.3s ease",
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: `${calc.feeRatio}%`,
-                      background: "#f39c12",
-                      transition: "width 0.3s ease",
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: `${calc.otherRatio}%`,
-                      background: "#adb5bd",
-                      transition: "width 0.3s ease",
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: `${calc.marginRatio}%`,
-                      background: "#2ecc71",
-                      transition: "width 0.3s ease",
-                    }}
-                  />
-                </div>
-                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                  {[
-                    ["#e74c3c", "원가"],
-                    ["#f39c12", "수수료"],
-                    ["#adb5bd", "기타공제"],
-                    ["#2ecc71", "실마진"],
-                  ].map(([color, label], i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "2px",
-                          background: color,
-                        }}
-                      />
-                      <span style={{ fontSize: "11px", opacity: 0.8 }}>
-                        {label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 월 매출 시뮬레이션 */}
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.12)",
-                  borderRadius: "14px",
-                  padding: "16px",
-                  marginBottom: "16px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    opacity: 0.9,
-                    marginBottom: "12px",
-                  }}
-                >
-                  📈 월 매출 시뮬레이션
-                  <span style={{ background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.9)', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: 600, marginLeft: '6px', verticalAlign: 'middle' }}>예상치</span>
-                </div>
-                {/* 하루 평균 주문 수 — +/- 카운터 */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <span
-                    style={{ fontSize: "13px", opacity: 0.8, flexShrink: 0 }}
-                  >
-                    하루 평균
-                  </span>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      background: "#fff",
-                      borderRadius: "10px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <button
-                      onClick={() =>
-                        setDailyOrders((v) =>
-                          String(Math.max(0, (parseInt(v) || 0) - 1)),
-                        )
-                      }
-                      style={{
-                        width: "32px",
-                        height: "36px",
-                        border: "none",
-                        background: "transparent",
-                        fontSize: "18px",
-                        fontWeight: 700,
-                        color: "#1b4797",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      −
-                    </button>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={dailyOrders}
-                      onChange={(e) =>
-                        setDailyOrders(e.target.value.replace(/[^0-9]/g, ""))
-                      }
-                      style={{
-                        width: "44px",
-                        textAlign: "center",
-                        fontSize: "16px",
-                        fontWeight: 700,
-                        color: "#1b4797",
-                        border: "none",
-                        outline: "none",
-                        fontFamily: "inherit",
-                        background: "transparent",
-                      }}
-                    />
-                    <button
-                      onClick={() =>
-                        setDailyOrders((v) => String((parseInt(v) || 0) + 1))
-                      }
-                      style={{
-                        width: "32px",
-                        height: "36px",
-                        border: "none",
-                        background: "transparent",
-                        fontSize: "18px",
-                        fontWeight: 700,
-                        color: "#1b4797",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      +
-                    </button>
+            {selectedPlatformId === "custom" ? (
+              <div className={styles.inlineFieldCard}>
+                <div className={styles.inlineFieldHeader}>
+                  <div className={styles.inlineFieldTitle}>직접 수수료 입력</div>
+                  <div className={styles.inlineFieldDescription}>
+                    중개 수수료만 직접 넣고, 카드 수수료는 설정 토글에 따라 별도로
+                    반영됩니다.
                   </div>
-                  <span
-                    style={{ fontSize: "13px", opacity: 0.8, flexShrink: 0 }}
-                  >
-                    건 주문 시
-                  </span>
                 </div>
-
-                {/* 월 고정비 입력 (BEP용) */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  <span
-                    style={{ fontSize: "12px", opacity: 0.75, flexShrink: 0 }}
-                  >
-                    월 고정비
-                  </span>
+                <div className={styles.percentFieldShell}>
                   <input
                     type="text"
-                    inputMode="numeric"
-                    placeholder="임대료+공과금 (예: 1,500,000)"
-                    value={fixedCost}
-                    onChange={handleNumInput(setFixedCost)}
-                    style={{
-                      flex: 1,
-                      padding: "6px 10px",
-                      fontSize: "12px",
-                      color: "#1b4797",
-                      border: "none",
-                      borderRadius: "8px",
-                      outline: "none",
-                      fontFamily: "inherit",
-                      background: "rgba(255,255,255,0.85)",
-                    }}
+                    inputMode="decimal"
+                    className={styles.percentField}
+                    value={customFee}
+                    onChange={(event) =>
+                      setCustomFee(sanitizePercentInput(event.target.value))
+                    }
+                    placeholder="예: 7.8"
                   />
-                  <span
-                    style={{ fontSize: "11px", opacity: 0.7, flexShrink: 0 }}
-                  >
-                    원
-                  </span>
-                </div>
-
-                {simulation ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
-                    {[
-                      ["📅 하루 마진", simulation.dailyMargin],
-                      ["📆 주간 마진", simulation.weeklyMargin],
-                    ].map(([label, val], i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          fontSize: "13px",
-                          opacity: 0.85,
-                        }}
-                      >
-                        <span>{label}</span>
-                        <span style={{ fontWeight: 700 }}>
-                          {Math.round(val).toLocaleString()}원
-                        </span>
-                      </div>
-                    ))}
-                    <div
-                      style={{
-                        height: "1px",
-                        background: "rgba(255,255,255,0.2)",
-                        margin: "4px 0",
-                      }}
-                    />
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: "13px", fontWeight: 700 }}>
-                          💰 월 실마진
-                        </div>
-                        <div style={{ fontSize: "11px", opacity: 0.65 }}>
-                          {simulation.orders}건 × 30일
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "22px",
-                          fontWeight: 800,
-                          letterSpacing: "-0.5px",
-                        }}
-                      >
-                        {Math.round(simulation.monthlyMargin).toLocaleString()}
-                        원
-                      </div>
-                    </div>
-                    {/* FIX 3: 올바른 일일 주문수 계산 */}
-                    {calc.margin > 0 &&
-                      (() => {
-                        const dailyNeeded = Math.ceil(
-                          2000000 / (calc.margin * 30),
-                        );
-                        if (dailyNeeded > 999) {
-                          return (
-                            <div
-                              style={{
-                                marginTop: "4px",
-                                padding: "8px 12px",
-                                borderRadius: "8px",
-                                background: "rgba(231,76,60,0.2)",
-                                fontSize: "12px",
-                                lineHeight: 1.5,
-                              }}
-                            >
-                              😢 현재 마진으로는 월 200만원 달성이 어렵습니다.
-                              판매가 조정을 고려해보세요.
-                            </div>
-                          );
-                        }
-                        return (
-                          <div
-                            style={{
-                              marginTop: "4px",
-                              padding: "8px 12px",
-                              borderRadius: "8px",
-                              background: "rgba(255,255,255,0.15)",
-                              fontSize: "12px",
-                              lineHeight: 1.5,
-                            }}
-                          >
-                            💡 월 200만원 달성하려면 하루{" "}
-                            <strong>{dailyNeeded}건</strong> 필요해요! 💪
-                          </div>
-                        );
-                      })()}
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      opacity: 0.6,
-                      textAlign: "center",
-                      padding: "8px 0",
-                    }}
-                  >
-                    건수를 입력하면 월 마진이 계산됩니다
-                  </div>
-                )}
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '10px', lineHeight: 1.5 }}>
-                  실제 매출은 메뉴 구성·쿠폰·광고비·계절성에 따라 달라질 수 있어요
+                  <span className={styles.percentSuffix}>%</span>
                 </div>
               </div>
+            ) : null}
+          </>
+        )}
+      </section>
 
-              {/* BEP (손익분기점) */}
-              {calc.margin > 0 && (
-                <div
-                  style={{
-                    background: "rgba(255,255,255,0.12)",
-                    borderRadius: "12px",
-                    padding: "12px 16px",
-                    marginBottom: "16px",
-                    fontSize: "13px",
-                  }}
+      {selectedPlatformId !== "custom" && selectedPlatform ? (
+        <section className={styles.card}>
+          <SectionHeader
+            step="STEP 2"
+            title="매출 구간 선택"
+            description="월 매출 구간별 수수료 차이를 읽기 쉬운 카드형으로 정리했습니다."
+          />
+
+          <div className={styles.tierList}>
+            {(selectedPlatform.tiers || []).map((tier) => {
+              const active = String(tier.id) === String(selectedTierId);
+              const badge = getTierBadge(tier);
+
+              return (
+                <button
+                  key={tier.id}
+                  type="button"
+                  className={`${styles.tierCard} ${active ? styles.tierCardActive : ""}`}
+                  onClick={() => setSelectedTierId(String(tier.id))}
                 >
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      marginBottom: "8px",
-                      opacity: 0.9,
-                    }}
-                  >
-                    📊 목표 달성 주문수 (하루 기준)
-                  </div>
-                  {[
-                    ["월 200만원", 2000000],
-                    ["월 500만원", 5000000],
-                  ].map(([label, target]) => {
-                    const daily = Math.ceil(target / (calc.margin * 30));
-                    return (
-                      <div
-                        key={label}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        <span style={{ opacity: 0.8 }}>{label} 달성</span>
-                        <span style={{ fontWeight: 700 }}>
-                          {daily > 999 ? "달성 어려움" : `하루 ${daily}건`}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  {/* 고정비 입력 시 BEP 계산 */}
-                  {parseNum(fixedCost) > 0 && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginTop: "6px",
-                        paddingTop: "6px",
-                        borderTop: "1px solid rgba(255,255,255,0.15)",
-                      }}
-                    >
-                      <span style={{ opacity: 0.8 }}>고정비 회수 (BEP)</span>
-                      <span style={{ fontWeight: 700 }}>
-                        {(() => {
-                          const bep = Math.ceil(
-                            parseNum(fixedCost) / calc.margin,
-                          );
-                          return bep > 99999
-                            ? "달성 어려움"
-                            : `${bep.toLocaleString()}건/월`;
-                        })()}
-                      </span>
+                  <div className={styles.tierTop}>
+                    <div>
+                      <div className={styles.tierTitle}>{getTierTitle(tier)}</div>
+                      <div className={styles.tierDescription}>{getTierDescription(tier)}</div>
                     </div>
-                  )}
+                    {badge ? <span className={styles.tierBadge}>{badge}</span> : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      <section className={styles.card}>
+        <SectionHeader
+          step={compareStep}
+          title="핵심 입력"
+          description="입력 빈도가 높은 판매가, 원가, 배달비 부담만 먼저 배치했습니다."
+        />
+
+        <div className={styles.fieldStack}>
+          <NumberField
+            label="메뉴 판매가"
+            hint="고객 결제 금액 기준"
+            value={menuPrice}
+            onChange={handleNumericChange(setMenuPrice)}
+            placeholder="예: 18,000"
+            help="판매가를 입력하면 결과 카드가 바로 활성화됩니다."
+          />
+          <NumberField
+            label="메뉴 원가"
+            hint="재료비와 포장비 포함"
+            value={menuCost}
+            onChange={handleNumericChange(setMenuCost)}
+            placeholder="예: 6,500"
+          />
+          <NumberField
+            label="배달비 부담"
+            hint="사장님이 부담하는 금액"
+            value={deliveryFee}
+            onChange={handleNumericChange(setDeliveryFee)}
+            placeholder="예: 3,000"
+          />
+        </div>
+
+        <div className={styles.helperNote}>숫자를 넣는 즉시 결과가 아래 카드에 반영됩니다.</div>
+      </section>
+
+      <section className={styles.card}>
+        <SectionHeader
+          step={settingStep}
+          title="설정"
+          description="핵심 입력과 옵션성 설정을 분리해 판단 부담을 줄였습니다."
+        />
+
+        <div className={styles.settingList}>
+          <ToggleRow
+            label="카드 수수료 포함"
+            description="끄면 결제 수수료를 제외하고 계산합니다."
+            checked={cardFeeOn}
+            onToggle={() => setCardFeeOn((value) => !value)}
+          />
+          <ToggleRow
+            label="부가세 포함"
+            description="켜면 판매가의 10%를 추가 차감 항목으로 반영합니다."
+            checked={vatOn}
+            onToggle={() => setVatOn((value) => !value)}
+          />
+        </div>
+
+        <div className={styles.settingSummary}>
+          현재 반영 수수료
+          <strong>
+            중개 {formatPercent(appFeeRate)} · 결제 {formatPercent(paymentFeeRate)}
+          </strong>
+        </div>
+      </section>
+
+      <section className={`${styles.card} ${styles.resultCard}`}>
+        <SectionHeader
+          step={resultStep}
+          title="결과 확인"
+          description="복잡한 설명보다, 지금 조건에서 얼마가 남는지 먼저 읽히도록 설계했습니다."
+        />
+
+        {!calc ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>₩</div>
+            <div className={styles.emptyTitle}>판매가를 입력하면 예상 마진이 바로 표시됩니다.</div>
+            <div className={styles.emptyDescription}>
+              앱 선택과 설정은 미리 반영되어 있으니, 숫자만 넣으면 결과를 확인할 수 있습니다.
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className={styles.resultHeader}>
+              <div>
+                <div className={styles.resultEyebrow}>
+                  {selectedPlatformName}
+                  <span className={styles.resultEyebrowDivider}>·</span>
+                  {selectedTierName}
                 </div>
-              )}
-
-              {/* 면책 안내 박스 */}
-              <div style={{ background: 'rgba(0,0,0,0.15)', borderRadius: '8px', padding: '10px 12px', marginBottom: '14px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
-                💡 실제 배민 정산서와 다를 수 있어요<br/>
-                정산서는 쿠폰할인·광고비·부가세 등이 반영된 실제 입금액이고, 이 계산기는 메뉴 1건 기준 예상 마진이에요.<br/>
-                '왜 정산서가 이것밖에 안 되지?' 싶을 때 메뉴별로 미리 계산해보는 용도로 쓰세요.
+                <div className={styles.resultValue}>{formatCurrency(calc.margin)}</div>
+                <div className={styles.resultCaption}>
+                  판매가 {formatCurrency(calc.price)} 기준 예상 실마진
+                </div>
               </div>
-
-              {/* 공유 버튼 */}
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() => setShowCompare((v) => !v)}
-                  style={{
-                    flex: 1,
-                    padding: "12px",
-                    borderRadius: "12px",
-                    background: "rgba(255,255,255,0.18)",
-                    border: "1.5px solid rgba(255,255,255,0.35)",
-                    color: "#fff",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  {showCompare ? "비교 닫기" : "📊 앱 비교"}
-                </button>
-                <button
-                  onClick={handleShare}
-                  style={{
-                    flex: 2,
-                    padding: "12px",
-                    borderRadius: "12px",
-                    background: "rgba(255,255,255,0.18)",
-                    border: "1.5px solid rgba(255,255,255,0.35)",
-                    color: "#fff",
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "7px",
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 20 20"
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="#fff"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="15" cy="4" r="2" />
-                    <circle cx="5" cy="10" r="2" />
-                    <circle cx="15" cy="16" r="2" />
-                    <path d="M7 9l6-4M7 11l6 4" />
-                  </svg>
-                  {shareMsg || "결과 공유"}
-                </button>
+              <div className={`${styles.rateBadge} ${resultTone?.toneClass || ""}`}>
+                <span>{resultTone?.label}</span>
+                <strong>{formatPercent(calc.marginRate)}</strong>
               </div>
             </div>
 
-            {/* 배달앱 마진 비교 (API 기반) */}
-            {showCompare && comparison && (
-              <div
-                style={{
-                  background: "#fff",
-                  borderRadius: "16px",
-                  padding: "20px",
-                  marginTop: "12px",
-                  boxShadow: "0 4px 20px rgba(27,71,151,0.1)",
-                  animation: "fadeSlideUp 0.2s ease",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "var(--color-gray-900)",
-                    marginBottom: "14px",
-                  }}
-                >
-                  📊 배달앱별 마진 비교
+            <div className={styles.insightBox}>
+              {calc.margin >= 0
+                ? `한 건당 ${formatCurrency(calc.margin)}이 남습니다. 현재 총 차감액은 ${formatCurrency(
+                    calc.totalDeductions,
+                  )}입니다.`
+                : `현재 조건에서는 한 건당 ${formatCurrency(
+                    Math.abs(calc.margin),
+                  )} 손실이 예상됩니다. 수수료와 원가 비중을 다시 점검해보세요.`}
+            </div>
+
+            <div className={styles.meterWrap}>
+              <div className={styles.meter}>
+                {meterSegments.map((segment) => (
+                  <span
+                    key={segment.key}
+                    className={styles.meterSegment}
+                    style={{
+                      width: segment.width,
+                      backgroundColor: segment.color,
+                    }}
+                  />
+                ))}
+              </div>
+              <div className={styles.legendList}>
+                <div className={styles.legendRow}>
+                  <span className={styles.legendLabel}>
+                    <span
+                      className={styles.legendDot}
+                      style={{ backgroundColor: "#d6ddea" }}
+                    />
+                    원가
+                  </span>
+                  <strong>{formatCurrency(calc.cost)}</strong>
                 </div>
-                <div style={{ fontSize: '11px', color: '#868e96', marginBottom: '10px' }}>
-                  동일 메뉴·원가 기준, 플랫폼별 기본 수수료 적용
+                <div className={styles.legendRow}>
+                  <span className={styles.legendLabel}>
+                    <span
+                      className={styles.legendDot}
+                      style={{ backgroundColor: "#b8c8e9" }}
+                    />
+                    앱/결제 수수료
+                  </span>
+                  <strong>{formatCurrency(calc.appFee + calc.cardFee)}</strong>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                  }}
-                >
-                  {[...comparison]
-                    .sort((a, b) => b.margin - a.margin)
-                    .map(
-                      ({
-                        platform,
-                        margin,
-                        rate,
-                        feeRate: fr,
-                        payRate: pr,
-                      }) => {
-                        const status = getMarginStatus(rate);
-                        const isSelected =
-                          selectedPlatformId === platform.platform_id;
-                        return (
-                          <div
-                            key={platform.platform_id}
-                            style={{
-                              padding: "12px 14px",
-                              borderRadius: "12px",
-                              border: isSelected
-                                ? `2px solid ${platform.color}`
-                                : "1.5px solid var(--color-gray-200)",
-                              background: isSelected
-                                ? `${platform.color}08`
-                                : "#fafafa",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "8px",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: "8px",
-                                    height: "8px",
-                                    borderRadius: "50%",
-                                    background: platform.color,
-                                  }}
-                                />
-                                <span
-                                  style={{
-                                    fontSize: "14px",
-                                    fontWeight: 700,
-                                    color: "var(--color-gray-900)",
-                                  }}
-                                >
-                                  {platform.name}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "var(--color-gray-500)",
-                                  }}
-                                >
-                                  총 {(fr + pr).toFixed(1)}%
-                                </span>
-                              </div>
-                              <span
-                                style={{
-                                  fontSize: "11px",
-                                  fontWeight: 700,
-                                  padding: "3px 8px",
-                                  borderRadius: "8px",
-                                  background: status.bg.replace("0.25", "0.15"),
-                                  color: status.color,
-                                }}
-                              >
-                                {status.emoji} {rate.toFixed(1)}%
-                              </span>
-                            </div>
-                            <div
-                              style={{
-                                marginTop: "8px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  flex: 1,
-                                  height: "6px",
-                                  borderRadius: "4px",
-                                  background: "var(--color-gray-100)",
-                                  overflow: "hidden",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    height: "100%",
-                                    borderRadius: "4px",
-                                    width: `${Math.max(0, rate)}%`,
-                                    background:
-                                      margin < 0 ? "#e74c3c" : platform.color,
-                                    transition: "width 0.4s ease",
-                                  }}
-                                />
-                              </div>
-                              <span
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: 800,
-                                  color:
-                                    margin < 0
-                                      ? "#e74c3c"
-                                      : "var(--color-gray-900)",
-                                  minWidth: "80px",
-                                  textAlign: "right",
-                                }}
-                              >
-                                {margin.toLocaleString()}원
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      },
-                    )}
+                <div className={styles.legendRow}>
+                  <span className={styles.legendLabel}>
+                    <span
+                      className={styles.legendDot}
+                      style={{ backgroundColor: "#e3eaf6" }}
+                    />
+                    배달비/부가세
+                  </span>
+                  <strong>{formatCurrency(calc.delivery + calc.vatAmount)}</strong>
+                </div>
+                <div className={styles.legendRow}>
+                  <span className={styles.legendLabel}>
+                    <span
+                      className={styles.legendDot}
+                      style={{ backgroundColor: "#1b4797" }}
+                    />
+                    예상 마진
+                  </span>
+                  <strong>{formatCurrency(calc.margin)}</strong>
                 </div>
               </div>
-            )}
+            </div>
+
+            <div className={styles.metricGrid}>
+              <div className={styles.metricCard}>
+                <span className={styles.metricLabel}>앱 수수료</span>
+                <strong className={styles.metricValue}>{formatCurrency(calc.appFee)}</strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span className={styles.metricLabel}>카드 수수료</span>
+                <strong className={styles.metricValue}>{formatCurrency(calc.cardFee)}</strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span className={styles.metricLabel}>배달비 부담</span>
+                <strong className={styles.metricValue}>{formatCurrency(calc.delivery)}</strong>
+              </div>
+              <div className={styles.metricCard}>
+                <span className={styles.metricLabel}>부가세</span>
+                <strong className={styles.metricValue}>{formatCurrency(calc.vatAmount)}</strong>
+              </div>
+            </div>
+
+            {comparison.length > 1 ? (
+              <div className={styles.compareWrap}>
+                <div className={styles.compareHeader}>
+                  <div className={styles.compareTitle}>앱별 예상 비교</div>
+                  <div className={styles.compareDescription}>
+                    동일한 판매가, 원가, 배달비 조건으로 비교했습니다.
+                  </div>
+                </div>
+                <div className={styles.compareList}>
+                  {comparison.map((item) => {
+                    const active = item.platformId === selectedPlatformId;
+                    return (
+                      <div
+                        key={item.platformId}
+                        className={`${styles.compareRow} ${
+                          active ? styles.compareRowActive : ""
+                        }`}
+                      >
+                        <div className={styles.compareCopy}>
+                          <div className={styles.compareName}>
+                            {item.name}
+                            {active ? (
+                              <span className={styles.compareCurrent}>현재 선택</span>
+                            ) : null}
+                          </div>
+                          <div className={styles.compareMeta}>
+                            총 수수료 {formatPercent(item.totalRate)}
+                          </div>
+                        </div>
+                        <div className={styles.compareValues}>
+                          <strong className={styles.compareAmount}>
+                            {formatCurrency(item.margin)}
+                          </strong>
+                          <span className={styles.compareRate}>
+                            {formatPercent(item.marginRate)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            <button type="button" className={styles.actionButton} onClick={handleShare}>
+              계산 결과 공유
+            </button>
+            {shareMessage ? (
+              <div className={styles.inlineFeedback} aria-live="polite">
+                {shareMessage}
+              </div>
+            ) : null}
           </>
         )}
+      </section>
 
-        {/* AI 분석 섹션 */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: "20px",
-            padding: "20px",
-            boxShadow: "0 4px 20px rgba(27,71,151,0.08)",
-            marginTop: "12px",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: 700,
-              color: "#1a1a1a",
-              marginBottom: "4px",
-            }}
-          >
-            🤖 AI 수익성 분석
+      <details className={`${styles.card} ${styles.extraDetails}`}>
+        <summary className={styles.detailsSummary}>
+          <div>
+            <div className={styles.detailsTitle}>추가 분석</div>
+            <div className={styles.detailsDescription}>
+              일 주문 수와 고정비 시뮬레이션, AI 해석을 한 번 더 볼 수 있습니다.
+            </div>
           </div>
-          <div
-            style={{ fontSize: "12px", color: "#888", marginBottom: "12px" }}
-          >
-            업종을 선택하면 동종업계 평균과 비교해 드려요
+          <span className={styles.summaryChevron}>
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
+              <path
+                d="M5 7.5L10 12.5L15 7.5"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </summary>
+
+        <div className={styles.extraContent}>
+          <div className={styles.subsectionTitle}>일 주문 수 시뮬레이션</div>
+          <div className={styles.compactGrid}>
+            <NumberField
+              compact
+              label="일 주문 수"
+              hint="선택 입력"
+              value={dailyOrders}
+              onChange={handleNumericChange(setDailyOrders)}
+              placeholder="예: 25"
+              suffix="건"
+            />
+            <NumberField
+              compact
+              label="월 고정비"
+              hint="임차료, 인건비 등"
+              value={fixedCost}
+              onChange={handleNumericChange(setFixedCost)}
+              placeholder="예: 2,000,000"
+            />
           </div>
-          <AiAnalysisSection
-            calc={calc}
-            platformName={selectedPlatform?.name || "직접입력"}
-            feeRate={feeRate + effectivePayRate}
-          />
+
+          {projection ? (
+            <div className={styles.projectionGrid}>
+              <div className={styles.projectionCard}>
+                <span className={styles.projectionLabel}>하루 예상</span>
+                <strong className={styles.projectionValue}>
+                  {formatCurrency(projection.dailyMargin)}
+                </strong>
+              </div>
+              <div className={styles.projectionCard}>
+                <span className={styles.projectionLabel}>일주일 예상</span>
+                <strong className={styles.projectionValue}>
+                  {formatCurrency(projection.weeklyMargin)}
+                </strong>
+              </div>
+              <div className={`${styles.projectionCard} ${styles.projectionCardWide}`}>
+                <span className={styles.projectionLabel}>한 달 예상</span>
+                <strong className={styles.projectionValue}>
+                  {formatCurrency(projection.monthlyMargin)}
+                </strong>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.helperNote}>
+              일 주문 수를 입력하면 하루, 일주일, 한 달 기준 추정을 함께 볼 수 있습니다.
+            </div>
+          )}
+
+          {breakEvenOrders ? (
+            <div className={styles.breakEvenBox}>
+              월 고정비 {formatCurrency(parseNumber(fixedCost))}를 회수하려면 현재 조건에서
+              약 <strong>{numberFormatter.format(breakEvenOrders)}건</strong>의 주문이 필요합니다.
+            </div>
+          ) : null}
+
+          <div className={styles.subsectionTitle}>AI 마진 해석</div>
+          <div className={styles.chipRow}>
+            {ANALYSIS_INDUSTRIES.map((industry) => (
+              <button
+                key={industry}
+                type="button"
+                className={`${styles.industryChip} ${
+                  analysisIndustry === industry ? styles.industryChipActive : ""
+                }`}
+                onClick={() =>
+                  setAnalysisIndustry((current) => (current === industry ? "" : industry))
+                }
+              >
+                {industry}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            className={`${styles.primaryButton} ${!calc ? styles.buttonDisabled : ""}`}
+            onClick={handleAnalyze}
+            disabled={!calc || analysisLoading}
+          >
+            {analysisLoading ? "AI 분석 불러오는 중..." : "AI로 결과 해석하기"}
+          </button>
+
+          {analysisError ? <div className={styles.notice}>{analysisError}</div> : null}
+
+          {analysisResult ? (
+            <div className={styles.analysisBox}>
+              <div className={styles.analysisHeader}>
+                <span>AI 분석 결과</span>
+                {analysisResult.cached ? (
+                  <span className={styles.analysisCached}>캐시</span>
+                ) : null}
+              </div>
+              <p className={styles.analysisText}>{analysisResult.text}</p>
+              <p className={styles.analysisNote}>
+                AI 해석은 참고용입니다. 실제 정산서는 광고비, 쿠폰, 프로모션 정책에 따라
+                달라질 수 있습니다.
+              </p>
+            </div>
+          ) : null}
         </div>
-      </div>
-
-      <style>{`
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes shimmer { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
-      `}</style>
+      </details>
     </div>
   );
 }
