@@ -1,6 +1,23 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.E2E_BASE_URL || "http://127.0.0.1:3000";
+const allowRemoteE2E = process.env.E2E_ALLOW_REMOTE === "true";
+
+function isLocalBaseUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
+  } catch {
+    return false;
+  }
+}
+
+if (!allowRemoteE2E && !isLocalBaseUrl(baseURL)) {
+  throw new Error(
+    `[E2E safety] Refusing to run against non-local base URL: ${baseURL}. ` +
+      "Use E2E_ALLOW_REMOTE=true only when intentional.",
+  );
+}
 
 export default defineConfig({
   testDir: "./tests/e2e",
