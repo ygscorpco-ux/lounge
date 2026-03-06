@@ -78,6 +78,71 @@ const BookmarkIcon = ({ active }) => (
   </svg>
 );
 
+function PostDetailSkeleton() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%",
+        maxWidth: "480px",
+        height: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        background: "#fff",
+        zIndex: 100,
+      }}
+    >
+      <div className="top-bar" style={{ flexShrink: 0, justifyContent: "space-between" }}>
+        <div className="detail-skeleton-box" style={{ width: 24, height: 24, borderRadius: 6 }} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+          <div className="detail-skeleton-box" style={{ width: 96, height: 16, borderRadius: 6 }} />
+          <div className="detail-skeleton-box" style={{ width: 72, height: 12, borderRadius: 6 }} />
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <div className="detail-skeleton-box" style={{ width: 24, height: 24, borderRadius: 6 }} />
+          <div className="detail-skeleton-box" style={{ width: 24, height: 24, borderRadius: 6 }} />
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "18px 16px 120px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <div className="detail-skeleton-box" style={{ width: 46, height: 46, borderRadius: 12 }} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div className="detail-skeleton-box" style={{ width: 78, height: 14, borderRadius: 6 }} />
+            <div className="detail-skeleton-box" style={{ width: 98, height: 12, borderRadius: 6 }} />
+          </div>
+        </div>
+
+        <div className="detail-skeleton-box" style={{ width: "56%", height: 26, borderRadius: 8, marginBottom: 10 }} />
+        <div className="detail-skeleton-box" style={{ width: "100%", height: 16, borderRadius: 6, marginBottom: 7 }} />
+        <div className="detail-skeleton-box" style={{ width: "89%", height: 16, borderRadius: 6, marginBottom: 7 }} />
+        <div className="detail-skeleton-box" style={{ width: "71%", height: 16, borderRadius: 6, marginBottom: 18 }} />
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            gap: 8,
+            marginBottom: 18,
+          }}
+        >
+          <div className="detail-skeleton-box" style={{ height: 42, borderRadius: 10 }} />
+          <div className="detail-skeleton-box" style={{ height: 42, borderRadius: 10 }} />
+          <div className="detail-skeleton-box" style={{ height: 42, borderRadius: 10 }} />
+        </div>
+
+        <div className="detail-skeleton-box" style={{ width: "100%", height: 90, borderRadius: 12, marginBottom: 16 }} />
+        <div className="detail-skeleton-box" style={{ width: "48%", height: 15, borderRadius: 6, marginBottom: 8 }} />
+        <div className="detail-skeleton-box" style={{ width: "82%", height: 14, borderRadius: 6, marginBottom: 6 }} />
+        <div className="detail-skeleton-box" style={{ width: "68%", height: 14, borderRadius: 6 }} />
+      </div>
+    </div>
+  );
+}
+
 export default function PostDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -359,7 +424,7 @@ export default function PostDetailPage() {
     router.back();
   }
 
-  if (loading) return <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>;
+  if (loading) return <PostDetailSkeleton />;
   if (!post) return <div className="empty">{"\uAC8C\uC2DC\uAE00\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>;
 
   const parentComments = comments.filter((comment) => !comment.parentId);
