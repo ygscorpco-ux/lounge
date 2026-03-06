@@ -1112,6 +1112,11 @@ export default function SubsidyCalendar() {
             key={t.id}
             onClick={() => {
               setView(t.id);
+              if (t.id === "calendar") {
+                setShowBookmarkOnly(true);
+                setCategory("전체");
+                setSelectedDate(null);
+              }
               setExpandedSubsidyId(null);
             }}
             style={{
@@ -1301,14 +1306,17 @@ export default function SubsidyCalendar() {
                 boxShadow: "var(--shadow-sm)",
                 border: "1px solid var(--color-gray-200)",
                 marginBottom: "12px",
+                overflow: "hidden",
               }}
             >
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(7,1fr)",
+                  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
                   gap: "4px",
                   marginTop: "46px",
+                  width: "100%",
+                  minWidth: 0,
                 }}
               >
                 {Array.from({ length: 35 }).map((_, i) => (
@@ -1316,6 +1324,9 @@ export default function SubsidyCalendar() {
                     key={i}
                     style={{
                       aspectRatio: "1",
+                      width: "100%",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                       borderRadius: "8px",
                       animation: "shimmer 1.2s infinite",
                     }}
@@ -1333,6 +1344,7 @@ export default function SubsidyCalendar() {
               boxShadow: "var(--shadow-sm)",
               border: "1px solid var(--color-gray-200)",
               marginBottom: "12px",
+              overflow: "hidden",
             }}
           >
             {/* 월 이동 헤더 */}
@@ -1418,14 +1430,17 @@ export default function SubsidyCalendar() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(7,1fr)",
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
                 marginBottom: "6px",
+                width: "100%",
+                minWidth: 0,
               }}
             >
               {WEEK_DAYS.map((d, i) => (
                 <div
                   key={d}
                   style={{
+                    minWidth: 0,
                     textAlign: "center",
                     fontSize: "12px",
                     fontWeight: 700,
@@ -1447,13 +1462,27 @@ export default function SubsidyCalendar() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(7,1fr)",
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
                 gap: "6px",
+                width: "100%",
+                minWidth: 0,
               }}
             >
               {grid.map((day, idx) => {
                 // null 셀 (달 앞/뒤 빈 칸) — 완전히 빈 div만 렌더링
-                if (!day) return <div key={idx} style={{ aspectRatio: "1" }} />;
+                if (!day) {
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        aspectRatio: "1",
+                        width: "100%",
+                        minWidth: 0,
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  );
+                }
 
                 const dow = idx % 7;
                 const dayItems = calendarByDay[day] || [];
@@ -1485,6 +1514,10 @@ export default function SubsidyCalendar() {
                     }
                     style={{
                       aspectRatio: "1",
+                      width: "100%",
+                      maxWidth: "100%",
+                      minWidth: 0,
+                      boxSizing: "border-box",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
