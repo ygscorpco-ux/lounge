@@ -43,7 +43,12 @@ export default function DeliveryMarginPage() {
         }
         title="실마진 계산기"
         sub="메뉴 하나 팔면 실제로 얼마 남을까?"
-        note={<>배민 정산서와 다를 수 있어요<br/>이 계산기는 메뉴별 예상 마진을 미리 확인하는 도구예요</>}
+        note={
+          <>
+            배민 정산서와 다를 수 있어요
+            <br />이 계산기는 메뉴별 예상 마진을 미리 확인하는 도구예요
+          </>
+        }
         badge={`배민·쿠팡\n요기요·땡겨요`}
       />
       <DeliveryMarginCalculator />
