@@ -13,7 +13,7 @@ export default function ToolHeader({ icon, title, sub, note, badge }) {
   return (
     <div
       style={{
-        padding: "12px 14px 0",
+        padding: "10px 14px 0",
       }}
     >
       <div
@@ -23,8 +23,8 @@ export default function ToolHeader({ icon, title, sub, note, badge }) {
           background:
             "radial-gradient(circle at top right, rgba(27,71,151,0.11), transparent 34%), linear-gradient(180deg, #ffffff 0%, #f9fbff 100%)",
           border: "1px solid #e3ebf4",
-          borderRadius: "28px",
-          padding: "18px",
+          borderRadius: "24px",
+          padding: "16px",
           boxShadow:
             "0 14px 30px rgba(15,23,42,0.04), 0 2px 8px rgba(15,23,42,0.02)",
         }}
@@ -41,22 +41,22 @@ export default function ToolHeader({ icon, title, sub, note, badge }) {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "14px",
+              gap: "12px",
               flex: 1,
               minWidth: 0,
             }}
           >
             <div
               style={{
-                width: "52px",
-                height: "52px",
-                borderRadius: "18px",
+                width: "44px",
+                height: "44px",
+                borderRadius: "15px",
                 background: "#1b4797",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
-                boxShadow: "0 12px 22px rgba(27,71,151,0.16)",
+                boxShadow: "0 10px 18px rgba(27,71,151,0.14)",
               }}
             >
               {icon}
@@ -65,7 +65,7 @@ export default function ToolHeader({ icon, title, sub, note, badge }) {
             <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
-                  fontSize: "24px",
+                  fontSize: "22px",
                   fontWeight: 800,
                   color: "#0f172a",
                   lineHeight: 1.2,
@@ -77,10 +77,10 @@ export default function ToolHeader({ icon, title, sub, note, badge }) {
               {sub && (
                 <div
                   style={{
-                    fontSize: "13px",
+                    fontSize: "12px",
                     color: "#5f6c80",
                     lineHeight: 1.55,
-                    marginTop: "6px",
+                    marginTop: "4px",
                   }}
                 >
                   {sub}
@@ -92,7 +92,7 @@ export default function ToolHeader({ icon, title, sub, note, badge }) {
                     fontSize: "11px",
                     color: "#8c99ac",
                     lineHeight: 1.5,
-                    marginTop: "5px",
+                    marginTop: "4px",
                   }}
                 >
                   {note}
@@ -110,7 +110,7 @@ export default function ToolHeader({ icon, title, sub, note, badge }) {
                 background: "rgba(27,71,151,0.08)",
                 border: "1px solid rgba(27,71,151,0.12)",
                 borderRadius: "999px",
-                padding: "5px 10px",
+                padding: "4px 9px",
                 flexShrink: 0,
                 lineHeight: 1.5,
                 textAlign: "center",

@@ -54,22 +54,6 @@ function formatPercent(value) {
   return `${percentFormatter.format(value || 0)}%`;
 }
 
-function formatUpdatedDate(value) {
-  const today = new Date();
-  const parsed = value ? new Date(value) : today;
-  const safeDate = Number.isNaN(parsed.getTime()) ? today : parsed;
-  const displayDate = safeDate > today ? safeDate : today;
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "Asia/Seoul",
-  })
-    .format(displayDate)
-    .replace(/\.\s/g, ".")
-    .replace(/\.$/, "");
-}
-
 function getDefaultTier(platform) {
   const tiers = platform?.tiers || [];
   return tiers.find((tier) => tier.is_default) || tiers[0] || null;
@@ -327,8 +311,6 @@ export default function DeliveryMarginCalculator() {
   const [platforms, setPlatforms] = useState([]);
   const [loadingPlatforms, setLoadingPlatforms] = useState(true);
   const [platformError, setPlatformError] = useState("");
-  const [lastUpdated, setLastUpdated] = useState("");
-
   const [selectedPlatformId, setSelectedPlatformId] = useState("baemin");
   const [selectedTierId, setSelectedTierId] = useState("");
   const [customFee, setCustomFee] = useState("");
@@ -399,8 +381,6 @@ export default function DeliveryMarginCalculator() {
         if (cancelled) return;
 
         setPlatforms(Array.isArray(data.data) ? data.data : []);
-        setLastUpdated(data.lastUpdated || "");
-
         if (!data.data?.length) {
           setPlatformError("활성화된 수수료 데이터가 없어 직접 입력 모드로만 계산할 수 있습니다.");
         }
@@ -790,22 +770,6 @@ export default function DeliveryMarginCalculator() {
   return (
     <>
       <div className={styles.page}>
-        <section className={`${styles.card} ${styles.heroCard}`}>
-          <div className={styles.heroTopRow}>
-            <span className={styles.heroBadge}>실시간 수수료 반영</span>
-            <span className={styles.heroUpdated}>
-              {lastUpdated ? `업데이트 ${formatUpdatedDate(lastUpdated)}` : "업데이트 03.06"}
-            </span>
-          </div>
-
-          <div className={styles.heroMain}>
-            <h1 className={styles.heroTitle}>실마진 계산기</h1>
-            <p className={styles.heroDescription}>
-              메뉴 1개 팔았을 때 실제로 남는 금액을 앱별로 바로 확인해보세요.
-            </p>
-          </div>
-        </section>
-
         {platformError ? (
           <div className={`${styles.notice} ${styles.noticeWarning}`}>{platformError}</div>
         ) : null}
