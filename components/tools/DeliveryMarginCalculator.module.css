@@ -66,42 +66,6 @@
   line-height: 1.58;
 }
 
-.quickSummaryRow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.quickSummaryItem {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #e4ebf4;
-}
-
-.quickSummaryItemAccent {
-  background: linear-gradient(180deg, #f5f9ff 0%, #eef4ff 100%);
-  border-color: rgba(27, 71, 151, 0.18);
-}
-
-.quickSummaryLabel {
-  color: #7b8798;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.quickSummaryValue {
-  color: #0f172a;
-  font-size: 15px;
-  line-height: 1.28;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
-
 .notice {
   padding: 12px 14px;
   border-radius: 18px;
@@ -1419,7 +1383,6 @@
 
 @media (max-width: 380px) {
   .platformGrid,
-  .quickSummaryRow,
   .compactFieldGrid,
   .settingGrid,
   .factGrid,

@@ -623,19 +623,6 @@ export default function DeliveryMarginCalculator() {
       ]
     : [];
 
-  const quickSummaryItems = [
-    { label: "선택 앱", value: selectedPlatformName },
-    {
-      label: "총 수수료",
-      value: formatPercent(totalFeeRate),
-    },
-    {
-      label: "메뉴 1개 예상",
-      value: calc ? formatCurrency(calc.margin) : "입력 후 확인",
-      accent: true,
-    },
-  ];
-
   function handleNumericChange(setter) {
     return (event) => {
       setter(formatNumberInput(event.target.value));
@@ -723,18 +710,6 @@ export default function DeliveryMarginCalculator() {
             <p className={styles.heroDescription}>
               메뉴 1개 팔았을 때 실제로 남는 금액을 앱별로 바로 확인해보세요.
             </p>
-
-            <div className={styles.quickSummaryRow}>
-              {quickSummaryItems.map((item) => (
-                <div
-                  key={item.label}
-                  className={`${styles.quickSummaryItem} ${item.accent ? styles.quickSummaryItemAccent : ""}`}
-                >
-                  <span className={styles.quickSummaryLabel}>{item.label}</span>
-                  <strong className={styles.quickSummaryValue}>{item.value}</strong>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
