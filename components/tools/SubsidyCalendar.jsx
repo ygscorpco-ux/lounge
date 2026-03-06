@@ -93,6 +93,17 @@ function buildGrid(year, month) {
   return cells;
 }
 
+function isDateInMonth(dateString, year, month) {
+  if (!dateString) return false;
+  const [y, m] = dateString.split("-").map(Number);
+  return y === year && m === month;
+}
+
+function getDateDay(dateString) {
+  if (!dateString) return 0;
+  return Number(dateString.slice(8, 10));
+}
+
 // 바텀 시트 컴포넌트
 function BottomSheet({ open, onClose, onSubmit }) {
   const EMPTY = {
@@ -803,7 +814,7 @@ export default function SubsidyCalendar() {
   const [showAdd, setShowAdd] = useState(false);
   const [user, setUser] = useState(null);
   const [bookmarks, setBookmarks] = useState([]); // 북마크 지원금 ID 배열
-  const [showBookmarkOnly, setShowBookmarkOnly] = useState(false);
+  const [showBookmarkOnly, setShowBookmarkOnly] = useState(true);
   const [expandedSubsidyId, setExpandedSubsidyId] = useState(null);
 
   // 북마크 초기 로드
@@ -855,29 +866,52 @@ export default function SubsidyCalendar() {
   // 캘린더 그리드
   const grid = useMemo(() => buildGrid(year, month), [year, month]);
 
+  const bookmarkedSubsidies = useMemo(
+    () => subsidies.filter((subsidy) => bookmarks.includes(subsidy.id)),
+    [bookmarks, subsidies],
+  );
+
   const visibleSubsidies = useMemo(() => {
     if (!showBookmarkOnly) return subsidies;
-    return subsidies.filter((subsidy) => bookmarks.includes(subsidy.id));
-  }, [bookmarks, showBookmarkOnly, subsidies]);
+    return bookmarkedSubsidies;
+  }, [bookmarkedSubsidies, showBookmarkOnly, subsidies]);
 
-  // 날짜별 지원금 그룹핑 (마감일 기준)
-  const subsidyByDay = useMemo(() => {
+  const calendarByDay = useMemo(() => {
     const map = {};
-    visibleSubsidies.forEach((s) => {
-      const day = parseInt(s.end_date.slice(8, 10));
-      if (!map[day]) map[day] = [];
-      map[day].push(s);
-    });
-    return map;
-  }, [visibleSubsidies]);
 
-  // 선택 날짜의 지원금
-  const selectedSubsidies = useMemo(() => {
-    if (!selectedDate) return [];
-    return visibleSubsidies.filter(
-      (s) => s.end_date.slice(8, 10) === String(selectedDate).padStart(2, "0"),
+    const addCalendarItem = (subsidy, dateString, type) => {
+      if (!isDateInMonth(dateString, year, month)) return;
+
+      const day = getDateDay(dateString);
+      if (!day) return;
+
+      if (!map[day]) {
+        map[day] = new Map();
+      }
+
+      const existing = map[day].get(subsidy.id) || { subsidy, types: [] };
+      if (!existing.types.includes(type)) {
+        existing.types.push(type);
+      }
+      map[day].set(subsidy.id, existing);
+    };
+
+    visibleSubsidies.forEach((subsidy) => {
+      addCalendarItem(subsidy, subsidy.end_date, "end");
+      if (showBookmarkOnly) {
+        addCalendarItem(subsidy, subsidy.start_date, "start");
+      }
+    });
+
+    return Object.fromEntries(
+      Object.entries(map).map(([day, items]) => [day, Array.from(items.values())]),
     );
-  }, [selectedDate, visibleSubsidies]);
+  }, [month, showBookmarkOnly, visibleSubsidies, year]);
+
+  const selectedCalendarItems = useMemo(() => {
+    if (!selectedDate) return [];
+    return calendarByDay[selectedDate] || [];
+  }, [calendarByDay, selectedDate]);
 
   // 리스트 뷰: D-day 임박 순 정렬, 마감 항목은 뒤로
   const sortedList = useMemo(() => {
@@ -908,7 +942,7 @@ export default function SubsidyCalendar() {
   }
 
   function handleDayClick(day) {
-    if (!day || !subsidyByDay[day]) return;
+    if (!day || !calendarByDay[day]?.length) return;
     setSelectedDate(selectedDate === day ? null : day);
   }
 
@@ -923,6 +957,23 @@ export default function SubsidyCalendar() {
   }).length;
   const activeCount = visibleSubsidies.filter((s) => getDday(s.end_date) >= 0).length;
   const bookmarkedCount = bookmarks.length;
+  const canApplyCount = visibleSubsidies.filter(
+    (s) => Boolean(s.apply_url || s.url) && getDday(s.end_date) >= 0,
+  ).length;
+  const calendarStartCount = Object.values(calendarByDay).reduce(
+    (count, items) => count + items.filter((item) => item.types.includes("start")).length,
+    0,
+  );
+  const calendarEndCount = Object.values(calendarByDay).reduce(
+    (count, items) => count + items.filter((item) => item.types.includes("end")).length,
+    0,
+  );
+  const selectedStartCount = selectedCalendarItems.filter((item) =>
+    item.types.includes("start"),
+  ).length;
+  const selectedEndCount = selectedCalendarItems.filter((item) =>
+    item.types.includes("end"),
+  ).length;
 
   return (
     <div
@@ -1156,10 +1207,6 @@ export default function SubsidyCalendar() {
         <div>
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "10px",
               background: "#fff",
               borderRadius: "18px",
               padding: "14px 16px",
@@ -1167,35 +1214,81 @@ export default function SubsidyCalendar() {
               marginBottom: "12px",
             }}
           >
-            <div>
-              <div style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
-                스크랩한 사업 마감일도 캘린더에 반영돼요
-              </div>
-              <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
-                관심 있는 공고만 따로 보면 마감일을 놓치기 쉽지 않습니다.
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowBookmarkOnly((v) => !v);
-                setSelectedDate(null);
-                setExpandedSubsidyId(null);
-              }}
+            <div
               style={{
-                flexShrink: 0,
-                padding: "8px 12px",
-                borderRadius: "999px",
-                border: showBookmarkOnly ? "1px solid #cfe0f7" : "1px solid #dbe5f1",
-                background: showBookmarkOnly ? "#eef5ff" : "#fff",
-                color: showBookmarkOnly ? "#1b4797" : "#475569",
-                fontSize: "12px",
-                fontWeight: 800,
-                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "10px",
               }}
             >
-              {showBookmarkOnly ? "전체 일정 보기" : "관심 일정만 보기"}
-            </button>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
+                  {showBookmarkOnly ? "스크랩한 사업 일정이 먼저 보여요" : "전체 지원금 일정을 보고 있어요"}
+                </div>
+                <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
+                  {showBookmarkOnly
+                    ? "초록은 신청 시작, 주황은 마감일입니다."
+                    : "카테고리별 마감일을 달력에서 바로 확인할 수 있어요."}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBookmarkOnly((v) => !v);
+                  setSelectedDate(null);
+                  setExpandedSubsidyId(null);
+                }}
+                style={{
+                  flexShrink: 0,
+                  padding: "8px 12px",
+                  borderRadius: "999px",
+                  border: showBookmarkOnly ? "1px solid #cfe0f7" : "1px solid #dbe5f1",
+                  background: showBookmarkOnly ? "#eef5ff" : "#fff",
+                  color: showBookmarkOnly ? "#1b4797" : "#475569",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                {showBookmarkOnly ? "전체 일정 보기" : "관심 일정만 보기"}
+              </button>
+            </div>
+
+            {showBookmarkOnly ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  marginTop: "12px",
+                }}
+              >
+                {[
+                  `관심 일정 ${bookmarkedSubsidies.length}건`,
+                  `신청 가능 ${canApplyCount}건`,
+                  `시작 ${calendarStartCount} · 마감 ${calendarEndCount}`,
+                ].map((label) => (
+                  <span
+                    key={label}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      minHeight: "28px",
+                      padding: "0 10px",
+                      borderRadius: "999px",
+                      background: "#f8fafc",
+                      border: "1px solid #e6edf5",
+                      color: "#475569",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           {/* 로딩 스켈레톤 */}
@@ -1303,9 +1396,12 @@ export default function SubsidyCalendar() {
             {/* 요일 헤더 */}
             <div
               style={{
-                display: "inline-flex",
+                display: "flex",
                 alignItems: "center",
-                padding: "6px 10px",
+                justifyContent: "center",
+                width: "100%",
+                textAlign: "center",
+                padding: "6px 12px",
                 borderRadius: "999px",
                 background: "#eef4ff",
                 color: "#48658f",
@@ -1314,7 +1410,9 @@ export default function SubsidyCalendar() {
                 marginBottom: "12px",
               }}
             >
-              마감일 있는 날짜를 누르면 바로 볼 수 있어요
+              {showBookmarkOnly
+                ? "초록은 신청 시작, 주황은 마감일입니다"
+                : "마감일 있는 날짜를 누르면 바로 볼 수 있어요"}
             </div>
 
             <div
@@ -1358,21 +1456,22 @@ export default function SubsidyCalendar() {
                 if (!day) return <div key={idx} style={{ aspectRatio: "1" }} />;
 
                 const dow = idx % 7;
-                const hasSub = subsidyByDay[day];
-                const dots = hasSub ? hasSub.slice(0, 3) : [];
-                const bookmarkedItems = hasSub
-                  ? hasSub.filter((item) => bookmarks.includes(item.id))
-                  : [];
+                const dayItems = calendarByDay[day] || [];
+                const dots = showBookmarkOnly ? [] : dayItems.slice(0, 3);
+                const bookmarkedItems = dayItems.filter((item) =>
+                  bookmarks.includes(item.subsidy.id),
+                );
                 const hasBookmarked = bookmarkedItems.length > 0;
                 const isSelected = day === selectedDate;
                 const isTod = isToday(day);
-                const subsidyCount = hasSub ? hasSub.length : 0;
-                const hasUrgent = hasSub
-                  ? hasSub.some((item) => {
-                      const dday = getDday(item.end_date);
-                      return dday >= 0 && dday <= 7;
-                    })
-                  : false;
+                const subsidyCount = dayItems.length;
+                const displayCount = subsidyCount > 9 ? "9+" : String(subsidyCount);
+                const startCount = dayItems.filter((item) => item.types.includes("start")).length;
+                const endCount = dayItems.filter((item) => item.types.includes("end")).length;
+                const hasUrgent = dayItems.some((item) => {
+                  const dday = getDday(item.subsidy.end_date);
+                  return item.types.includes("end") && dday >= 0 && dday <= 7;
+                });
                 return (
                   <button
                     type="button"
@@ -1380,7 +1479,7 @@ export default function SubsidyCalendar() {
                     onClick={() => handleDayClick(day)}
                     aria-pressed={isSelected}
                     title={
-                      hasSub
+                      dayItems.length
                         ? `${month}월 ${day}일 마감 지원금 ${subsidyCount}건`
                         : `${month}월 ${day}일`
                     }
@@ -1393,13 +1492,13 @@ export default function SubsidyCalendar() {
                       gap: "4px",
                       padding: "7px 4px 8px",
                       borderRadius: "14px",
-                      cursor: hasSub ? "pointer" : "default",
+                      cursor: dayItems.length ? "pointer" : "default",
                       border:
                         isSelected
                           ? "1.5px solid #1b4797"
                           : hasBookmarked
                             ? "1.5px solid rgba(27,71,151,0.28)"
-                          : hasSub
+                          : dayItems.length
                             ? "1.5px solid rgba(27,71,151,0.16)"
                             : isTod
                               ? "1.5px solid rgba(27,71,151,0.28)"
@@ -1408,14 +1507,16 @@ export default function SubsidyCalendar() {
                         ? "linear-gradient(180deg, #1b4797 0%, #234f9f 100%)"
                         : hasBookmarked
                           ? "linear-gradient(180deg, #f5f9ff 0%, #eaf2ff 100%)"
-                        : hasSub
+                          : dayItems.length && showBookmarkOnly
+                            ? "linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%)"
+                        : dayItems.length
                           ? "linear-gradient(180deg, #fbfdff 0%, #f1f6ff 100%)"
                           : isTod
                             ? "#f8fbff"
                             : "#fbfcfe",
                       boxShadow: isSelected
                         ? "0 10px 18px rgba(27,71,151,0.22)"
-                        : hasSub
+                        : dayItems.length
                           ? "0 6px 14px rgba(27,71,151,0.08)"
                           : "none",
                       transform: isSelected ? "translateY(-2px)" : "none",
@@ -1433,10 +1534,10 @@ export default function SubsidyCalendar() {
                         paddingRight: "6px",
                       }}
                     >
-                      {hasSub ? (
+                      {dayItems.length ? (
                         <span
                           style={{
-                            minWidth: "18px",
+                            minWidth: "22px",
                             height: "18px",
                             padding: "0 5px",
                             borderRadius: "999px",
@@ -1445,29 +1546,41 @@ export default function SubsidyCalendar() {
                             justifyContent: "center",
                             background: isSelected
                               ? "rgba(255,255,255,0.18)"
-                              : hasUrgent
-                                ? "#fff2ef"
-                                : hasBookmarked
-                                  ? "#dfe9fb"
-                                : "#e9f1ff",
+                              : showBookmarkOnly
+                                ? endCount > 0
+                                  ? hasUrgent
+                                    ? "#fff2ef"
+                                    : "#fff7ed"
+                                  : "#eefbf3"
+                                : hasUrgent
+                                  ? "#fff2ef"
+                                  : hasBookmarked
+                                    ? "#dfe9fb"
+                                    : "#e9f1ff",
                             color: isSelected
                               ? "#ffffff"
-                              : hasUrgent
-                                ? "#d9554d"
-                                : "#1b4797",
+                              : showBookmarkOnly
+                                ? endCount > 0
+                                  ? hasUrgent
+                                    ? "#d9554d"
+                                    : "#b45309"
+                                  : "#15803d"
+                                : hasUrgent
+                                  ? "#d9554d"
+                                  : "#1b4797",
                             fontSize: "10px",
                             fontWeight: 800,
                             lineHeight: 1,
                           }}
                         >
-                          {subsidyCount}
+                          {displayCount}
                         </span>
                       ) : null}
                     </span>
                     <span
                       style={{
                         fontSize: "14px",
-                        fontWeight: isSelected || isTod || hasSub ? 800 : 600,
+                        fontWeight: isSelected || isTod || dayItems.length ? 800 : 600,
                         lineHeight: 1,
                         color: isSelected
                           ? "#fff"
@@ -1480,7 +1593,42 @@ export default function SubsidyCalendar() {
                     >
                       {day}
                     </span>
-                    {dots.length > 0 ? (
+                    {showBookmarkOnly ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "4px",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          minHeight: "8px",
+                        }}
+                      >
+                        {startCount > 0 ? (
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "4px",
+                              borderRadius: "999px",
+                              background: isSelected ? "rgba(255,255,255,0.8)" : "#22c55e",
+                            }}
+                          />
+                        ) : null}
+                        {endCount > 0 ? (
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "4px",
+                              borderRadius: "999px",
+                              background: isSelected
+                                ? "rgba(255,255,255,0.8)"
+                                : hasUrgent
+                                  ? "#f97316"
+                                  : "#f1b24a",
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    ) : dots.length > 0 ? (
                       <div
                         style={{
                           display: "flex",
@@ -1489,7 +1637,7 @@ export default function SubsidyCalendar() {
                           minHeight: "8px",
                         }}
                       >
-                        {dots.map((s, i) => (
+                        {dots.map((item, i) => (
                           <div
                             key={i}
                             style={{
@@ -1498,9 +1646,9 @@ export default function SubsidyCalendar() {
                               borderRadius: "50%",
                               background: isSelected
                                 ? "rgba(255,255,255,0.8)"
-                                : bookmarks.includes(s.id)
+                                : bookmarks.includes(item.subsidy.id)
                                   ? "#1b4797"
-                                : CAT_MAP[s.category]?.color || "#1b4797",
+                                  : CAT_MAP[item.subsidy.category]?.color || "#1b4797",
                             }}
                           />
                         ))}
@@ -1515,8 +1663,20 @@ export default function SubsidyCalendar() {
           </div>
 
           {/* 선택 날짜 지원금 슬라이드업 */}
-          {selectedDate && selectedSubsidies.length > 0 && (
+          {selectedDate && selectedCalendarItems.length > 0 && (
             <div style={{ animation: "slideUp 0.2s ease" }}>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "var(--color-gray-700)",
+                  marginBottom: "8px",
+                  paddingLeft: "4px",
+                  display: "none",
+                }}
+              >
+                {month}월 {selectedDate}일 마감 지원금
+              </div>
               <div
                 style={{
                   fontSize: "14px",
@@ -1526,13 +1686,51 @@ export default function SubsidyCalendar() {
                   paddingLeft: "4px",
                 }}
               >
-                {month}월 {selectedDate}일 마감 지원금
+                {showBookmarkOnly
+                  ? `${month}월 ${selectedDate}일 관심 일정`
+                  : `${month}월 ${selectedDate}일 마감 지원금`}
               </div>
-              {selectedSubsidies.map((s) => {
+              {showBookmarkOnly ? (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                    marginBottom: "10px",
+                    paddingLeft: "4px",
+                  }}
+                >
+                  {[
+                    `신청 시작 ${selectedStartCount}건`,
+                    `마감 ${selectedEndCount}건`,
+                  ].map((label) => (
+                    <span
+                      key={label}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        minHeight: "26px",
+                        padding: "0 10px",
+                        borderRadius: "999px",
+                        background: "#f8fafc",
+                        border: "1px solid #e6edf5",
+                        color: "#475569",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {selectedCalendarItems.map((item) => {
+                const s = item.subsidy;
                 const cat = CAT_MAP[s.category] || CAT_MAP["자금지원"];
+                const canApply = Boolean(s.apply_url || s.url) && getDday(s.end_date) >= 0;
                 return (
                   <div
-                    key={s.id}
+                    key={`${s.id}-${item.types.join("-")}`}
                     style={{
                       background: "#fff",
                       borderRadius: "14px",
@@ -1565,7 +1763,37 @@ export default function SubsidyCalendar() {
                       >
                         {s.category}
                       </span>
-                      <DdayBadge endDate={s.end_date} small />
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        {item.types.includes("start") ? (
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: "999px",
+                              background: "#eefbf3",
+                              color: "#15803d",
+                              fontSize: "10px",
+                              fontWeight: 800,
+                            }}
+                          >
+                            신청 시작
+                          </span>
+                        ) : null}
+                        {item.types.includes("end") ? (
+                          <span
+                            style={{
+                              padding: "2px 8px",
+                              borderRadius: "999px",
+                              background: "#fff7ed",
+                              color: "#b45309",
+                              fontSize: "10px",
+                              fontWeight: 800,
+                            }}
+                          >
+                            마감일
+                          </span>
+                        ) : null}
+                        <DdayBadge endDate={s.end_date} small />
+                      </div>
                     </div>
                     <div
                       style={{
@@ -1576,6 +1804,16 @@ export default function SubsidyCalendar() {
                       }}
                     >
                       {s.title}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: canApply ? "#1b4797" : "#64748b",
+                        fontWeight: 700,
+                        marginBottom: s.amount ? "6px" : "0",
+                      }}
+                    >
+                      {canApply ? "바로 신청 가능한 일정입니다" : "공고 확인 후 신청 링크를 확인하세요"}
                     </div>
                     {s.amount && (
                       <div
