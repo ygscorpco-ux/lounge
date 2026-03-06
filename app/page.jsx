@@ -1,10 +1,71 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Header from "../components/Header.jsx";
-
 import PostCard from "../components/PostCard.jsx";
 import WriteButton from "../components/WriteButton.jsx";
+
+function QuickIcon({ type, accent, fill }) {
+  const stroke = accent || "#1b4797";
+  const tone = fill || "#93c5fd";
+
+  const common = {
+    width: 26,
+    height: 26,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    xmlns: "http://www.w3.org/2000/svg",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  };
+
+  if (type === "home") {
+    return (
+      <svg {...common}>
+        <path d="M3 10.5L12 3L21 10.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5Z" fill={tone} stroke={stroke} strokeWidth="1.6" />
+        <path d="M9 21v-6h6v6" stroke={stroke} strokeWidth="1.6" />
+      </svg>
+    );
+  }
+
+  if (type === "scooter") {
+    return (
+      <svg {...common}>
+        <circle cx="7" cy="18" r="2.2" fill={tone} stroke={stroke} strokeWidth="1.6" />
+        <circle cx="17" cy="18" r="2.2" fill={tone} stroke={stroke} strokeWidth="1.6" />
+        <path d="M8.8 18h5.3l2.1-5h-5l-1.8-3H7" stroke={stroke} strokeWidth="1.8" />
+        <path d="M16.6 13h1.9a1.5 1.5 0 0 1 1.5 1.5V16" stroke={stroke} strokeWidth="1.8" />
+      </svg>
+    );
+  }
+
+  if (type === "briefcase") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="7" width="18" height="12" rx="2" fill={tone} stroke={stroke} strokeWidth="1.6" />
+        <path d="M9 7V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke={stroke} strokeWidth="1.6" />
+        <path d="M3 12h18" stroke={stroke} strokeWidth="1.6" />
+      </svg>
+    );
+  }
+
+  if (type === "calendar") {
+    return (
+      <svg {...common}>
+        <rect x="4" y="5" width="16" height="15" rx="2" fill={tone} stroke={stroke} strokeWidth="1.6" />
+        <path d="M8 3v4M16 3v4M4 9h16" stroke={stroke} strokeWidth="1.6" />
+        <rect x="8" y="12" width="3" height="3" rx="0.5" fill={stroke} />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <rect x="5" y="4" width="14" height="17" rx="2" fill={tone} stroke={stroke} strokeWidth="1.6" />
+      <path d="M8 8h8M8 12h8M8 16h5" stroke={stroke} strokeWidth="1.6" />
+    </svg>
+  );
+}
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -17,11 +78,53 @@ export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const quickMenus = [
+    {
+      label: "\uC5FC\uAD11\uC0AC \uD648",
+      url: "https://www.\uC5FC\uAD11\uC0AC.com",
+      external: true,
+      type: "home",
+      bg: "#eaf2ff",
+      fill: "#fca5a5",
+    },
+    {
+      label: "\uB9C8\uC9C4\uACC4\uC0B0\uAE30",
+      url: "/tools/delivery-margin",
+      external: false,
+      type: "scooter",
+      bg: "#fff2e8",
+      fill: "#fdba74",
+    },
+    {
+      label: "\uC778\uAC74\uBE44\uACC4\uC0B0",
+      url: "/tools/labor-cost",
+      external: false,
+      type: "briefcase",
+      bg: "#eefbf4",
+      fill: "#86efac",
+    },
+    {
+      label: "\uC9C0\uC6D0\uAE08\uC77C\uC815",
+      url: "/tools/subsidy-calendar",
+      external: false,
+      type: "calendar",
+      bg: "#fff9eb",
+      fill: "#fcd34d",
+    },
+    {
+      label: "\uC54C\uBC14\uAD00\uB9AC",
+      url: "/tools/worker-scheduler",
+      external: false,
+      type: "clipboard",
+      bg: "#f4f1ff",
+      fill: "#c4b5fd",
+    },
+  ];
+
   const fetchPosts = useCallback(async (p, cat, s, reset) => {
     setLoading(true);
     try {
-      let url = "/api/posts?page=" + p + "&sort=" + s + "&t=" + Date.now();
-
+      const url = "/api/posts?page=" + p + "&sort=" + s + "&t=" + Date.now();
       const res = await fetch(url);
       const data = await res.json();
       if (reset) setPosts(data.posts || []);
@@ -40,7 +143,9 @@ export default function Home() {
         const data = await res.json();
         setBestPosts(data.posts || []);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error(e);
+    }
   }, []);
 
   useEffect(() => {
@@ -48,6 +153,7 @@ export default function Home() {
     fetchPosts(1, null, sort, true);
     fetchBest();
   }, [sort, refreshKey, fetchPosts, fetchBest]);
+
   useEffect(() => {
     const h = () => setRefreshKey((p) => p + 1);
     window.addEventListener("focus", h);
@@ -57,6 +163,7 @@ export default function Home() {
       window.removeEventListener("pageshow", h);
     };
   }, []);
+
   useEffect(() => {
     setRefreshKey((p) => p + 1);
   }, [pathname]);
@@ -66,6 +173,7 @@ export default function Home() {
     setPage(n);
     fetchPosts(n, null, sort, false);
   }
+
   useEffect(() => {
     const h = () => {
       if (
@@ -73,8 +181,9 @@ export default function Home() {
           document.body.offsetHeight - 200 &&
         !loading &&
         hasMore
-      )
+      ) {
         loadMore();
+      }
     };
     window.addEventListener("scroll", h);
     return () => window.removeEventListener("scroll", h);
@@ -84,7 +193,6 @@ export default function Home() {
     <div>
       <Header />
 
-      {/* ????썹땟戮녹?????椰?*/}
       <div
         className="banner-scroll"
         style={{
@@ -108,55 +216,43 @@ export default function Home() {
             cursor: "pointer",
           }}
         >
-          <div
-            style={{
-              fontSize: "12px",
-              opacity: 0.8,
-              marginBottom: "8px",
-              fontWeight: 500,
-            }}
-          >
-            ?????怨룹??????
+          <div style={{ fontSize: "12px", opacity: 0.85, marginBottom: "8px", fontWeight: 600 }}>
+            {"\uACF5\uC9C0\uC0AC\uD56D"}
           </div>
           <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.3 }}>
-            ???μ떜媛?걫?筌뚮툙彛???몃룛????????????살퓢????棺堉?뤃????
+            {"\uB77C\uC6B4\uC9C0 \uC5C5\uB370\uC774\uD2B8 \uBC0F \uC6B4\uC601 \uC18C\uC2DD\uC744"}
             <br />
-            ????癰궽블뀪???굿???꿔꺂??????
+            {"\uAC00\uC7A5 \uBA3C\uC800 \uD655\uC778\uD574\uBCF4\uC138\uC694"}
           </div>
-          <div style={{ fontSize: "11px", opacity: 0.6, marginTop: "10px" }}>
-            ??????汝뷴젆?????????嫄??????????깅짆?????????
+          <div style={{ fontSize: "11px", opacity: 0.72, marginTop: "10px" }}>
+            {"\uC810\uAC80 \uC548\uB0B4\u00B7\uAE30\uB2A5 \uCD94\uAC00\u00B7\uD589\uC0AC \uC18C\uC2DD"}
           </div>
         </div>
+
         <div
           style={{
             minWidth: "220px",
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            background: "linear-gradient(135deg, #ff6f91 0%, #ff9671 100%)",
             borderRadius: "14px",
             padding: "18px",
             color: "white",
             flex: "0 0 auto",
           }}
         >
-          <div
-            style={{
-              fontSize: "12px",
-              opacity: 0.8,
-              marginBottom: "8px",
-              fontWeight: 500,
-            }}
-          >
-            ??????          </div>
-          <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.3 }}>
-            ?癲??壤굿熬곥굥?????????留? ??鶯ㅺ동???????
-            <br />
-            ???????癲????????
+          <div style={{ fontSize: "12px", opacity: 0.85, marginBottom: "8px", fontWeight: 600 }}>
+            {"\uC774\uBCA4\uD2B8"}
           </div>
-          <div style={{ fontSize: "11px", opacity: 0.6, marginTop: "10px" }}>
-            ?饔낅떽?????????????댄뱼???1??關?쒎첎?嫄?????レ맄?????꿔꺂??틝?????          </div>
+          <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.3 }}>
+            {"\uC0AC\uC7A5\uB2D8 \uB3C4\uAD6C \uD65C\uC6A9 \uD6C4\uAE30 \uACF5\uC720\uD558\uACE0"}
+            <br />
+            {"\uCD94\uAC00 \uD3EC\uC778\uD2B8\uB97C \uBC1B\uC544\uBCF4\uC138\uC694"}
+          </div>
+          <div style={{ fontSize: "11px", opacity: 0.72, marginTop: "10px" }}>
+            {"\uB9E4\uC8FC 1\uBA85 \uC120\uC815 \u00B7 \uACF5\uC9C0\uC5D0\uC11C \uC138\uBD80 \uC548\uB0B4"}
+          </div>
         </div>
       </div>
 
-      {/* ??ш끽維뽳쭩??嚥싳쉶瑗??밸윾癲???????????????ш끽維쀩????β뼯爰????????밸븶??뫢??*/}
       <div style={{ padding: "6px 12px 16px" }}>
         <div
           style={{
@@ -174,48 +270,7 @@ export default function Home() {
               gap: "6px",
             }}
           >
-            {[
-              {
-                label: "\uC5FC\uAD11\uC0AC \uD648",
-                url: "http://www.?쇨킅??com",
-                external: true,
-                emoji: "\uD83C\uDFE0",
-                bg: "#eef3ff",
-                icon: "#ef4444",
-              },
-              {
-                label: "\uB9C8\uC9C4\uACC4\uC0B0\uAE30",
-                url: "/tools/delivery-margin",
-                external: false,
-                emoji: "\uD83D\uDEF5",
-                bg: "#fff3ea",
-                icon: "#f97316",
-              },
-              {
-                label: "\uC778\uAC74\uBE44\uACC4\uC0B0",
-                url: "/tools/labor-cost",
-                external: false,
-                emoji: "\uD83D\uDCBC",
-                bg: "#eefbf2",
-                icon: "#10b981",
-              },
-              {
-                label: "\uC9C0\uC6D0\uAE08\uC77C\uC815",
-                url: "/tools/subsidy-calendar",
-                external: false,
-                emoji: "\uD83D\uDCC5",
-                bg: "#fff8e8",
-                icon: "#eab308",
-              },
-              {
-                label: "\uC54C\uBC14\uAD00\uB9AC",
-                url: "/tools/worker-scheduler",
-                external: false,
-                emoji: "\uD83D\uDCCB",
-                bg: "#f3f0ff",
-                icon: "#8b5cf6",
-              },
-            ].map((item, i) => (
+            {quickMenus.map((item, i) => (
               <a
                 key={i}
                 href={item.url}
@@ -241,30 +296,9 @@ export default function Home() {
                     justifyContent: "center",
                     boxShadow: "0 4px 10px rgba(0,0,0,0.12)",
                     border: "1px solid #d9e1f1",
-                    position: "relative",
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: "24px",
-                      lineHeight: 1,
-                      filter: "saturate(1.15)",
-                    }}
-                  >
-                    {item.emoji}
-                  </span>
-                  <span
-                    style={{
-                      position: "absolute",
-                      right: "1px",
-                      bottom: "1px",
-                      width: "10px",
-                      height: "10px",
-                      borderRadius: "50%",
-                      background: item.icon,
-                      border: "2px solid #fff",
-                    }}
-                  />
+                  <QuickIcon type={item.type} accent="#1b4797" fill={item.fill} />
                 </div>
                 <span
                   style={{
@@ -284,7 +318,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ?癲??壤굿熬곥굥????*/}
       {bestPosts.length > 0 && (
         <>
           <div className="section-divider" />
@@ -297,7 +330,7 @@ export default function Home() {
                 marginBottom: "12px",
               }}
             >
-              ?????????살퓢?????轅붽틓???????????留?
+              {"\uC774\uBC88 \uC8FC \uC778\uAE30 \uAC8C\uC2DC\uAE00"}
             </div>
             <div
               className="best-scroll"
@@ -354,8 +387,8 @@ export default function Home() {
                       gap: "8px",
                     }}
                   >
-                    <span>??{post.likeCount}</span>
-                    <span>???{post.commentCount}</span>
+                    <span>{"\uC88B\uC544\uC694 "}{post.likeCount}</span>
+                    <span>{"\uB313\uAE00 "}{post.commentCount}</span>
                   </div>
                 </div>
               ))}
@@ -366,7 +399,6 @@ export default function Home() {
 
       <div className="section-divider" />
 
-      {/* ??轅붽틓???壤굿??*/}
       <div
         style={{
           display: "flex",
@@ -377,31 +409,29 @@ export default function Home() {
         }}
       >
         <span style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a1a" }}>
-          野껊슣?녷묾?
+          {"\uC790\uC720\uAC8C\uC2DC\uD310"}
         </span>
         <select
           className="sort-select"
           value={sort}
           onChange={(e) => setSort(e.target.value)}
         >
-          <option value="latest">Latest</option>
-          <option value="likes">Most Liked</option>
-          <option value="comments">Most Commented</option>
+          <option value="latest">{"\uCD5C\uC2E0\uC21C"}</option>
+          <option value="likes">{"\uCD94\uCC9C\uC21C"}</option>
+          <option value="comments">{"\uB313\uAE00\uC21C"}</option>
         </select>
       </div>
 
-      {/* ?????留? ?饔낅떽????ш낄?뉔뇡?꾩땡沃섏쥓???*/}
       <div>
         {posts.map((post) => (
           <PostCard key={post.id} post={post} />
         ))}
-        {loading && <div className="loading">?癲??嶺??獒뺛뀙????..</div>}
+        {loading && <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>}
         {!loading && posts.length === 0 && (
-          <div className="empty">?????諛몃마??蹂㏓룾??????留?????????깅즽????????놁졄</div>
+          <div className="empty">{"\uC544\uC9C1 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>
         )}
       </div>
       <WriteButton />
     </div>
   );
 }
-
