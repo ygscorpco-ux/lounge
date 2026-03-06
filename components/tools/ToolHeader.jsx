@@ -7,143 +7,120 @@
  *   title   : 타이틀 문자열
  *   sub     : 부제목 문자열
  *   badge   : 오른쪽 보조 뱃지 문자열 (선택)
- *   gradient: 배경 그라디언트 CSS 문자열 (기본: primary → accent)
+ *   gradient: 하위 호환용, 현재는 사용하지 않음
  */
-export default function ToolHeader({
-  icon,
-  title,
-  sub,
-  note,
-  badge,
-  gradient,
-}) {
-  const bg = gradient || "linear-gradient(135deg, #1b4797 0%, #2d5fc4 100%)";
-
+export default function ToolHeader({ icon, title, sub, note, badge }) {
   return (
     <div
       style={{
-        background: bg,
-        padding: "22px 20px 26px",
-        position: "relative",
-        overflow: "hidden",
+        padding: "12px 14px 0",
       }}
     >
-      {/* 장식 원 배경 */}
       <div
         style={{
-          position: "absolute",
-          top: "-30px",
-          right: "-30px",
-          width: "140px",
-          height: "140px",
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.07)",
-          pointerEvents: "none",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: "-40px",
-          left: "60px",
-          width: "100px",
-          height: "100px",
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.05)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
           position: "relative",
+          overflow: "hidden",
+          background:
+            "radial-gradient(circle at top right, rgba(27,71,151,0.11), transparent 34%), linear-gradient(180deg, #ffffff 0%, #f9fbff 100%)",
+          border: "1px solid #e3ebf4",
+          borderRadius: "28px",
+          padding: "18px",
+          boxShadow:
+            "0 14px 30px rgba(15,23,42,0.04), 0 2px 8px rgba(15,23,42,0.02)",
         }}
       >
         <div
           style={{
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
             gap: "14px",
-            flex: 1,
-            minWidth: 0,
           }}
         >
-          {/* 아이콘 컨테이너 */}
           <div
             style={{
-              width: "52px",
-              height: "52px",
-              borderRadius: "16px",
-              background: "rgba(255,255,255,0.18)",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              gap: "14px",
+              flex: 1,
+              minWidth: 0,
             }}
           >
-            {icon}
-          </div>
-          {/* 텍스트 영역 — minWidth:0 이 없으면 flex 자식이 넘침 */}
-          <div style={{ minWidth: 0, flex: 1 }}>
             <div
               style={{
-                fontSize: "20px",
-                fontWeight: 800,
-                color: "#fff",
-                lineHeight: 1.2,
-                marginBottom: "4px",
+                width: "52px",
+                height: "52px",
+                borderRadius: "18px",
+                background: "#1b4797",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                boxShadow: "0 12px 22px rgba(27,71,151,0.16)",
               }}
             >
-              {title}
+              {icon}
             </div>
-            {sub && (
+
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
-                  fontSize: "13px",
-                  color: "rgba(255,255,255,0.9)",
-                  lineHeight: 1.4,
+                  fontSize: "24px",
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  lineHeight: 1.2,
+                  letterSpacing: "-0.04em",
                 }}
               >
-                {sub}
+                {title}
               </div>
-            )}
-            {note && (
-              <div
-                style={{
-                  fontSize: "11px",
-                  color: "rgba(255,255,255,0.65)",
-                  lineHeight: 1.5,
-                  marginTop: "3px",
-                }}
-              >
-                {note}
-              </div>
-            )}
+              {sub && (
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#5f6c80",
+                    lineHeight: 1.55,
+                    marginTop: "6px",
+                  }}
+                >
+                  {sub}
+                </div>
+              )}
+              {note && (
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#8c99ac",
+                    lineHeight: 1.5,
+                    marginTop: "5px",
+                  }}
+                >
+                  {note}
+                </div>
+              )}
+            </div>
           </div>
+
+          {badge ? (
+            <div
+              style={{
+                fontSize: "11px",
+                fontWeight: 800,
+                color: "#1b4797",
+                background: "rgba(27,71,151,0.08)",
+                border: "1px solid rgba(27,71,151,0.12)",
+                borderRadius: "999px",
+                padding: "5px 10px",
+                flexShrink: 0,
+                lineHeight: 1.5,
+                textAlign: "center",
+                whiteSpace: "pre",
+              }}
+            >
+              {badge}
+            </div>
+          ) : null}
         </div>
-        {badge && (
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 700,
-              color: "#fff",
-              background: "rgba(255,255,255,0.18)",
-              borderRadius: "8px",
-              padding: "5px 10px",
-              flexShrink: 0,
-              marginLeft: "8px",
-              lineHeight: 1.5,
-              textAlign: "center",
-              whiteSpace: "pre",
-            }}
-          >
-            {badge}
-          </div>
-        )}
       </div>
     </div>
   );

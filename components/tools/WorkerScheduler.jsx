@@ -456,16 +456,49 @@ export default function WorkerScheduler() {
   // ════════════════════════════════════════════════════════════════════
   const renderWorkers = () => (
     <div style={{ padding: '0 16px' }}>
-      {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '18px', fontWeight: 700 }}>우리 직원</span>
-          <span style={{ background: 'var(--color-primary)', color: '#fff', borderRadius: '12px', padding: '2px 10px', fontSize: '12px', fontWeight: 700 }}>{workers.length}명</span>
+      <div style={{
+        background: '#fff',
+        borderRadius: '24px',
+        padding: '18px',
+        border: '1px solid #e6edf5',
+        boxShadow: '0 12px 28px rgba(15,23,42,0.04)',
+        margin: '16px 0 12px',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+          <div>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>직원 목록</div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+              근무 조건과 계약, 시급을 한 화면에서 관리합니다.
+            </div>
+          </div>
+          <div style={{
+            minWidth: '52px',
+            height: '34px',
+            borderRadius: '999px',
+            background: 'rgba(27,71,151,0.08)',
+            color: '#1b4797',
+            fontSize: '14px',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            {workers.length}명
+          </div>
         </div>
         <button onClick={() => { setEditWorker(null); setShowAddWorker(true); }} style={{
-          padding: '8px 16px', background: 'var(--color-primary)', color: '#fff',
-          border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-        }}>+ 직원 추가</button>
+          width: '100%',
+          marginTop: '14px',
+          padding: '13px 16px',
+          background: '#1b4797',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '16px',
+          fontSize: '14px',
+          fontWeight: 800,
+          cursor: 'pointer',
+        }}>직원 추가</button>
       </div>
 
       {loading ? Array(3).fill(0).map((_, i) => <Skeleton key={i} h={90} mb={10} />) :
@@ -475,10 +508,13 @@ export default function WorkerScheduler() {
           const accentColor = w.color || 'var(--color-primary)';
           return (
             <div key={w.id} style={{
-              background: '#fff', borderRadius: '16px', padding: '16px',
-              marginBottom: '10px', boxShadow: 'var(--shadow-sm)',
-              border: '1px solid var(--color-gray-200)',
-              borderLeft: `4px solid ${accentColor}`, // 직원 고유색 accent 라인
+              background: '#fff',
+              borderRadius: '22px',
+              padding: '16px',
+              marginBottom: '10px',
+              boxShadow: '0 10px 24px rgba(15,23,42,0.04)',
+              border: '1px solid #e6edf5',
+              borderLeft: `4px solid ${accentColor}`,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Avatar name={w.name} color={w.color} size={44} />
@@ -492,10 +528,10 @@ export default function WorkerScheduler() {
                     {w.work_days} {w.start_time}~{w.end_time}
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <button onClick={() => router.push(`/tools/contract?workerId=${w.id}`)} style={{ padding: '5px 10px', background: 'var(--color-primary-bg)', color: 'var(--color-primary)', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>계약서</button>
-                  <button onClick={() => { setEditWorker(w); setShowAddWorker(true); }} style={{ padding: '5px 10px', background: 'var(--color-gray-100)', color: 'var(--color-gray-700)', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>수정</button>
-                  <button onClick={() => deleteWorker(w.id)} style={{ padding: '5px 10px', background: '#fff0f0', color: 'var(--color-danger)', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <button onClick={() => router.push(`/tools/contract?workerId=${w.id}`)} style={{ padding: '6px 10px', background: 'var(--color-primary-bg)', color: 'var(--color-primary)', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>계약서</button>
+                  <button onClick={() => { setEditWorker(w); setShowAddWorker(true); }} style={{ padding: '6px 10px', background: '#f8fafc', color: 'var(--color-gray-700)', border: '1px solid #e6edf5', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>수정</button>
+                  <button onClick={() => deleteWorker(w.id)} style={{ padding: '6px 10px', background: '#fff3f1', color: 'var(--color-danger)', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
                 </div>
               </div>
               {w.task_description && (
@@ -545,14 +581,20 @@ export default function WorkerScheduler() {
   // ════════════════════════════════════════════════════════════════════
   const renderSchedule = () => (
     <div style={{ padding: '0 16px' }}>
-      {/* 상단 헤더 */}
-      <div style={{ padding: '16px 0 12px' }}>
+      <div style={{
+        background: '#fff',
+        borderRadius: '24px',
+        padding: '18px',
+        border: '1px solid #e6edf5',
+        boxShadow: '0 12px 28px rgba(15,23,42,0.04)',
+        margin: '16px 0 12px',
+      }}>
         {/* 뷰 전환 */}
-        <div style={{ display: 'flex', background: 'var(--color-gray-100)', borderRadius: '10px', padding: '3px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', background: '#f3f6fb', borderRadius: '14px', padding: '4px', marginBottom: '14px' }}>
           {[{ id: 'week', label: '주간' }, { id: 'month', label: '월간' }].map(v => (
             <button key={v.id} onClick={() => setSchedView(v.id)} style={{
-              flex: 1, padding: '8px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-              fontSize: '13px', fontWeight: 700,
+              flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 800,
               background: schedView === v.id ? 'var(--color-primary)' : 'transparent',
               color: schedView === v.id ? '#fff' : 'var(--color-gray-700)',
             }}>{v.label}</button>
@@ -561,43 +603,43 @@ export default function WorkerScheduler() {
 
         {/* 월/주 이동 */}
         {schedView === 'week' ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <button onClick={prevWeek} style={navBtn}>‹</button>
-            <span style={{ fontSize: '14px', fontWeight: 700 }}>
+            <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
               {weekDates[0].slice(5).replace('-', '/')} ~ {weekDates[6].slice(5).replace('-', '/')}
             </span>
             <button onClick={nextWeek} style={navBtn}>›</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
             <button onClick={prevMonth} style={navBtn}>‹</button>
-            <span style={{ fontSize: '14px', fontWeight: 700 }}>{year}년 {month}월</span>
+            <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>{year}년 {month}월</span>
             <button onClick={nextMonth} style={navBtn}>›</button>
           </div>
         )}
 
         {/* 이달 스케줄 자동생성 버튼 */}
         <button onClick={autoGenerateSchedule} style={{
-          width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px dashed var(--color-primary)',
-          background: 'var(--color-primary-bg)', color: 'var(--color-primary)',
-          fontSize: '13px', fontWeight: 700, cursor: 'pointer', marginBottom: '10px',
+          width: '100%', padding: '13px', borderRadius: '16px', border: '1px dashed var(--color-primary)',
+          background: '#eef5ff', color: 'var(--color-primary)',
+          fontSize: '13px', fontWeight: 800, cursor: 'pointer', marginBottom: '12px',
         }}>
-          ⚡ 이달 스케줄 자동생성 ({year}년 {month}월)
+          이달 스케줄 자동 생성
         </button>
 
         {/* 직원 필터 */}
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
           <button onClick={() => setFilterWorker('all')} style={{
-            padding: '5px 12px', borderRadius: '16px', border: 'none', cursor: 'pointer',
-            fontSize: '12px', fontWeight: 700, flexShrink: 0,
-            background: filterWorker === 'all' ? 'var(--color-primary)' : 'var(--color-gray-100)',
+            padding: '8px 12px', borderRadius: '999px', border: 'none', cursor: 'pointer',
+            fontSize: '12px', fontWeight: 800, flexShrink: 0,
+            background: filterWorker === 'all' ? 'var(--color-primary)' : '#f3f6fb',
             color: filterWorker === 'all' ? '#fff' : 'var(--color-gray-700)',
           }}>전체</button>
           {workers.map(w => (
             <button key={w.id} onClick={() => setFilterWorker(String(w.id))} style={{
-              padding: '5px 12px', borderRadius: '16px', border: 'none', cursor: 'pointer',
-              fontSize: '12px', fontWeight: 700, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px',
-              background: filterWorker === String(w.id) ? w.color : 'var(--color-gray-100)',
+              padding: '8px 12px', borderRadius: '999px', border: 'none', cursor: 'pointer',
+              fontSize: '12px', fontWeight: 800, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px',
+              background: filterWorker === String(w.id) ? w.color : '#f3f6fb',
               color: filterWorker === String(w.id) ? '#fff' : 'var(--color-gray-700)',
             }}>
               <span>{w.name.slice(0, 1)}</span>{w.name}
@@ -730,7 +772,7 @@ export default function WorkerScheduler() {
 
       {/* 출퇴근 기록 버튼 */}
       <button onClick={() => { setAttendDate(todayStr()); setShowAttend(true); }} style={{
-        position: 'fixed', bottom: '88px', right: '20px',
+        position: 'fixed', bottom: '98px', right: '20px',
         width: '52px', height: '52px', borderRadius: '50%',
         background: 'var(--color-primary)', color: '#fff',
         border: 'none', fontSize: '22px', cursor: 'pointer',
@@ -741,8 +783,8 @@ export default function WorkerScheduler() {
   );
 
   const navBtn = {
-    width: '32px', height: '32px', border: 'none', background: 'var(--color-gray-100)',
-    borderRadius: '8px', cursor: 'pointer', fontSize: '18px',
+    width: '36px', height: '36px', border: '1px solid #e6edf5', background: '#f8fafc',
+    borderRadius: '12px', cursor: 'pointer', fontSize: '18px',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   };
 
@@ -750,7 +792,7 @@ export default function WorkerScheduler() {
   // RENDER
   // ════════════════════════════════════════════════════════════════════
   return (
-    <div style={{ background: 'var(--color-bg)', minHeight: 'calc(100dvh - 56px)', paddingBottom: '70px' }}>
+    <div style={{ background: 'var(--color-bg)', minHeight: 'calc(100dvh - 56px)', paddingBottom: '96px' }}>
 
       {/* 탭 컨텐츠 */}
       {tab === 'workers'  && renderWorkers()}
@@ -764,10 +806,13 @@ export default function WorkerScheduler() {
 
       {/* 하단 탭바 */}
       <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: '480px',
-        background: '#fff', borderTop: '1px solid var(--color-gray-200)',
-        display: 'flex', zIndex: 300,
+        position: 'fixed', bottom: '14px', left: '50%', transform: 'translateX(-50%)',
+        width: 'calc(100% - 28px)', maxWidth: '452px',
+        background: 'rgba(255,255,255,0.92)', border: '1px solid #dbe5f1',
+        boxShadow: '0 16px 34px rgba(15,23,42,0.10)',
+        backdropFilter: 'blur(14px)',
+        borderRadius: '22px',
+        display: 'flex', zIndex: 300, padding: '6px',
       }}>
         {[
           { id: 'workers',  icon: '👥', label: '직원관리' },
@@ -775,11 +820,12 @@ export default function WorkerScheduler() {
           { id: 'salary',   icon: '💰', label: '급여정산' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
-            flex: 1, padding: '10px 0 14px', border: 'none', background: 'transparent', cursor: 'pointer',
-            fontSize: '10px', fontWeight: tab === t.id ? 700 : 500,
+            flex: 1, padding: '10px 0', border: 'none',
+            borderRadius: '16px', background: tab === t.id ? 'rgba(27,71,151,0.08)' : 'transparent', cursor: 'pointer',
+            fontSize: '10px', fontWeight: tab === t.id ? 800 : 600,
             color: tab === t.id ? 'var(--color-primary)' : 'var(--color-gray-500)',
           }}>
-            <div style={{ fontSize: '20px', marginBottom: '3px' }}>{t.icon}</div>
+            <div style={{ fontSize: '18px', marginBottom: '3px' }}>{t.icon}</div>
             {t.label}
           </button>
         ))}

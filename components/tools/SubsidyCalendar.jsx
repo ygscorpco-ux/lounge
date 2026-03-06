@@ -4,10 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 // 카테고리 설정
 const CATEGORIES = [
   { id: "전체", label: "전체", color: "#495057", bg: "#f4f6fb" },
-  { id: "자금지원", label: "💰 자금지원", color: "#1b4797", bg: "#eef2fb" },
-  { id: "교육", label: "📚 교육", color: "#2ecc71", bg: "#f0faf4" },
-  { id: "컨설팅", label: "🤝 컨설팅", color: "#f39c12", bg: "#fff8ec" },
-  { id: "세금혜택", label: "🏦 세금혜택", color: "#e74c3c", bg: "#fff0f0" },
+  { id: "자금지원", label: "자금지원", color: "#1b4797", bg: "#eef2fb" },
+  { id: "교육", label: "교육", color: "#2ecc71", bg: "#f0faf4" },
+  { id: "컨설팅", label: "컨설팅", color: "#f39c12", bg: "#fff8ec" },
+  { id: "세금혜택", label: "세금혜택", color: "#e74c3c", bg: "#fff0f0" },
 ];
 const CAT_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]));
 const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -428,11 +428,11 @@ function SubsidyAiSection({ onRecommend }) {
     <div
       style={{
         background: "#fff",
-        borderRadius: "16px",
-        padding: "16px",
+        borderRadius: "24px",
+        padding: "18px",
         marginBottom: "16px",
-        boxShadow: "var(--shadow-sm)",
-        border: "1px solid var(--color-gray-200)",
+        boxShadow: "0 12px 28px rgba(15,23,42,0.04)",
+        border: "1px solid #e6edf5",
       }}
     >
       <button
@@ -449,22 +449,21 @@ function SubsidyAiSection({ onRecommend }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "18px" }}>🎯</span>
           <div style={{ textAlign: "left" }}>
             <div
-              style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}
+              style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a" }}
             >
               AI 맞춤 지원금 추천
             </div>
-            <div style={{ fontSize: "11px", color: "#888", marginTop: "1px" }}>
-              프로필 입력 → 내게 맞는 TOP 3 추천
+            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>
+              업종과 지역 기준으로 지금 볼만한 지원사업을 고릅니다.
             </div>
           </div>
         </div>
         <span
           style={{
-            fontSize: "16px",
-            color: "#888",
+            fontSize: "14px",
+            color: "#64748b",
             transform: open ? "rotate(180deg)" : "none",
             transition: "transform 0.2s",
           }}
@@ -668,19 +667,17 @@ function SubsidyAiSection({ onRecommend }) {
             disabled={loading}
             style={{
               width: "100%",
-              padding: "13px",
-              borderRadius: "12px",
+              padding: "14px",
+              borderRadius: "14px",
               border: "none",
-              background: loading
-                ? "#ccc"
-                : "linear-gradient(135deg, #1b4797 0%, #4f80e1 100%)",
+              background: loading ? "#b8c5da" : "#1b4797",
               color: "#fff",
               fontSize: "14px",
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: loading ? "default" : "pointer",
             }}
           >
-            {loading ? "AI 분석 중..." : "🎯 맞춤 지원금 추천받기"}
+            {loading ? "추천 중..." : "추천 보기"}
           </button>
 
           {error && (
@@ -705,10 +702,10 @@ function SubsidyAiSection({ onRecommend }) {
                   key={i}
                   style={{
                     padding: "14px",
-                    borderRadius: "12px",
+                    borderRadius: "16px",
                     marginBottom: "8px",
-                    background: i === 0 ? "#eef2fb" : "#f8f9fa",
-                    border: `1.5px solid ${i === 0 ? "var(--color-primary)" : "#ddd"}`,
+                    background: i === 0 ? "#f7fbff" : "#f8fafc",
+                    border: `1px solid ${i === 0 ? "#cfe0f6" : "#e6edf5"}`,
                   }}
                 >
                   <div
@@ -726,7 +723,7 @@ function SubsidyAiSection({ onRecommend }) {
                         color: i === 0 ? "var(--color-primary)" : "#555",
                       }}
                     >
-                      {["🥇", "🥈", "🥉"][i]} {rec.title}
+                      {`추천 ${i + 1}`} · {rec.title}
                     </span>
                     {rec.urgency && (
                       <span
@@ -898,100 +895,93 @@ export default function SubsidyCalendar() {
     today.getFullYear() === year &&
     today.getMonth() + 1 === month &&
     today.getDate() === day;
+  const urgentCount = subsidies.filter((s) => {
+    const d = getDday(s.end_date);
+    return d >= 0 && d <= 7;
+  }).length;
+  const activeCount = subsidies.filter((s) => getDday(s.end_date) >= 0).length;
+  const bookmarkedCount = bookmarks.length;
 
   return (
     <div
       style={{
         maxWidth: "480px",
         margin: "0 auto",
-        padding: "20px 16px 80px",
+        padding: "14px 14px 80px",
         background: "var(--color-bg)",
       }}
     >
-      {/* ── 헤더 ── */}
       <div
         style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          marginBottom: "20px",
+          background: "#fff",
+          borderRadius: "24px",
+          padding: "18px",
+          border: "1px solid #e6edf5",
+          boxShadow: "0 12px 28px rgba(15,23,42,0.04)",
+          marginBottom: "14px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <svg viewBox="0 0 48 48" width="44" height="44" fill="none">
-            <rect
-              x="4"
-              y="8"
-              width="32"
-              height="30"
-              rx="4"
-              stroke="#1b4797"
-              strokeWidth="2.4"
-              fill="#eef2fb"
-            />
-            <path d="M4 17h32" stroke="#1b4797" strokeWidth="2.2" />
-            <path
-              d="M14 8V5M26 8V5"
-              stroke="#1b4797"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-            />
-            <path
-              d="M10 24h4M10 30h4M18 24h4"
-              stroke="#4f80e1"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <circle
-              cx="36"
-              cy="36"
-              r="10"
-              fill="#eef2fb"
-              stroke="#1b4797"
-              strokeWidth="2.2"
-            />
-            <path
-              d="M36 30v6l3 3"
-              stroke="#4f80e1"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: "12px",
+          }}
+        >
           <div>
-            <div
-              style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                color: "var(--color-gray-900)",
-                lineHeight: 1.2,
-              }}
-            >
-              지원금 캘린더
+            <div style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>
+              빠른 확인
             </div>
-            <div
-              style={{
-                fontSize: "12px",
-                color: "var(--color-gray-500)",
-                marginTop: "3px",
-              }}
-            >
-              놓치면 아까운 소상공인 지원사업
+            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
+              마감 임박 사업부터 보고, 필요하면 캘린더로 옮겨 확인하세요.
             </div>
+          </div>
+          <div
+            style={{
+              padding: "6px 10px",
+              borderRadius: "999px",
+              background: "rgba(27,71,151,0.08)",
+              color: "#1b4797",
+              fontSize: "11px",
+              fontWeight: 800,
+              flexShrink: 0,
+            }}
+          >
+            {year}.{String(month).padStart(2, "0")}
           </div>
         </div>
         <div
           style={{
-            fontSize: "13px",
-            fontWeight: 700,
-            color: "var(--color-primary)",
-            background: "var(--color-primary-bg)",
-            borderRadius: "8px",
-            padding: "6px 12px",
-            flexShrink: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "8px",
+            marginTop: "14px",
           }}
         >
-          {year}년 {month}월
+          {[
+            { label: "진행 중", value: `${activeCount}건` },
+            { label: "이번 주 마감", value: `${urgentCount}건` },
+            { label: "북마크", value: `${bookmarkedCount}건` },
+          ].map((item) => (
+            <div
+              key={item.label}
+              style={{
+                padding: "14px 10px",
+                borderRadius: "18px",
+                background: "#f8fafc",
+                border: "1px solid #e6edf5",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a" }}>
+                {item.value}
+              </div>
+              <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px" }}>
+                {item.label}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -1035,15 +1025,15 @@ export default function SubsidyCalendar() {
       <div
         style={{
           display: "flex",
-          background: "var(--color-gray-100)",
-          borderRadius: "12px",
+          background: "#f3f6fb",
+          borderRadius: "16px",
           padding: "4px",
           marginBottom: "16px",
         }}
       >
         {[
-          { id: "calendar", label: "📅 캘린더" },
-          { id: "list", label: "📋 리스트" },
+          { id: "calendar", label: "캘린더" },
+          { id: "list", label: "리스트" },
         ].map((t) => (
           <button
             key={t.id}
@@ -1051,19 +1041,19 @@ export default function SubsidyCalendar() {
             style={{
               flex: 1,
               padding: "10px",
-              borderRadius: "8px",
+              borderRadius: "12px",
               border: "none",
               cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 700,
+              fontSize: "13px",
+              fontWeight: 800,
               transition: "all 0.2s",
               background:
                 view === t.id ? "var(--color-primary)" : "transparent",
               color: view === t.id ? "#fff" : "var(--color-gray-700)",
-            }}
-          >
-            {t.label}
-          </button>
+              }}
+            >
+              {t.label}
+            </button>
         ))}
       </div>
 
@@ -1090,17 +1080,17 @@ export default function SubsidyCalendar() {
                 setShowBookmarkOnly(false);
               }}
               style={{
-                padding: "6px 14px",
-                borderRadius: "20px",
+                padding: "8px 14px",
+                borderRadius: "999px",
                 cursor: "pointer",
                 flexShrink: 0,
-                fontSize: "13px",
-                fontWeight: sel ? 700 : 500,
+                fontSize: "12px",
+                fontWeight: sel ? 800 : 600,
                 border: sel
                   ? `1.5px solid ${c.color}`
-                  : "1.5px solid var(--color-gray-300)",
-                background: sel ? c.color : "#fff",
-                color: sel ? "#fff" : "var(--color-gray-700)",
+                  : "1px solid #dbe5f1",
+                background: sel ? c.bg : "#fff",
+                color: sel ? c.color : "var(--color-gray-700)",
                 transition: "all 0.15s",
               }}
             >
@@ -1116,21 +1106,21 @@ export default function SubsidyCalendar() {
             setSelectedDate(null);
           }}
           style={{
-            padding: "6px 14px",
-            borderRadius: "20px",
+            padding: "8px 14px",
+            borderRadius: "999px",
             cursor: "pointer",
             flexShrink: 0,
-            fontSize: "13px",
-            fontWeight: showBookmarkOnly ? 700 : 500,
+            fontSize: "12px",
+            fontWeight: showBookmarkOnly ? 800 : 600,
             border: showBookmarkOnly
-              ? "1.5px solid #f39c12"
-              : "1.5px solid var(--color-gray-300)",
-            background: showBookmarkOnly ? "#f39c12" : "#fff",
-            color: showBookmarkOnly ? "#fff" : "var(--color-gray-700)",
+              ? "1.5px solid #1b4797"
+              : "1px solid #dbe5f1",
+            background: showBookmarkOnly ? "#eef5ff" : "#fff",
+            color: showBookmarkOnly ? "#1b4797" : "var(--color-gray-700)",
             transition: "all 0.15s",
           }}
         >
-          ⭐ 관심 {bookmarks.length > 0 ? `(${bookmarks.length})` : ""}
+          관심 {bookmarks.length > 0 ? `(${bookmarks.length})` : ""}
         </button>
       </div>
 
