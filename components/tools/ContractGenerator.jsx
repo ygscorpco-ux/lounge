@@ -24,6 +24,15 @@ const card = {
   marginBottom: '16px',
 };
 
+function Field({ label: textLabel, value, onChange, ...props }) {
+  return (
+    <div style={{ marginBottom: '12px' }}>
+      <label style={label()}>{textLabel}</label>
+      <input value={value} onChange={onChange} style={inp()} {...props} />
+    </div>
+  );
+}
+
 // ── 진행바 ────────────────────────────────────────────────────────────
 function StepBar({ current }) {
   return (
@@ -296,7 +305,7 @@ export default function ContractGenerator() {
     insurance: false, specialTerms: '',
   });
 
-  const set = (k, v) => setD(p => ({ ...p, [k]: v }));
+  const setField = (k, v) => setD(p => ({ ...p, [k]: v }));
   const contractPeriod = d.contractStart && d.contractEnd ? `${d.contractStart} ~ ${d.contractEnd}` : '';
 
   // 직원 데이터 자동 불러오기
@@ -377,13 +386,6 @@ export default function ContractGenerator() {
   }
 
   // ── 인풋 헬퍼 ──────────────────────────────────────────────────────
-  const Field = ({ k, label: l, ...props }) => (
-    <div style={{ marginBottom: '12px' }}>
-      <label style={label()}>{l}</label>
-      <input value={d[k]} onChange={e => set(k, e.target.value)} style={inp()} {...props} />
-    </div>
-  );
-
   // ════════════════════════════════════════════════════════════════════
   // RENDER
   // ════════════════════════════════════════════════════════════════════
@@ -404,10 +406,30 @@ export default function ContractGenerator() {
           <div>
             <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>사업장 정보</div>
             <div style={card}>
-              <Field k="businessName" label="사업장명 *" placeholder="예) 행복한 카페" />
-              <Field k="ceoName"      label="대표자명 *" placeholder="홍길동" />
-              <Field k="bizAddress"   label="사업장 주소" placeholder="서울시 강남구..." />
-              <Field k="bizNumber"    label="사업자등록번호" placeholder="000-00-00000" />
+              <Field
+                label="사업장명 *"
+                value={d.businessName}
+                onChange={e => setField('businessName', e.target.value)}
+                placeholder="예) 행복한 카페"
+              />
+              <Field
+                label="대표자명 *"
+                value={d.ceoName}
+                onChange={e => setField('ceoName', e.target.value)}
+                placeholder="홍길동"
+              />
+              <Field
+                label="사업장 주소"
+                value={d.bizAddress}
+                onChange={e => setField('bizAddress', e.target.value)}
+                placeholder="서울시 강남구..."
+              />
+              <Field
+                label="사업자등록번호"
+                value={d.bizNumber}
+                onChange={e => setField('bizNumber', e.target.value)}
+                placeholder="000-00-00000"
+              />
             </div>
           </div>
         )}
@@ -422,12 +444,22 @@ export default function ContractGenerator() {
               </div>
             )}
             <div style={card}>
-              <Field k="workerName"    label="이름 *"     placeholder="홍길동" />
+              <Field
+                label="이름 *"
+                value={d.workerName}
+                onChange={e => setField('workerName', e.target.value)}
+                placeholder="홍길동"
+              />
               <div style={{ marginBottom: '12px' }}>
                 <label style={label()}>생년월일</label>
-                <input type="date" value={d.workerBirth} onChange={e => set('workerBirth', e.target.value)} style={inp()} />
+                <input type="date" value={d.workerBirth} onChange={e => setField('workerBirth', e.target.value)} style={inp()} />
               </div>
-              <Field k="workerAddress" label="주소" placeholder="서울시..." />
+              <Field
+                label="주소"
+                value={d.workerAddress}
+                onChange={e => setField('workerAddress', e.target.value)}
+                placeholder="서울시..."
+              />
             </div>
           </div>
         )}
@@ -445,7 +477,7 @@ export default function ContractGenerator() {
                   { id: '표준', sub: '정규 알바' },
                   { id: '단기', sub: '단기·일용직' },
                 ].map(t => (
-                  <button key={t.id} onClick={() => set('contractType', t.id)} style={{
+                  <button key={t.id} onClick={() => setField('contractType', t.id)} style={{
                     flex: 1, padding: '14px', borderRadius: '12px', cursor: 'pointer', textAlign: 'left',
                     border: d.contractType === t.id ? '2px solid var(--color-primary)' : '2px solid var(--color-gray-200)',
                     background: d.contractType === t.id ? 'var(--color-primary-bg)' : '#fff',
@@ -462,17 +494,27 @@ export default function ContractGenerator() {
               <div style={{ ...card, animation: 'fadeIn 0.2s' }}>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-gray-700)', marginBottom: '10px' }}>계약기간</div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input type="date" value={d.contractStart} onChange={e => set('contractStart', e.target.value)} style={{ ...inp(), flex: 1 }} />
+                  <input type="date" value={d.contractStart} onChange={e => setField('contractStart', e.target.value)} style={{ ...inp(), flex: 1 }} />
                   <span style={{ color: '#aaa' }}>~</span>
-                  <input type="date" value={d.contractEnd} onChange={e => set('contractEnd', e.target.value)} style={{ ...inp(), flex: 1 }} />
+                  <input type="date" value={d.contractEnd} onChange={e => setField('contractEnd', e.target.value)} style={{ ...inp(), flex: 1 }} />
                 </div>
               </div>
             )}
 
             {/* 근무 정보 */}
             <div style={card}>
-              <Field k="workplace"   label="근무장소" placeholder="예) 행복한 카페 1호점" />
-              <Field k="taskContent" label="업무내용" placeholder="예) 홀 서빙, 음료 제조" />
+              <Field
+                label="근무장소"
+                value={d.workplace}
+                onChange={e => setField('workplace', e.target.value)}
+                placeholder="예) 행복한 카페 1호점"
+              />
+              <Field
+                label="업무내용"
+                value={d.taskContent}
+                onChange={e => setField('taskContent', e.target.value)}
+                placeholder="예) 홀 서빙, 음료 제조"
+              />
 
               <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-gray-700)', marginBottom: '8px' }}>근무요일</div>
               <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
@@ -488,16 +530,16 @@ export default function ContractGenerator() {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ flex: 1 }}>
                   <label style={label()}>시작시간</label>
-                  <input type="time" value={d.startTime} onChange={e => set('startTime', e.target.value)} style={inp()} />
+                  <input type="time" value={d.startTime} onChange={e => setField('startTime', e.target.value)} style={inp()} />
                 </div>
                 <span style={{ color: '#aaa', marginTop: '20px' }}>~</span>
                 <div style={{ flex: 1 }}>
                   <label style={label()}>종료시간</label>
-                  <input type="time" value={d.endTime} onChange={e => set('endTime', e.target.value)} style={inp()} />
+                  <input type="time" value={d.endTime} onChange={e => setField('endTime', e.target.value)} style={inp()} />
                 </div>
                 <div style={{ width: '70px' }}>
                   <label style={label()}>휴게(분)</label>
-                  <input type="number" value={d.breakTime} onChange={e => set('breakTime', e.target.value)} style={inp()} />
+                  <input type="number" value={d.breakTime} onChange={e => setField('breakTime', e.target.value)} style={inp()} />
                 </div>
               </div>
             </div>
@@ -508,7 +550,7 @@ export default function ContractGenerator() {
                 <div style={{ flex: 2 }}>
                   <label style={label()}>시급 *</label>
                   <div style={{ position: 'relative' }}>
-                    <input type="number" value={d.wage} onChange={e => set('wage', e.target.value)}
+                    <input type="number" value={d.wage} onChange={e => setField('wage', e.target.value)}
                       placeholder={String(MIN_WAGE)} style={inp({ paddingRight: '32px' })} />
                     <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#aaa' }}>원</span>
                   </div>
@@ -519,7 +561,7 @@ export default function ContractGenerator() {
                 <div style={{ flex: 1 }}>
                   <label style={label()}>급여지급일 *</label>
                   <div style={{ position: 'relative' }}>
-                    <input type="number" value={d.payday} onChange={e => set('payday', e.target.value)}
+                    <input type="number" value={d.payday} onChange={e => setField('payday', e.target.value)}
                       placeholder="25" min="1" max="31" style={inp({ paddingRight: '24px' })} />
                     <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#aaa' }}>일</span>
                   </div>
@@ -532,7 +574,7 @@ export default function ContractGenerator() {
                   <div style={{ fontSize: '14px', fontWeight: 600 }}>4대보험 가입</div>
                   <div style={{ fontSize: '12px', color: 'var(--color-gray-500)' }}>근로자 부담 약 9.05%</div>
                 </div>
-                <div onClick={() => set('insurance', !d.insurance)} style={{
+                <div onClick={() => setField('insurance', !d.insurance)} style={{
                   width: '44px', height: '24px', borderRadius: '12px', cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
                   background: d.insurance ? 'var(--color-primary)' : 'var(--color-gray-300)',
                 }}>
@@ -546,7 +588,7 @@ export default function ContractGenerator() {
               {/* 특약 */}
               <div style={{ marginTop: '12px' }}>
                 <label style={label()}>기타 특약사항</label>
-                <textarea value={d.specialTerms} onChange={e => set('specialTerms', e.target.value)}
+                <textarea value={d.specialTerms} onChange={e => setField('specialTerms', e.target.value)}
                   placeholder="예) 수습기간 3개월 시급 90% 적용..." rows={3}
                   style={{ ...inp(), resize: 'vertical' }} />
               </div>
