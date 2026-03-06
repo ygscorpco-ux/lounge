@@ -5,14 +5,13 @@ import Header from "../components/Header.jsx";
 import PostCard from "../components/PostCard.jsx";
 import WriteButton from "../components/WriteButton.jsx";
 
-function QuickIcon({ type, accent, fill }) {
+function QuickIcon({ type, accent }) {
   const stroke = accent || "#1b4797";
-  const tone = fill || "#93c5fd";
 
   const common = {
-    width: 26,
-    height: 26,
-    viewBox: "0 0 24 24",
+    width: 28,
+    height: 28,
+    viewBox: "0 0 28 28",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg",
     strokeLinecap: "round",
@@ -22,8 +21,9 @@ function QuickIcon({ type, accent, fill }) {
   if (type === "home") {
     return (
       <svg {...common}>
-        <path d="M3 10.5L12 3L21 10.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5Z" fill={tone} stroke={stroke} strokeWidth="1.6" />
-        <path d="M9 21v-6h6v6" stroke={stroke} strokeWidth="1.6" />
+        <path d="M4 12.5L14 5L24 12.5V22a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 4 22v-9.5Z" fill="#ffd5d5" stroke={stroke} strokeWidth="1.8" />
+        <path d="M10.5 23.5V16.5h7V23.5" stroke={stroke} strokeWidth="1.8" />
+        <rect x="16.3" y="8.2" width="2.4" height="4.5" rx="0.6" fill="#ff5f5f" stroke={stroke} strokeWidth="1.4" />
       </svg>
     );
   }
@@ -31,10 +31,11 @@ function QuickIcon({ type, accent, fill }) {
   if (type === "scooter") {
     return (
       <svg {...common}>
-        <circle cx="7" cy="18" r="2.2" fill={tone} stroke={stroke} strokeWidth="1.6" />
-        <circle cx="17" cy="18" r="2.2" fill={tone} stroke={stroke} strokeWidth="1.6" />
-        <path d="M8.8 18h5.3l2.1-5h-5l-1.8-3H7" stroke={stroke} strokeWidth="1.8" />
-        <path d="M16.6 13h1.9a1.5 1.5 0 0 1 1.5 1.5V16" stroke={stroke} strokeWidth="1.8" />
+        <circle cx="8.2" cy="21" r="2.6" fill="#86d3ff" stroke={stroke} strokeWidth="1.7" />
+        <circle cx="19.7" cy="21" r="2.6" fill="#86d3ff" stroke={stroke} strokeWidth="1.7" />
+        <path d="M9.7 21h6.4l2.4-6H12l-2.1-3.5H7.2" stroke={stroke} strokeWidth="1.9" />
+        <rect x="15.8" y="11.8" width="4.2" height="2.6" rx="1" fill="#ff8a4c" stroke={stroke} strokeWidth="1.4" />
+        <path d="M20.5 14.4h1.6a1.4 1.4 0 0 1 1.4 1.4v1.7" stroke={stroke} strokeWidth="1.8" />
       </svg>
     );
   }
@@ -42,9 +43,10 @@ function QuickIcon({ type, accent, fill }) {
   if (type === "briefcase") {
     return (
       <svg {...common}>
-        <rect x="3" y="7" width="18" height="12" rx="2" fill={tone} stroke={stroke} strokeWidth="1.6" />
-        <path d="M9 7V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke={stroke} strokeWidth="1.6" />
-        <path d="M3 12h18" stroke={stroke} strokeWidth="1.6" />
+        <rect x="4.2" y="9" width="19.6" height="13.6" rx="2.2" fill="#7be29f" stroke={stroke} strokeWidth="1.8" />
+        <path d="M10.8 9V7.4a1.3 1.3 0 0 1 1.3-1.3h3.8a1.3 1.3 0 0 1 1.3 1.3V9" stroke={stroke} strokeWidth="1.7" />
+        <path d="M4.2 14.2H23.8" stroke={stroke} strokeWidth="1.6" />
+        <rect x="12.1" y="13.2" width="3.8" height="2.1" rx="0.8" fill="#1b4797" />
       </svg>
     );
   }
@@ -52,17 +54,18 @@ function QuickIcon({ type, accent, fill }) {
   if (type === "calendar") {
     return (
       <svg {...common}>
-        <rect x="4" y="5" width="16" height="15" rx="2" fill={tone} stroke={stroke} strokeWidth="1.6" />
-        <path d="M8 3v4M16 3v4M4 9h16" stroke={stroke} strokeWidth="1.6" />
-        <rect x="8" y="12" width="3" height="3" rx="0.5" fill={stroke} />
+        <rect x="5.2" y="6.5" width="17.6" height="16.8" rx="2.2" fill="#ffe182" stroke={stroke} strokeWidth="1.8" />
+        <path d="M9.3 4.6V8M18.7 4.6V8M5.2 10.4h17.6" stroke={stroke} strokeWidth="1.7" />
+        <rect x="9.4" y="13" width="3.1" height="3.1" rx="0.7" fill="#ff6b6b" stroke={stroke} strokeWidth="1.2" />
       </svg>
     );
   }
 
   return (
     <svg {...common}>
-      <rect x="5" y="4" width="14" height="17" rx="2" fill={tone} stroke={stroke} strokeWidth="1.6" />
-      <path d="M8 8h8M8 12h8M8 16h5" stroke={stroke} strokeWidth="1.6" />
+      <rect x="6.2" y="4.8" width="15.6" height="18.4" rx="2.3" fill="#b9b5ff" stroke={stroke} strokeWidth="1.8" />
+      <rect x="9.3" y="8.6" width="9.4" height="1.8" rx="0.8" fill="#1b4797" />
+      <path d="M9.3 13.2h9.4M9.3 16.6h6.6" stroke="#ffffff" strokeWidth="1.4" />
     </svg>
   );
 }
