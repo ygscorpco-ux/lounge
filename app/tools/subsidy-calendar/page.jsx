@@ -18,7 +18,6 @@ export default function SubsidyCalendarPage() {
       <ToolHeader
         icon={<svg viewBox="0 0 28 28" width="28" height="28" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22M9 3v4M19 3v4"/><path d="M8 17h3M14 17h3M8 21h3"/></svg>}
         title="지원금 캘린더"
-        sub="마감 임박 지원사업을 한눈에 확인"
         badge="주간 체크용"
         gradient="linear-gradient(135deg, #1b6297 0%, #2d8fc4 100%)"
       />

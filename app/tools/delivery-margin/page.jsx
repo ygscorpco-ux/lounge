@@ -43,7 +43,6 @@ export default function DeliveryMarginPage() {
           </svg>
         }
         title="실마진 계산기"
-        sub="배달앱별 수수료와 메뉴 1개당 실제 남는 금액을 바로 계산"
         badge="실시간 반영"
       />
       <DeliveryMarginCalculator />

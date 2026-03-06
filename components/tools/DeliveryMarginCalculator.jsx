@@ -93,18 +93,18 @@ function getTierBadge(tier) {
   return "";
 }
 
-function getTierMetaItems(tier) {
+function getTierTotalRate(tier) {
+  return Number(tier?.fee_rate || 0) + Number(tier?.payment_fee_rate || 0);
+}
+
+function getTierInfoItems(tier) {
   if (!tier) return [];
 
-  const items = [`중개 ${formatPercent(Number(tier.fee_rate || 0))}`];
-  const paymentRate = Number(tier.payment_fee_rate || 0);
-
-  if (paymentRate) {
-    items.push(`결제 ${formatPercent(paymentRate)}`);
-  }
-
-  items.push(tier.vat_included ? "부가세 포함" : "부가세 별도");
-  return items;
+  return [
+    { label: "중개 수수료", value: formatPercent(Number(tier.fee_rate || 0)) },
+    { label: "결제 수수료", value: formatPercent(Number(tier.payment_fee_rate || 0)) },
+    { label: "부가세", value: tier.vat_included ? "포함" : "별도" },
+  ];
 }
 
 function getMarginTone(rate) {
@@ -113,9 +113,7 @@ function getMarginTone(rate) {
       label: "좋음",
       icon: "▲",
       badgeClass: styles.ratePositive,
-      insightClass: styles.resultInsightPositive,
-      headline: "현재 가격이면 메뉴 1건당 마진이 비교적 안정적으로 남습니다.",
-      action: "앱별 비교에서 더 유리한 조건도 함께 확인해보세요.",
+      signalClass: styles.resultSignalPositive,
     };
   }
   if (rate >= 12) {
@@ -123,9 +121,7 @@ function getMarginTone(rate) {
       label: "보통",
       icon: "●",
       badgeClass: styles.rateNeutral,
-      insightClass: styles.resultInsightNeutral,
-      headline: "운영은 가능하지만 여유가 넉넉한 구간은 아닙니다.",
-      action: "원가나 배달비를 함께 확인하면 판단이 더 쉬워집니다.",
+      signalClass: styles.resultSignalNeutral,
     };
   }
   if (rate >= 0) {
@@ -133,18 +129,14 @@ function getMarginTone(rate) {
       label: "주의",
       icon: "!",
       badgeClass: styles.rateCaution,
-      insightClass: styles.resultInsightCaution,
-      headline: "남기는 금액은 있지만 실제 체감 마진은 빠듯할 수 있습니다.",
-      action: "판매가와 비용을 조금만 바꿔도 결과가 크게 달라질 수 있습니다.",
+      signalClass: styles.resultSignalCaution,
     };
   }
   return {
     label: "손실",
     icon: "−",
     badgeClass: styles.rateWarning,
-    insightClass: styles.resultInsightWarning,
-    headline: "현재 가격이면 메뉴 1건당 손실이 발생하는 구조입니다.",
-    action: "판매가, 원가, 앱 조건을 다시 넣어 바로 비교해보세요.",
+    signalClass: styles.resultSignalWarning,
   };
 }
 
@@ -340,6 +332,7 @@ export default function DeliveryMarginCalculator() {
   const [dailyOrders, setDailyOrders] = useState("");
   const [fixedCost, setFixedCost] = useState("");
   const [shareMessage, setShareMessage] = useState("");
+  const [openTierInfoId, setOpenTierInfoId] = useState("");
 
   const [analysisIndustry, setAnalysisIndustry] = useState("");
   const [analysisLoading, setAnalysisLoading] = useState(false);
@@ -456,6 +449,10 @@ export default function DeliveryMarginCalculator() {
       setSelectedTierId(nextTierId);
     }
   }, [selectedPlatform, selectedPlatformId, selectedTierId]);
+
+  useEffect(() => {
+    setOpenTierInfoId("");
+  }, [selectedPlatformId]);
 
   useEffect(() => {
     setAnalysisError("");
@@ -590,40 +587,19 @@ export default function DeliveryMarginCalculator() {
   const selectedTierName =
     selectedPlatformId === "custom" ? "수수료 직접 입력" : getTierTitle(selectedTier);
   const resultTone = calc ? getMarginTone(calc.marginRate) : null;
-  const compareHeadline =
-    bestComparison && currentComparison
-      ? bestComparison.platformId === currentComparison.platformId
-        ? "현재 선택한 앱이 가장 많이 남습니다."
-        : `${bestComparison.name}이 현재보다 ${formatCurrency(bestComparison.margin - currentComparison.margin)} 더 남아요.`
-      : bestComparison
-        ? `${bestComparison.name} 기준이 가장 유리하게 계산됩니다.`
-        : "같은 메뉴 조건으로 앱별 실마진을 비교합니다.";
-
-  const resultFacts = calc
+  const resultSummaryRows = calc
     ? [
         {
           label: calc.margin >= 0 ? "손익률" : "손실률",
           value: formatPercent(calc.marginRate),
           note: resultTone?.label || "",
-          className: calc.margin >= 0 ? styles.factCardStrong : styles.factCardAlert,
-        },
-        {
-          label: calc.margin >= 0 ? "매출 1만원당 남는 돈" : "매출 1만원당 손실",
-          value: formatCurrency(calc.contributionPerTenThousand),
-          note: "매출 기준 체감 수익",
-          className: styles.factCardBlue,
-        },
-        {
-          label: "총 차감액",
-          value: formatCurrency(calc.totalDeductions),
-          note: "판매가에서 빠지는 금액",
-          className: styles.factCardNeutral,
+          valueClass: calc.margin >= 0 ? styles.summaryValuePositive : styles.summaryValueNegative,
         },
         {
           label: "앱/결제 수수료",
           value: formatCurrency(calc.appFee + calc.cardFee),
           note: `총 수수료 ${formatPercent(calc.feeRate)}`,
-          className: styles.factCardSoft,
+          valueClass: styles.summaryValueAccent,
         },
       ]
     : [];
@@ -863,33 +839,58 @@ export default function DeliveryMarginCalculator() {
               {(selectedPlatform.tiers || []).map((tier) => {
                 const active = String(tier.id) === String(selectedTierId);
                 const badge = getTierBadge(tier);
+                const infoOpen = openTierInfoId === String(tier.id);
 
                 return (
-                  <button
-                    key={tier.id}
-                    type="button"
-                    className={`${styles.tierCard} ${active ? styles.tierCardActive : ""}`}
-                    onClick={() => setSelectedTierId(String(tier.id))}
-                  >
-                    <div className={styles.tierTop}>
-                      <div className={styles.tierHead}>
-                        <div className={styles.tierTitle}>{getTierTitle(tier)}</div>
-                        {badge ? <span className={styles.tierBadge}>{badge}</span> : null}
+                  <div key={tier.id} className={styles.tierCardWrap}>
+                    <button
+                      type="button"
+                      className={`${styles.tierCard} ${active ? styles.tierCardActive : ""}`}
+                      onClick={() => setSelectedTierId(String(tier.id))}
+                    >
+                      <div className={styles.tierTop}>
+                        <div className={styles.tierHeadCompact}>
+                          <div className={styles.tierTitle}>{getTierTitle(tier)}</div>
+                          {badge ? <span className={styles.tierBadge}>{badge}</span> : null}
+                        </div>
+
+                        <div className={styles.tierPrimaryMeta}>
+                          총 수수료 {formatPercent(getTierTotalRate(tier))}
+                        </div>
+
+                        <div className={styles.tierSecondaryMeta}>
+                          {tier.vat_included ? "부가세 포함" : "부가세 별도"}
+                        </div>
                       </div>
-                      <div className={styles.tierMetaRow}>
-                        {getTierMetaItems(tier).map((item) => (
-                          <span
-                            key={item}
-                            className={`${styles.tierMetaChip} ${
-                              item.includes("부가세") ? styles.tierMetaVat : ""
-                            }`}
-                          >
-                            {item}
-                          </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`${styles.tierInfoButton} ${
+                        infoOpen ? styles.tierInfoButtonActive : ""
+                      }`}
+                      aria-label={`${getTierTitle(tier)} 상세 보기`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setOpenTierInfoId((current) =>
+                          current === String(tier.id) ? "" : String(tier.id),
+                        );
+                      }}
+                    >
+                      !
+                    </button>
+
+                    {infoOpen ? (
+                      <div className={styles.tierInfoPanel}>
+                        {getTierInfoItems(tier).map((item) => (
+                          <div key={item.label} className={styles.tierInfoRow}>
+                            <span>{item.label}</span>
+                            <strong>{item.value}</strong>
+                          </div>
                         ))}
                       </div>
-                    </div>
-                  </button>
+                    ) : null}
+                  </div>
                 );
               })}
             </div>
@@ -1013,32 +1014,42 @@ export default function DeliveryMarginCalculator() {
                 </div>
 
                 <div className={styles.resultHeroMeta}>
-                  <div className={styles.resultMiniMetric}>
+                  <div className={`${styles.resultMiniMetric} ${styles.resultMiniMetricStrong}`}>
                     <span className={styles.resultMiniLabel}>
                       {calc.margin >= 0 ? "매출 1만원당 남는 돈" : "매출 1만원당 손실"}
                     </span>
                     <strong>{formatCurrency(calc.contributionPerTenThousand)}</strong>
                   </div>
-                  <div className={styles.resultMiniMetric}>
+                  <div className={`${styles.resultMiniMetric} ${styles.resultMiniMetricStrong}`}>
                     <span className={styles.resultMiniLabel}>총 차감액</span>
                     <strong>{formatCurrency(calc.totalDeductions)}</strong>
                   </div>
                 </div>
 
-                <div className={`${styles.resultInsight} ${resultTone?.insightClass || ""}`}>
-                  <strong>{resultTone?.headline}</strong>
-                  <span>{resultTone?.action}</span>
+                <div className={`${styles.resultSignalBar} ${resultTone?.signalClass || ""}`}>
+                  <span className={styles.resultSignalBadge}>
+                    <span className={styles.resultSignalIcon}>{resultTone?.icon}</span>
+                    {resultTone?.label}
+                  </span>
+                  <span className={styles.resultSignalPill}>{selectedPlatformName}</span>
+                  <span className={styles.resultSignalPill}>총 수수료 {formatPercent(totalFeeRate)}</span>
                 </div>
               </div>
 
-              <div className={styles.factGrid}>
-                {resultFacts.map((item) => (
-                  <div key={item.label} className={`${styles.factCard} ${item.className}`}>
-                    <span className={styles.factLabel}>{item.label}</span>
-                    <strong className={styles.factValue}>{item.value}</strong>
-                    <span className={styles.factNote}>{item.note}</span>
-                  </div>
-                ))}
+              <div className={styles.summaryPanel}>
+                <div className={styles.summaryList}>
+                  {resultSummaryRows.map((item) => (
+                    <div key={item.label} className={styles.summaryRow}>
+                      <div className={styles.summaryCopy}>
+                        <span className={styles.summaryLabel}>{item.label}</span>
+                        <span className={styles.summaryNote}>{item.note}</span>
+                      </div>
+                      <strong className={`${styles.summaryValue} ${item.valueClass || ""}`}>
+                        {item.value}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.breakdownPanel}>
@@ -1074,10 +1085,7 @@ export default function DeliveryMarginCalculator() {
               {comparison.length > 1 ? (
                 <div className={styles.comparePanel}>
                   <div className={styles.comparePanelHeader}>
-                    <div>
-                      <div className={styles.compareTitle}>앱별 비교</div>
-                      <div className={styles.compareDescription}>{compareHeadline}</div>
-                    </div>
+                    <div className={styles.compareTitle}>앱별 비교</div>
                   </div>
 
                   <div className={styles.compareList}>
@@ -1095,41 +1103,41 @@ export default function DeliveryMarginCalculator() {
                             active ? styles.compareRowCurrent : styles.compareRowDefault
                           }`}
                         >
-                          <div className={styles.compareRank}>{index + 1}</div>
+                          <div className={styles.compareLead}>
+                            <div className={styles.compareRank}>{index + 1}</div>
+                            {index === 0 ? (
+                              <span className={styles.compareRecommended}>추천</span>
+                            ) : null}
+                          </div>
 
                           <div className={styles.compareCopy}>
                             <div className={styles.compareNameRow}>
                               <div className={styles.compareName}>{item.name}</div>
-                              <div className={styles.compareStatusRow}>
-                                {index === 0 ? (
-                                  <span className={styles.compareRecommended}>추천</span>
-                                ) : null}
-                                {active ? (
-                                  <span className={styles.compareCurrent}>현재 선택</span>
-                                ) : null}
-                              </div>
+                              {active ? (
+                                <span className={styles.compareCurrent}>현재 선택</span>
+                              ) : null}
                             </div>
 
-                            <div className={styles.compareMeta}>
-                              총 수수료 {formatPercent(item.totalRate)}
-                            </div>
-
-                            {!active && currentComparison ? (
-                              <span
-                                className={`${styles.compareDeltaPill} ${
-                                  delta > 0
+                            <div className={styles.compareMeta}>총 수수료 {formatPercent(item.totalRate)}</div>
+                            <div
+                              className={`${styles.compareDeltaText} ${
+                                active
+                                  ? styles.compareDeltaCurrent
+                                  : delta > 0
                                     ? styles.compareDeltaPositive
                                     : delta < 0
                                       ? styles.compareDeltaNegative
                                       : styles.compareDeltaNeutral
-                                }`}
-                              >
-                                현재 대비 {formatSignedCurrency(delta)}
-                              </span>
-                            ) : null}
+                              }`}
+                            >
+                              {active
+                                ? "지금 계산 중인 앱"
+                                : `현재 선택보다 ${formatSignedCurrency(delta)}`}
+                            </div>
                           </div>
 
                           <div className={styles.compareValues}>
+                            <span className={styles.compareValueLabel}>메뉴 1개 남는 돈</span>
                             <strong
                               className={`${styles.compareAmount} ${
                                 item.margin >= 0 ? styles.compareAmountPositive : styles.compareAmountNegative
@@ -1137,9 +1145,7 @@ export default function DeliveryMarginCalculator() {
                             >
                               {formatCurrency(item.margin)}
                             </strong>
-                            <span className={styles.compareRate}>
-                              {formatPercent(item.marginRate)}
-                            </span>
+                            <span className={styles.compareRate}>마진율 {formatPercent(item.marginRate)}</span>
                           </div>
                         </div>
                       );
@@ -1168,7 +1174,13 @@ export default function DeliveryMarginCalculator() {
           </summary>
 
           <div className={styles.extraContent}>
-            <div className={styles.subsectionTitle}>주문 수 시뮬레이션</div>
+            <div className={styles.extraSectionCard}>
+              <div className={styles.subsectionHeader}>
+                <div className={styles.subsectionTitle}>주문 수 시뮬레이션</div>
+                <div className={styles.subsectionDescription}>
+                  일 주문 수와 월 고정비를 넣으면 운영 흐름을 바로 볼 수 있어요.
+                </div>
+              </div>
             <div className={styles.compactFieldGrid}>
               <NumberField
                 compact
@@ -1226,8 +1238,15 @@ export default function DeliveryMarginCalculator() {
                 </strong>
               </div>
             ) : null}
+            </div>
 
-            <div className={styles.subsectionTitle}>AI 해석</div>
+            <div className={styles.extraSectionCard}>
+              <div className={styles.subsectionHeader}>
+                <div className={styles.subsectionTitle}>AI 해석</div>
+                <div className={styles.subsectionDescription}>
+                  업종을 고르면 운영 코멘트를 더 구체적으로 볼 수 있어요.
+                </div>
+              </div>
             <div className={styles.chipRow}>
               {ANALYSIS_INDUSTRIES.map((industry) => (
                 <button
@@ -1270,6 +1289,7 @@ export default function DeliveryMarginCalculator() {
                 </p>
               </div>
             ) : null}
+            </div>
           </div>
         </details>
       </div>

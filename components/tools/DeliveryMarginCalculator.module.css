@@ -418,6 +418,17 @@
 .percentField::placeholder,
 .fieldInput::placeholder {
   color: #c1cad7;
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.fieldGroupPrimary .fieldInput::placeholder {
+  font-size: 0.74em;
+}
+
+.fieldGroupCompact .fieldInput::placeholder {
+  font-size: 0.86em;
 }
 
 .percentSuffix,
@@ -448,11 +459,15 @@
   gap: 10px;
 }
 
+.tierCardWrap {
+  position: relative;
+}
+
 .tierCard {
-  width: auto;
+  width: 100%;
   min-width: 0;
-  min-height: 132px;
-  padding: 14px 13px;
+  min-height: 108px;
+  padding: 14px 44px 14px 14px;
   border: 1.5px solid #e5ebf4;
   border-radius: 22px;
   background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
@@ -472,14 +487,14 @@
 .tierTop {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.tierHead {
+.tierHeadCompact {
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .tierTitle {
@@ -488,6 +503,19 @@
   font-weight: 800;
   line-height: 1.4;
   letter-spacing: -0.03em;
+}
+
+.tierPrimaryMeta {
+  color: #1b4797;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.tierSecondaryMeta {
+  color: #718095;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .tierBadge {
@@ -504,28 +532,53 @@
   line-height: 1.35;
 }
 
-.tierMetaRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.tierMetaChip {
+.tierInfoButton {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
   height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: #f4f7fb;
-  color: #5f6e83;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
+  border: 0;
+  border-radius: 50%;
+  background: #f2f5fa;
+  color: #8391a7;
+  font-size: 12px;
+  font-weight: 900;
 }
 
-.tierMetaVat {
-  background: #eef4ff;
-  color: #35548b;
+.tierInfoButtonActive {
+  background: rgba(27, 71, 151, 0.1);
+  color: #1b4797;
+}
+
+.tierInfoPanel {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid #e3ebf4;
+  background: #f8fbff;
+}
+
+.tierInfoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #607086;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.tierInfoRow + .tierInfoRow {
+  margin-top: 6px;
+}
+
+.tierInfoRow strong {
+  color: #0f172a;
+  font-weight: 800;
 }
 
 .compactFieldGrid,
@@ -557,14 +610,14 @@
 }
 
 .fieldHint {
-  color: #95a3b6;
-  font-size: 12px;
+  color: #9aa8ba;
+  font-size: 11px;
   font-weight: 700;
 }
 
 .fieldHelp {
   color: #6d798b;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.58;
 }
 
@@ -825,30 +878,156 @@
 .resultHeroMeta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .resultMiniMetric {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px;
+  gap: 6px;
+  padding: 14px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.84);
-  border: 1px solid rgba(226, 234, 244, 0.92);
+  background: #ffffff;
+  border: 1px solid rgba(211, 223, 238, 0.96);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05);
+}
+
+.resultMiniMetricStrong {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border-color: rgba(27, 71, 151, 0.14);
 }
 
 .resultMiniLabel {
-  color: #738095;
+  color: #59739d;
   font-size: 11px;
   font-weight: 800;
 }
 
 .resultMiniMetric strong {
-  color: #0f172a;
-  font-size: 17px;
+  color: #102a63;
+  font-size: 24px;
   line-height: 1.14;
   letter-spacing: -0.03em;
+}
+
+.resultSignalBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resultSignalBadge,
+.resultSignalPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(218, 228, 240, 0.94);
+  color: #516075;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.resultSignalIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.resultSignalPositive .resultSignalBadge {
+  background: rgba(27, 71, 151, 0.1);
+  border-color: rgba(27, 71, 151, 0.12);
+  color: #1b4797;
+}
+
+.resultSignalNeutral .resultSignalBadge {
+  background: #f4f6fa;
+  border-color: #e4eaf2;
+  color: #536277;
+}
+
+.resultSignalCaution .resultSignalBadge {
+  background: #fff7ea;
+  border-color: rgba(231, 188, 94, 0.24);
+  color: #9a630f;
+}
+
+.resultSignalWarning .resultSignalBadge {
+  background: #fff1ef;
+  border-color: rgba(217, 85, 77, 0.16);
+  color: #b74b3f;
+}
+
+.summaryPanel {
+  margin-top: 12px;
+}
+
+.summaryList {
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid #e3ebf4;
+  background: #ffffff;
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+}
+
+.summaryRow + .summaryRow {
+  border-top: 1px solid #edf2f7;
+}
+
+.summaryCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.summaryLabel {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.summaryNote {
+  color: #738095;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.summaryValue {
+  color: #0f172a;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  text-align: right;
+}
+
+.summaryValuePositive {
+  color: #163b82;
+}
+
+.summaryValueNegative {
+  color: #c34d3f;
+}
+
+.summaryValueAccent {
+  color: #1b4797;
 }
 
 .resultInsight {
@@ -1074,6 +1253,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 10px;
 }
 
 .compareTitle {
@@ -1114,12 +1294,18 @@
   color: #0f9f6e;
 }
 
+.compareLead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .compareRow {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 14px 12px;
   border-radius: 18px;
   border: 1px solid #e4ebf4;
   transition:
@@ -1165,8 +1351,8 @@
 .compareNameRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .compareName {
@@ -1188,6 +1374,15 @@
   font-size: 12px;
 }
 
+.compareDeltaText {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .compareDeltaPill {
   display: inline-flex;
   align-items: center;
@@ -1200,22 +1395,33 @@
 }
 
 .compareDeltaPositive {
-  background: rgba(27, 71, 151, 0.08);
   color: #1b4797;
 }
 
 .compareDeltaNegative {
-  background: rgba(217, 85, 77, 0.1);
   color: #c34d3f;
 }
 
 .compareDeltaNeutral {
-  background: #f2f5fa;
   color: #617086;
 }
 
+.compareDeltaCurrent {
+  color: #1b4797;
+}
+
 .compareValues {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
   text-align: right;
+}
+
+.compareValueLabel {
+  color: #7a8799;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .compareAmount {
@@ -1236,7 +1442,6 @@
 
 .compareRate {
   display: inline-block;
-  margin-top: 4px;
   color: #718095;
   font-size: 12px;
   font-weight: 800;
@@ -1303,6 +1508,28 @@
 .extraContent {
   gap: 16px;
   padding: 18px;
+}
+
+.extraSectionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid #e3ebf4;
+  background: linear-gradient(180deg, #fbfdff 0%, #f7faff 100%);
+}
+
+.subsectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subsectionDescription {
+  color: #6c788b;
+  font-size: 12px;
+  line-height: 1.56;
 }
 
 .projectionCard {
