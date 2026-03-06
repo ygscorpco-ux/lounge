@@ -1183,16 +1183,18 @@ export default function SubsidyCalendar() {
               <button
                 onClick={prevMonth}
                 style={{
-                  width: "32px",
-                  height: "32px",
-                  border: "none",
-                  background: "var(--color-gray-100)",
-                  borderRadius: "8px",
+                  width: "36px",
+                  height: "36px",
+                  border: "1px solid #dbe5f1",
+                  background: "#f8fafc",
+                  borderRadius: "12px",
                   cursor: "pointer",
                   fontSize: "16px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  color: "#334155",
+                  boxShadow: "0 4px 10px rgba(15,23,42,0.04)",
                 }}
               >
                 ‹
@@ -1209,16 +1211,18 @@ export default function SubsidyCalendar() {
               <button
                 onClick={nextMonth}
                 style={{
-                  width: "32px",
-                  height: "32px",
-                  border: "none",
-                  background: "var(--color-gray-100)",
-                  borderRadius: "8px",
+                  width: "36px",
+                  height: "36px",
+                  border: "1px solid #dbe5f1",
+                  background: "#f8fafc",
+                  borderRadius: "12px",
                   cursor: "pointer",
                   fontSize: "16px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  color: "#334155",
+                  boxShadow: "0 4px 10px rgba(15,23,42,0.04)",
                 }}
               >
                 ›
@@ -1226,6 +1230,22 @@ export default function SubsidyCalendar() {
             </div>
 
             {/* 요일 헤더 */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "6px 10px",
+                borderRadius: "999px",
+                background: "#eef4ff",
+                color: "#48658f",
+                fontSize: "11px",
+                fontWeight: 700,
+                marginBottom: "12px",
+              }}
+            >
+              마감일 있는 날짜를 누르면 바로 볼 수 있어요
+            </div>
+
             <div
               style={{
                 display: "grid",
@@ -1259,7 +1279,7 @@ export default function SubsidyCalendar() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(7,1fr)",
-                gap: "2px",
+                gap: "6px",
               }}
             >
               {grid.map((day, idx) => {
@@ -1271,35 +1291,102 @@ export default function SubsidyCalendar() {
                 const dots = hasSub ? hasSub.slice(0, 3) : [];
                 const isSelected = day === selectedDate;
                 const isTod = isToday(day);
+                const subsidyCount = hasSub ? hasSub.length : 0;
+                const hasUrgent = hasSub
+                  ? hasSub.some((item) => {
+                      const dday = getDday(item.end_date);
+                      return dday >= 0 && dday <= 7;
+                    })
+                  : false;
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={idx}
                     onClick={() => handleDayClick(day)}
+                    aria-pressed={isSelected}
+                    title={
+                      hasSub
+                        ? `${month}월 ${day}일 마감 지원금 ${subsidyCount}건`
+                        : `${month}월 ${day}일`
+                    }
                     style={{
                       aspectRatio: "1",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
-                      justifyContent: "center",
-                      gap: "3px",
-                      borderRadius: "10px",
+                      justifyContent: "space-between",
+                      gap: "4px",
+                      padding: "7px 4px 8px",
+                      borderRadius: "14px",
                       cursor: hasSub ? "pointer" : "default",
-                      background: isSelected
-                        ? "var(--color-primary)"
-                        : isTod
-                          ? "var(--color-primary-bg)"
-                          : "transparent",
                       border:
-                        isTod && !isSelected
-                          ? "2px solid var(--color-primary)"
-                          : "2px solid transparent",
-                      transition: "all 0.15s",
+                        isSelected
+                          ? "1.5px solid #1b4797"
+                          : hasSub
+                            ? "1.5px solid rgba(27,71,151,0.16)"
+                            : isTod
+                              ? "1.5px solid rgba(27,71,151,0.28)"
+                              : "1px solid #eef3f8",
+                      background: isSelected
+                        ? "linear-gradient(180deg, #1b4797 0%, #234f9f 100%)"
+                        : hasSub
+                          ? "linear-gradient(180deg, #fbfdff 0%, #f1f6ff 100%)"
+                          : isTod
+                            ? "#f8fbff"
+                            : "#fbfcfe",
+                      boxShadow: isSelected
+                        ? "0 10px 18px rgba(27,71,151,0.22)"
+                        : hasSub
+                          ? "0 6px 14px rgba(27,71,151,0.08)"
+                          : "none",
+                      transform: isSelected ? "translateY(-2px)" : "none",
+                      transition: "all 0.18s ease",
+                      paddingInline: 0,
                     }}
                   >
                     <span
                       style={{
-                        fontSize: "13px",
-                        fontWeight: isSelected || isTod ? 700 : 400,
+                        width: "100%",
+                        minHeight: "18px",
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        alignItems: "center",
+                        paddingRight: "6px",
+                      }}
+                    >
+                      {hasSub ? (
+                        <span
+                          style={{
+                            minWidth: "18px",
+                            height: "18px",
+                            padding: "0 5px",
+                            borderRadius: "999px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: isSelected
+                              ? "rgba(255,255,255,0.18)"
+                              : hasUrgent
+                                ? "#fff2ef"
+                                : "#e9f1ff",
+                            color: isSelected
+                              ? "#ffffff"
+                              : hasUrgent
+                                ? "#d9554d"
+                                : "#1b4797",
+                            fontSize: "10px",
+                            fontWeight: 800,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {subsidyCount}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: isSelected || isTod || hasSub ? 800 : 600,
                         lineHeight: 1,
                         color: isSelected
                           ? "#fff"
@@ -1312,20 +1399,21 @@ export default function SubsidyCalendar() {
                     >
                       {day}
                     </span>
-                    {dots.length > 0 && (
+                    {dots.length > 0 ? (
                       <div
                         style={{
                           display: "flex",
-                          gap: "2px",
+                          gap: "3px",
                           justifyContent: "center",
+                          minHeight: "8px",
                         }}
                       >
                         {dots.map((s, i) => (
                           <div
                             key={i}
                             style={{
-                              width: "5px",
-                              height: "5px",
+                              width: "6px",
+                              height: "6px",
                               borderRadius: "50%",
                               background: isSelected
                                 ? "rgba(255,255,255,0.8)"
@@ -1334,8 +1422,10 @@ export default function SubsidyCalendar() {
                           />
                         ))}
                       </div>
+                    ) : (
+                      <span style={{ minHeight: "8px" }} />
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
