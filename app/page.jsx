@@ -9,8 +9,8 @@ function QuickIcon({ type, accent }) {
   const stroke = accent || "#1b4797";
 
   const common = {
-    width: 28,
-    height: 28,
+    width: 30,
+    height: 30,
     viewBox: "0 0 28 28",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg",
@@ -21,9 +21,10 @@ function QuickIcon({ type, accent }) {
   if (type === "home") {
     return (
       <svg {...common}>
-        <path d="M4 12.5L14 5L24 12.5V22a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 4 22v-9.5Z" fill="#ffd5d5" stroke={stroke} strokeWidth="1.8" />
-        <path d="M10.5 23.5V16.5h7V23.5" stroke={stroke} strokeWidth="1.8" />
-        <rect x="16.3" y="8.2" width="2.4" height="4.5" rx="0.6" fill="#ff5f5f" stroke={stroke} strokeWidth="1.4" />
+        <path d="M4 12.5L14 5L24 12.5V22a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 4 22v-9.5Z" fill="#ffc8c8" stroke={stroke} strokeWidth="1.9" />
+        <path d="M10.5 23.5V16.5h7V23.5" stroke={stroke} strokeWidth="1.9" />
+        <rect x="16.1" y="7.6" width="2.7" height="5.1" rx="0.8" fill="#ff4545" stroke={stroke} strokeWidth="1.4" />
+        <circle cx="17.4" cy="6.2" r="0.95" fill="#dbeafe" stroke={stroke} strokeWidth="1.1" />
       </svg>
     );
   }
@@ -31,11 +32,11 @@ function QuickIcon({ type, accent }) {
   if (type === "scooter") {
     return (
       <svg {...common}>
-        <circle cx="8.2" cy="21" r="2.6" fill="#86d3ff" stroke={stroke} strokeWidth="1.7" />
-        <circle cx="19.7" cy="21" r="2.6" fill="#86d3ff" stroke={stroke} strokeWidth="1.7" />
-        <path d="M9.7 21h6.4l2.4-6H12l-2.1-3.5H7.2" stroke={stroke} strokeWidth="1.9" />
-        <rect x="15.8" y="11.8" width="4.2" height="2.6" rx="1" fill="#ff8a4c" stroke={stroke} strokeWidth="1.4" />
-        <path d="M20.5 14.4h1.6a1.4 1.4 0 0 1 1.4 1.4v1.7" stroke={stroke} strokeWidth="1.8" />
+        <circle cx="8.1" cy="21.2" r="2.7" fill="#8be9ff" stroke={stroke} strokeWidth="1.8" />
+        <circle cx="20" cy="21.2" r="2.7" fill="#8be9ff" stroke={stroke} strokeWidth="1.8" />
+        <path d="M9.9 21.2h6.2l2.7-6.4h-6.7l-2-3.3H7.3" stroke={stroke} strokeWidth="1.9" />
+        <rect x="15.9" y="11.4" width="4.7" height="2.9" rx="1.1" fill="#ff6b6b" stroke={stroke} strokeWidth="1.4" />
+        <path d="M20.6 14.3h1.6a1.5 1.5 0 0 1 1.5 1.5v2" stroke={stroke} strokeWidth="1.8" />
       </svg>
     );
   }
@@ -43,10 +44,10 @@ function QuickIcon({ type, accent }) {
   if (type === "briefcase") {
     return (
       <svg {...common}>
-        <rect x="4.2" y="9" width="19.6" height="13.6" rx="2.2" fill="#7be29f" stroke={stroke} strokeWidth="1.8" />
-        <path d="M10.8 9V7.4a1.3 1.3 0 0 1 1.3-1.3h3.8a1.3 1.3 0 0 1 1.3 1.3V9" stroke={stroke} strokeWidth="1.7" />
-        <path d="M4.2 14.2H23.8" stroke={stroke} strokeWidth="1.6" />
-        <rect x="12.1" y="13.2" width="3.8" height="2.1" rx="0.8" fill="#1b4797" />
+        <rect x="4.2" y="9" width="19.6" height="13.6" rx="2.3" fill="#67e39a" stroke={stroke} strokeWidth="1.9" />
+        <path d="M10.8 9V7.4a1.3 1.3 0 0 1 1.3-1.3h3.8a1.3 1.3 0 0 1 1.3 1.3V9" stroke={stroke} strokeWidth="1.8" />
+        <path d="M4.2 14.2H23.8" stroke={stroke} strokeWidth="1.7" />
+        <rect x="11.9" y="13.1" width="4.2" height="2.4" rx="0.9" fill="#1b4797" />
       </svg>
     );
   }
@@ -54,18 +55,19 @@ function QuickIcon({ type, accent }) {
   if (type === "calendar") {
     return (
       <svg {...common}>
-        <rect x="5.2" y="6.5" width="17.6" height="16.8" rx="2.2" fill="#ffe182" stroke={stroke} strokeWidth="1.8" />
-        <path d="M9.3 4.6V8M18.7 4.6V8M5.2 10.4h17.6" stroke={stroke} strokeWidth="1.7" />
-        <rect x="9.4" y="13" width="3.1" height="3.1" rx="0.7" fill="#ff6b6b" stroke={stroke} strokeWidth="1.2" />
+        <rect x="5.2" y="6.5" width="17.6" height="16.8" rx="2.2" fill="#ffd95a" stroke={stroke} strokeWidth="1.9" />
+        <path d="M9.2 4.6V8M18.8 4.6V8M5.2 10.4h17.6" stroke={stroke} strokeWidth="1.7" />
+        <rect x="9.2" y="13" width="3.3" height="3.3" rx="0.8" fill="#ff5f5f" stroke={stroke} strokeWidth="1.2" />
+        <rect x="14.6" y="13" width="3.3" height="3.3" rx="0.8" fill="#fff3bf" stroke={stroke} strokeWidth="1.2" />
       </svg>
     );
   }
 
   return (
     <svg {...common}>
-      <rect x="6.2" y="4.8" width="15.6" height="18.4" rx="2.3" fill="#b9b5ff" stroke={stroke} strokeWidth="1.8" />
-      <rect x="9.3" y="8.6" width="9.4" height="1.8" rx="0.8" fill="#1b4797" />
-      <path d="M9.3 13.2h9.4M9.3 16.6h6.6" stroke="#ffffff" strokeWidth="1.4" />
+      <rect x="6.1" y="4.7" width="15.8" height="18.6" rx="2.4" fill="#b0a8ff" stroke={stroke} strokeWidth="1.9" />
+      <rect x="9.1" y="8.5" width="9.8" height="2" rx="0.9" fill="#1b4797" />
+      <path d="M9.3 13.2h9.4M9.3 16.8h6.6" stroke="#ffffff" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -87,40 +89,40 @@ export default function Home() {
       url: "https://www.\uC5FC\uAD11\uC0AC.com",
       external: true,
       type: "home",
-      bg: "#eaf2ff",
-      fill: "#fca5a5",
+      bubble:
+        "radial-gradient(circle at 30% 25%, #ffffff 0%, #e8f0ff 45%, #dbe7ff 100%)",
     },
     {
       label: "\uB9C8\uC9C4\uACC4\uC0B0\uAE30",
       url: "/tools/delivery-margin",
       external: false,
       type: "scooter",
-      bg: "#fff2e8",
-      fill: "#fdba74",
+      bubble:
+        "radial-gradient(circle at 30% 25%, #ffffff 0%, #fff1e6 45%, #ffe5d1 100%)",
     },
     {
       label: "\uC778\uAC74\uBE44\uACC4\uC0B0",
       url: "/tools/labor-cost",
       external: false,
       type: "briefcase",
-      bg: "#eefbf4",
-      fill: "#86efac",
+      bubble:
+        "radial-gradient(circle at 30% 25%, #ffffff 0%, #ebfbf3 45%, #d7f4e6 100%)",
     },
     {
       label: "\uC9C0\uC6D0\uAE08\uC77C\uC815",
       url: "/tools/subsidy-calendar",
       external: false,
       type: "calendar",
-      bg: "#fff9eb",
-      fill: "#fcd34d",
+      bubble:
+        "radial-gradient(circle at 30% 25%, #ffffff 0%, #fff9e7 45%, #fff0c9 100%)",
     },
     {
       label: "\uC54C\uBC14\uAD00\uB9AC",
       url: "/tools/worker-scheduler",
       external: false,
       type: "clipboard",
-      bg: "#f4f1ff",
-      fill: "#c4b5fd",
+      bubble:
+        "radial-gradient(circle at 30% 25%, #ffffff 0%, #f4f2ff 45%, #e4ddff 100%)",
     },
   ];
 
@@ -290,18 +292,33 @@ export default function Home() {
               >
                 <div
                   style={{
-                    width: "54px",
-                    height: "54px",
+                    width: "58px",
+                    height: "58px",
                     borderRadius: "50%",
-                    background: item.bg,
+                    background: item.bubble,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.12)",
-                    border: "1px solid #d9e1f1",
+                    boxShadow:
+                      "0 8px 14px rgba(15,39,84,0.18), inset 0 2px 4px rgba(255,255,255,0.92), inset 0 -2px 3px rgba(27,71,151,0.12)",
+                    border: "1.5px solid rgba(27,71,151,0.22)",
+                    position: "relative",
+                    overflow: "hidden",
                   }}
                 >
-                  <QuickIcon type={item.type} accent="#1b4797" fill={item.fill} />
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "7px",
+                      left: "11px",
+                      width: "22px",
+                      height: "8px",
+                      borderRadius: "10px",
+                      background: "rgba(255,255,255,0.58)",
+                      transform: "rotate(-12deg)",
+                    }}
+                  />
+                  <QuickIcon type={item.type} accent="#1b4797" />
                 </div>
                 <span
                   style={{
