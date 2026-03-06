@@ -201,19 +201,18 @@ export default function NoticePage() {
                   marginLeft: 6,
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 3,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: "#1b4797",
                   background: "#ebf2ff",
                   borderRadius: 999,
-                  padding: "2px 7px",
+                  width: 18,
+                  height: 18,
+                  justifyContent: "center",
                 }}
+                aria-label="고정 공지"
               >
                 <svg
                   viewBox="0 0 24 24"
-                  width="10"
-                  height="10"
+                  width="11"
+                  height="11"
                   fill="none"
                   stroke="#1b4797"
                   strokeWidth="2"
@@ -223,7 +222,6 @@ export default function NoticePage() {
                   <path d="M12 17v5" />
                   <path d="M5 4h14l-3 6v3H8v-3L5 4z" />
                 </svg>
-                {"\uACE0\uC815"}
               </span>
             )}
 
