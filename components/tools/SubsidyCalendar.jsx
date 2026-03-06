@@ -2304,9 +2304,8 @@ export default function SubsidyCalendar() {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                display: "grid",
-                gridTemplateColumns: "40px 1fr",
-                alignItems: "stretch",
+                display: "flex",
+                alignItems: "center",
                 gap: "10px",
                 padding: "12px",
                 borderRadius: "14px",
@@ -2321,8 +2320,8 @@ export default function SubsidyCalendar() {
             >
               <span
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: "42px",
+                  height: "42px",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -2331,7 +2330,6 @@ export default function SubsidyCalendar() {
                   flexShrink: 0,
                   borderRadius: "12px",
                   background: "#f8fafc",
-                  alignSelf: "center",
                 }}
               >
                 {link.icon}
@@ -2343,7 +2341,7 @@ export default function SubsidyCalendar() {
                   flexDirection: "column",
                   justifyContent: "center",
                   gap: "4px",
-                  minHeight: "40px",
+                  minHeight: "42px",
                   flex: 1,
                 }}
               >
@@ -2352,10 +2350,7 @@ export default function SubsidyCalendar() {
                     fontSize: "13px",
                     fontWeight: 700,
                     color: link.color,
-                    minHeight: "18px",
                     lineHeight: 1.35,
-                    display: "flex",
-                    alignItems: "center",
                   }}
                 >
                   {link.name}
@@ -2365,7 +2360,6 @@ export default function SubsidyCalendar() {
                     fontSize: "11px",
                     color: "var(--color-gray-500)",
                     lineHeight: 1.45,
-                    minHeight: "32px",
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: "vertical",
