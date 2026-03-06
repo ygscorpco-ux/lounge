@@ -238,7 +238,7 @@ export default function Home() {
         console.error(error);
       }
     }
-    router.push("/post/" + postId, { scroll: false });
+    router.push("/post/" + postId + "?from=home", { scroll: false });
   }, [router, posts, noticePosts, bestPosts, page, hasMore, sort]);
 
   const fetchPosts = useCallback(async (p, s, reset) => {

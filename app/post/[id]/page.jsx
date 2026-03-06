@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import CommentItem from "../../../components/CommentItem.jsx";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
@@ -80,6 +80,7 @@ const BookmarkIcon = ({ active }) => (
 export default function PostDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const commentsAnchorRef = useRef(null);
 
   const [post, setPost] = useState(null);
@@ -299,10 +300,22 @@ export default function PostDetailPage() {
   }
 
   function handleBack() {
-    if (typeof window === "undefined" || window.history.length <= 1) {
+    if (typeof window === "undefined") {
       router.push("/");
       return;
     }
+
+    if (searchParams.get("from") === "home") {
+      sessionStorage.setItem("lounge-home-feed-return-v1", "1");
+      router.push("/", { scroll: false });
+      return;
+    }
+
+    if (window.history.length <= 1) {
+      router.push("/");
+      return;
+    }
+
     router.back();
   }
 
