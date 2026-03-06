@@ -2239,7 +2239,7 @@ export default function SubsidyCalendar() {
             {
               icon: "🏢",
               name: "기업마당",
-              desc: "중소기업·소상공인 지원사업 통합공고",
+              desc: "소상공인 지원사업 공고",
               url: "https://www.bizinfo.go.kr",
               color: "#1b4797",
             },
@@ -2273,7 +2273,7 @@ export default function SubsidyCalendar() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "40px 1fr",
-                alignItems: "center",
+                alignItems: "stretch",
                 gap: "10px",
                 padding: "12px",
                 borderRadius: "14px",
@@ -2282,7 +2282,7 @@ export default function SubsidyCalendar() {
                 textDecoration: "none",
                 transition: "border-color 0.15s, box-shadow 0.15s",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                minHeight: "82px",
+                minHeight: "84px",
                 boxSizing: "border-box",
               }}
             >
@@ -2298,6 +2298,7 @@ export default function SubsidyCalendar() {
                   flexShrink: 0,
                   borderRadius: "12px",
                   background: "#f8fafc",
+                  alignSelf: "center",
                 }}
               >
                 {link.icon}
@@ -2308,6 +2309,7 @@ export default function SubsidyCalendar() {
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
+                  gap: "4px",
                   minHeight: "40px",
                   flex: 1,
                 }}
@@ -2317,7 +2319,10 @@ export default function SubsidyCalendar() {
                     fontSize: "13px",
                     fontWeight: 700,
                     color: link.color,
-                    marginBottom: "2px",
+                    minHeight: "18px",
+                    lineHeight: 1.35,
+                    display: "flex",
+                    alignItems: "center",
                   }}
                 >
                   {link.name}
@@ -2326,8 +2331,8 @@ export default function SubsidyCalendar() {
                   style={{
                     fontSize: "11px",
                     color: "var(--color-gray-500)",
-                    lineHeight: 1.4,
-                    minHeight: "30px",
+                    lineHeight: 1.45,
+                    minHeight: "32px",
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: "vertical",
