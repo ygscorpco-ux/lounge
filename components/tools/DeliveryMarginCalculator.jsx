@@ -199,6 +199,11 @@ function buildShareText({
   return lines.join("\n");
 }
 
+function parseBooleanParam(value, fallback) {
+  if (value == null) return fallback;
+  return value === "1" || value === "true";
+}
+
 function SectionHeader({ step, title, description }) {
   return (
     <div className={styles.sectionHeader}>
@@ -359,6 +364,39 @@ export default function DeliveryMarginCalculator() {
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
   const [analysisResult, setAnalysisResult] = useState(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (!params.size) return;
+
+    const platformParam = params.get("platform");
+    const tierParam = params.get("tier");
+    const customFeeParam = params.get("customFee");
+    const menuPriceParam = params.get("menuPrice");
+    const menuCostParam = params.get("menuCost");
+    const deliveryFeeParam = params.get("deliveryFee");
+    const dailyOrdersParam = params.get("dailyOrders");
+    const fixedCostParam = params.get("fixedCost");
+    const industryParam = params.get("industry");
+
+    if (platformParam) setSelectedPlatformId(platformParam);
+    if (tierParam) setSelectedTierId(tierParam);
+    if (customFeeParam) setCustomFee(sanitizePercentInput(customFeeParam));
+    if (menuPriceParam) setMenuPrice(formatNumberInput(menuPriceParam));
+    if (menuCostParam) setMenuCost(formatNumberInput(menuCostParam));
+    if (deliveryFeeParam) setDeliveryFee(formatNumberInput(deliveryFeeParam));
+    if (dailyOrdersParam) setDailyOrders(formatNumberInput(dailyOrdersParam));
+    if (fixedCostParam) setFixedCost(formatNumberInput(fixedCostParam));
+
+    setCardFeeOn(parseBooleanParam(params.get("cardFeeOn"), true));
+    setVatOn(parseBooleanParam(params.get("vatOn"), false));
+
+    if (industryParam && ANALYSIS_INDUSTRIES.includes(industryParam)) {
+      setAnalysisIndustry(industryParam);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -651,9 +689,46 @@ export default function DeliveryMarginCalculator() {
     };
   }
 
+  function buildShareUrl() {
+    if (typeof window === "undefined") return "";
+
+    const url = new URL(window.location.pathname, window.location.origin);
+    const params = url.searchParams;
+
+    params.set("platform", selectedPlatformId);
+    if (selectedPlatformId !== "custom" && selectedTierId) {
+      params.set("tier", selectedTierId);
+    }
+    if (selectedPlatformId === "custom" && customFee) {
+      params.set("customFee", sanitizePercentInput(customFee));
+    }
+
+    const price = parseNumber(menuPrice);
+    const cost = parseNumber(menuCost);
+    const delivery = parseNumber(deliveryFee);
+    const orders = parseNumber(dailyOrders);
+    const fixed = parseNumber(fixedCost);
+
+    if (price) params.set("menuPrice", String(price));
+    if (cost) params.set("menuCost", String(cost));
+    if (delivery) params.set("deliveryFee", String(delivery));
+    if (orders) params.set("dailyOrders", String(orders));
+    if (fixed) params.set("fixedCost", String(fixed));
+
+    params.set("cardFeeOn", cardFeeOn ? "1" : "0");
+    params.set("vatOn", vatOn ? "1" : "0");
+
+    if (analysisIndustry) {
+      params.set("industry", analysisIndustry);
+    }
+
+    return url.toString();
+  }
+
   async function handleShare() {
     if (!calc) return;
 
+    const shareUrl = buildShareUrl();
     const text = buildShareText({
       platformName: selectedPlatformName,
       tierName: selectedTierName,
@@ -664,16 +739,29 @@ export default function DeliveryMarginCalculator() {
       projection,
     });
 
+    let copied = false;
     try {
-      if (navigator.share) {
-        await navigator.share({ title: "실마진 계산 결과", text });
+      if (navigator.clipboard?.writeText && shareUrl) {
+        await navigator.clipboard.writeText(shareUrl);
+        copied = true;
+      }
+
+      if (navigator.share && shareUrl) {
+        await navigator.share({
+          title: "실마진 계산 결과",
+          text,
+          url: shareUrl,
+        });
         setShareMessage("공유 창을 열었습니다.");
       } else {
-        await navigator.clipboard.writeText(text);
-        setShareMessage("결과를 클립보드에 복사했습니다.");
+        setShareMessage(
+          copied ? "현재 입력값이 담긴 링크를 복사했습니다." : "링크를 만들지 못했습니다.",
+        );
       }
     } catch {
-      setShareMessage("공유를 취소했습니다.");
+      setShareMessage(
+        copied ? "현재 입력값이 담긴 링크를 복사했습니다." : "공유를 취소했습니다.",
+      );
     }
 
     window.setTimeout(() => setShareMessage(""), 2200);
@@ -1248,7 +1336,7 @@ export default function DeliveryMarginCalculator() {
             <strong className={styles.floatingSummaryValue}>{formatCurrency(calc.margin)}</strong>
           </div>
           <button type="button" className={styles.floatingSummaryButton} onClick={handleShare}>
-            공유
+            결과 공유
           </button>
         </div>
       ) : null}
