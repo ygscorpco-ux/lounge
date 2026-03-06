@@ -69,6 +69,17 @@ export async function POST(request) {
     const { postId, parentId, content } = await request.json();
     if (!postId || !content) return NextResponse.json({ error: 'Fields required' }, { status: 400 });
 
+    const [postRows] = await pool.query(
+      'SELECT id, user_id, is_notice, is_hidden FROM posts WHERE id = ?',
+      [postId]
+    );
+    if (postRows.length === 0 || postRows[0].is_hidden) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+    if (postRows[0].is_notice) {
+      return NextResponse.json({ error: 'Comments are disabled for notices' }, { status: 403 });
+    }
+
     const hasBanned = await containsBannedWord(content);
     if (hasBanned) return NextResponse.json({ error: 'Inappropriate content' }, { status: 400 });
 
@@ -79,7 +90,6 @@ export async function POST(request) {
 
     await pool.query('UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?', [postId]);
 
-    const [postRows] = await pool.query('SELECT user_id FROM posts WHERE id = ?', [postId]);
     if (postRows.length > 0 && postRows[0].user_id !== user.id) {
       await pool.query(
         'INSERT INTO notifications (user_id, type, target_type, target_id, from_user_id) VALUES (?, ?, ?, ?, ?)',

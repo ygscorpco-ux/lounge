@@ -25,7 +25,7 @@ const CommentIcon = ({ color = "#42bcc4" }) => (
 export default function PostCard({ post }) {
   const router = useRouter();
   const displayAuthor = post.author === ADMIN_NAME ? ADMIN_NAME : ANON_NAME;
-  const hasComments = (post.commentCount || 0) > 0;
+  const hasComments = !post.isNotice && (post.commentCount || 0) > 0;
 
   return (
     <article

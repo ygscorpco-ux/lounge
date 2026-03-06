@@ -16,6 +16,8 @@ export async function GET(request) {
     const page = parseInt(searchParams.get("page"), 10) || 1;
     const category = searchParams.get("category");
     const sort = searchParams.get("sort") || "latest";
+    const noticeOnly = searchParams.get("noticeOnly") === "1";
+    const excludeNotice = searchParams.get("excludeNotice") === "1";
     const offset = (page - 1) * PAGE_SIZE;
 
     const user = await getCurrentUser();
@@ -49,12 +51,24 @@ export async function GET(request) {
       params.push(category);
     }
 
+    if (noticeOnly) {
+      query += " AND p.is_notice = TRUE";
+    } else if (excludeNotice) {
+      query += " AND p.is_notice = FALSE";
+    }
+
     if (sort === "likes") {
-      query += " ORDER BY p.is_notice DESC, p.like_count DESC, p.created_at DESC";
+      query += noticeOnly
+        ? " ORDER BY p.like_count DESC, p.created_at DESC"
+        : " ORDER BY p.is_notice DESC, p.like_count DESC, p.created_at DESC";
     } else if (sort === "comments") {
-      query += " ORDER BY p.is_notice DESC, p.comment_count DESC, p.created_at DESC";
+      query += noticeOnly
+        ? " ORDER BY p.comment_count DESC, p.created_at DESC"
+        : " ORDER BY p.is_notice DESC, p.comment_count DESC, p.created_at DESC";
     } else {
-      query += " ORDER BY p.is_notice DESC, p.created_at DESC";
+      query += noticeOnly
+        ? " ORDER BY p.created_at DESC"
+        : " ORDER BY p.is_notice DESC, p.created_at DESC";
     }
 
     query += " LIMIT ? OFFSET ?";

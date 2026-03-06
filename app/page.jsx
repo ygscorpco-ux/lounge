@@ -124,6 +124,7 @@ function QuickIcon({ type, accent }) {
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
+  const [noticePosts, setNoticePosts] = useState([]);
   const [bestPosts, setBestPosts] = useState([]);
   const [sort, setSort] = useState("latest");
   const [page, setPage] = useState(1);
@@ -169,7 +170,13 @@ export default function Home() {
   const fetchPosts = useCallback(async (p, cat, s, reset) => {
     setLoading(true);
     try {
-      const url = "/api/posts?page=" + p + "&sort=" + s + "&t=" + Date.now();
+      const url =
+        "/api/posts?page=" +
+        p +
+        "&sort=" +
+        s +
+        "&excludeNotice=1&t=" +
+        Date.now();
       const res = await fetch(url);
       const data = await res.json();
       if (reset) {
@@ -195,6 +202,20 @@ export default function Home() {
     setLoading(false);
   }, []);
 
+  const fetchNotices = useCallback(async () => {
+    try {
+      const res = await fetch(
+        "/api/posts?noticeOnly=1&sort=latest&page=1&t=" + Date.now(),
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const notices = (data.posts || []).slice(0, 4);
+      setNoticePosts(notices);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
   const fetchBest = useCallback(async () => {
     try {
       const res = await fetch("/api/posts/best?t=" + Date.now());
@@ -210,8 +231,9 @@ export default function Home() {
   useEffect(() => {
     setPage(1);
     fetchPosts(1, null, sort, true);
+    fetchNotices();
     fetchBest();
-  }, [sort, refreshKey, fetchPosts, fetchBest]);
+  }, [sort, refreshKey, fetchPosts, fetchNotices, fetchBest]);
 
   useEffect(() => {
     const h = () => setRefreshKey((p) => p + 1);
@@ -370,6 +392,112 @@ export default function Home() {
               </a>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="section-divider" />
+      <div style={{ padding: "16px 16px 12px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "10px",
+          }}
+        >
+          <div style={{ fontSize: "16px", fontWeight: 800, color: "#1a1a1a" }}>
+            {"\uACF5\uC9C0\uC0AC\uD56D"}
+          </div>
+          <button
+            onClick={() => router.push("/notice")}
+            style={{
+              border: "none",
+              background: "none",
+              color: "#1b4797",
+              fontSize: "13px",
+              fontWeight: 700,
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            {"\uC804\uCCB4\uBCF4\uAE30"}
+          </button>
+        </div>
+
+        <div
+          style={{
+            border: "1px solid #eceff4",
+            borderRadius: "14px",
+            overflow: "hidden",
+            background: "#fff",
+          }}
+        >
+          {noticePosts.length === 0 ? (
+            <div
+              style={{
+                padding: "16px",
+                fontSize: "13px",
+                color: "#8b94a1",
+              }}
+            >
+              {"\uB4F1\uB85D\uB41C \uACF5\uC9C0\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."}
+            </div>
+          ) : (
+            noticePosts.map((post, index) => (
+              <button
+                key={post.id}
+                onClick={() => router.push("/post/" + post.id)}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  borderBottom:
+                    index === noticePosts.length - 1 ? "none" : "1px solid #f1f3f6",
+                  background: "none",
+                  textAlign: "left",
+                  padding: "12px 14px",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "#fff",
+                      background: "#ff5f5f",
+                      borderRadius: "999px",
+                      padding: "2px 6px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {"\uACF5\uC9C0"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 700,
+                      color: "#1f2430",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      flex: 1,
+                    }}
+                  >
+                    {post.title}
+                  </span>
+                  <span style={{ fontSize: "12px", color: "#9aa3af", flexShrink: 0 }}>
+                    {new Date(post.createdAt).toLocaleDateString("ko-KR", {
+                      month: "2-digit",
+                      day: "2-digit",
+                    })}
+                  </span>
+                </div>
+              </button>
+            ))
+          )}
         </div>
       </div>
 

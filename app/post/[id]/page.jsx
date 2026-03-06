@@ -103,6 +103,11 @@ export default function PostDetailPage() {
     const data = await response.json();
     setPost(data.post);
     setPoll(data.post?.poll || null);
+    if (data.post?.isNotice) {
+      setComments([]);
+    } else {
+      fetchComments();
+    }
     setLoading(false);
   }
 
@@ -126,7 +131,6 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     fetchPost();
-    fetchComments();
     checkBookmark();
   }, [id]);
 
@@ -488,7 +492,13 @@ export default function PostDetailPage() {
         )}
 
         <section style={{ borderTop: "1px solid #efefef", borderBottom: "1px solid #efefef", background: "#fff" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", height: 56 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: post.isNotice ? "1fr 1fr" : "1fr 1fr 1fr",
+              height: 56,
+            }}
+          >
             <button
               onClick={handleLikePost}
               style={{
@@ -507,24 +517,26 @@ export default function PostDetailPage() {
               <HeartIcon active={post.alreadyLiked} />
               {`\uC88B\uC544\uC694 ${post.likeCount}`}
             </button>
-            <button
-              onClick={() => commentsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              style={{
-                border: "none",
-                background: "none",
-                borderRight: "1px solid #efefef",
-                color: "#8c8c8c",
-                fontWeight: 700,
-                fontSize: 14,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
-            >
-              <CommentIcon />
-              {`\uB313\uAE00 ${post.commentCount}`}
-            </button>
+            {!post.isNotice && (
+              <button
+                onClick={() => commentsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                style={{
+                  border: "none",
+                  background: "none",
+                  borderRight: "1px solid #efefef",
+                  color: "#8c8c8c",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+              >
+                <CommentIcon />
+                {`\uB313\uAE00 ${post.commentCount}`}
+              </button>
+            )}
             <button
               onClick={handleBookmark}
               style={{
@@ -587,38 +599,40 @@ export default function PostDetailPage() {
           )}
         </section>
 
-        <section ref={commentsAnchorRef} className="comment-section">
-          <div className="comment-count">{`\uB313\uAE00 ${comments.length}`}</div>
+        {!post.isNotice && (
+          <section ref={commentsAnchorRef} className="comment-section">
+            <div className="comment-count">{`\uB313\uAE00 ${comments.length}`}</div>
 
-          {parentComments.map((comment) => (
-            <div key={comment.id}>
-              <CommentItem
-                comment={comment}
-                onLike={handleCommentLike}
-                onReport={handleCommentReport}
-                onReply={(commentId) => setReplyTo(commentId)}
-                onDelete={handleCommentDelete}
-                onBlock={handleCommentBlock}
-              />
+            {parentComments.map((comment) => (
+              <div key={comment.id}>
+                <CommentItem
+                  comment={comment}
+                  onLike={handleCommentLike}
+                  onReport={handleCommentReport}
+                  onReply={(commentId) => setReplyTo(commentId)}
+                  onDelete={handleCommentDelete}
+                  onBlock={handleCommentBlock}
+                />
 
-              {childComments
-                .filter((item) => item.parentId === comment.id)
-                .map((child) => (
-                  <CommentItem
-                    key={child.id}
-                    comment={child}
-                    onLike={handleCommentLike}
-                    onReport={handleCommentReport}
-                    onReply={() => {}}
-                    onDelete={handleCommentDelete}
-                    onBlock={handleCommentBlock}
-                  />
-                ))}
-            </div>
-          ))}
+                {childComments
+                  .filter((item) => item.parentId === comment.id)
+                  .map((child) => (
+                    <CommentItem
+                      key={child.id}
+                      comment={child}
+                      onLike={handleCommentLike}
+                      onReport={handleCommentReport}
+                      onReply={() => {}}
+                      onDelete={handleCommentDelete}
+                      onBlock={handleCommentBlock}
+                    />
+                  ))}
+              </div>
+            ))}
 
-          {comments.length === 0 && <div className="empty">{"\uB4F1\uB85D\uB41C \uB313\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>}
-        </section>
+            {comments.length === 0 && <div className="empty">{"\uB4F1\uB85D\uB41C \uB313\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>}
+          </section>
+        )}
       </div>
 
       <div
@@ -629,76 +643,92 @@ export default function PostDetailPage() {
           paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
         }}
       >
-        {replyTo && (
+        {post.isNotice ? (
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "6px 14px",
-              background: "#f0f4ff",
-              color: "#1b4797",
-              fontSize: 12,
+              padding: "14px 16px",
+              textAlign: "center",
+              color: "#8e97a3",
+              fontSize: 13,
+              fontWeight: 600,
             }}
           >
-            <span>{"\uB2F5\uAE00 \uC791\uC131 \uC911"}</span>
-            <button onClick={() => setReplyTo(null)} style={{ border: "none", background: "none", color: "#9097a3" }}>
-              {"\uCDE8\uC18C"}
-            </button>
+            {"\uACF5\uC9C0 \uAC8C\uC2DC\uBB3C\uC740 \uB313\uAE00 \uAE30\uB2A5\uC774 \uBE44\uD65C\uC131\uD654\uB429\uB2C8\uB2E4."}
           </div>
-        )}
+        ) : (
+          <>
+            {replyTo && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "6px 14px",
+                  background: "#f0f4ff",
+                  color: "#1b4797",
+                  fontSize: 12,
+                }}
+              >
+                <span>{"\uB2F5\uAE00 \uC791\uC131 \uC911"}</span>
+                <button onClick={() => setReplyTo(null)} style={{ border: "none", background: "none", color: "#9097a3" }}>
+                  {"\uCDE8\uC18C"}
+                </button>
+              </div>
+            )}
 
-        <div style={{ padding: "10px 12px" }}>
-          <div
-            style={{
-              height: 52,
-              borderRadius: 16,
-              border: "1px solid #e2e5eb",
-              background: "#f7f8fa",
-              display: "flex",
-              alignItems: "center",
-              padding: "0 8px 0 12px",
-              gap: 8,
-            }}
-          >
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#e53935", flexShrink: 0 }}>
-              {"\uC775\uBA85"}
-            </span>
-            <input
-              value={commentText}
-              onChange={(event) => setCommentText(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") handleCommentSubmit();
-              }}
-              placeholder={commentInputPlaceholder}
-              style={{
-                flex: 1,
-                border: "none",
-                outline: "none",
-                background: "transparent",
-                fontSize: 16,
-                color: "#333",
-              }}
-            />
-            <button
-              onClick={handleCommentSubmit}
-              disabled={!commentText.trim()}
-              style={{
-                border: "none",
-                background: "none",
-                width: 38,
-                height: 38,
-                borderRadius: 12,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: commentText.trim() ? 1 : 0.4,
-              }}
-            >
-              <SendIcon />
-            </button>
-          </div>
-        </div>
+            <div style={{ padding: "10px 12px" }}>
+              <div
+                style={{
+                  height: 52,
+                  borderRadius: 16,
+                  border: "1px solid #e2e5eb",
+                  background: "#f7f8fa",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0 8px 0 12px",
+                  gap: 8,
+                }}
+              >
+                <span style={{ fontSize: 16, fontWeight: 800, color: "#e53935", flexShrink: 0 }}>
+                  {"\uC775\uBA85"}
+                </span>
+                <input
+                  value={commentText}
+                  onChange={(event) => setCommentText(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") handleCommentSubmit();
+                  }}
+                  placeholder={commentInputPlaceholder}
+                  style={{
+                    flex: 1,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    fontSize: 16,
+                    color: "#333",
+                  }}
+                />
+                <button
+                  onClick={handleCommentSubmit}
+                  disabled={!commentText.trim()}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: commentText.trim() ? 1 : 0.4,
+                  }}
+                >
+                  <SendIcon />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
