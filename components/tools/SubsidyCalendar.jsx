@@ -1512,7 +1512,7 @@ export default function SubsidyCalendar() {
                   style={{
                     background: "#fff",
                     borderRadius: "16px",
-                    padding: "18px",
+                    padding: "14px",
                     boxShadow: urgent
                       ? "0 0 0 2px #e74c3c40"
                       : "var(--shadow-sm)",
@@ -1530,7 +1530,7 @@ export default function SubsidyCalendar() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      marginBottom: "10px",
+                      marginBottom: "8px",
                     }}
                   >
                     <span
@@ -1546,27 +1546,32 @@ export default function SubsidyCalendar() {
                       {s.category}
                     </span>
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
                       {/* 북마크 버튼 */}
                       <button
                         onClick={() => toggleBookmark(s.id)}
                         style={{
-                          background: "none",
-                          border: "none",
+                          height: "30px",
+                          padding: "0 10px",
+                          borderRadius: "999px",
+                          border: isBookmarked
+                            ? "1px solid rgba(27,71,151,0.18)"
+                            : "1px solid #dbe5f1",
+                          background: isBookmarked ? "#eef5ff" : "#f8fafc",
+                          color: isBookmarked ? "#1b4797" : "#64748b",
                           cursor: "pointer",
-                          fontSize: "18px",
-                          padding: "2px",
+                          fontSize: "12px",
+                          fontWeight: 800,
                           lineHeight: 1,
-                          opacity: isBookmarked ? 1 : 0.3,
-                          transition: "opacity 0.15s, transform 0.15s",
+                          transition: "all 0.15s",
                         }}
                       >
-                        ⭐
+                        {isBookmarked ? "스크랩됨" : "스크랩"}
                       </button>
                       <DdayBadge endDate={s.end_date} />
                     </div>
@@ -1575,11 +1580,11 @@ export default function SubsidyCalendar() {
                   {/* 제목 */}
                   <div
                     style={{
-                      fontSize: "16px",
+                      fontSize: "15px",
                       fontWeight: 700,
                       color: "var(--color-gray-900)",
-                      marginBottom: "6px",
-                      lineHeight: 1.4,
+                      marginBottom: "5px",
+                      lineHeight: 1.35,
                     }}
                   >
                     {s.title}
@@ -1588,11 +1593,11 @@ export default function SubsidyCalendar() {
                   {/* 신청기간 + 대상 */}
                   {(s.start_date || s.end_date) && (
                     <div
-                      style={{
-                        fontSize: "13px",
-                        color: "var(--color-gray-500)",
-                        marginBottom: "4px",
-                      }}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-gray-500)",
+                          marginBottom: "3px",
+                        }}
                     >
                       📅 신청기간:{" "}
                       {s.start_date
@@ -1603,23 +1608,23 @@ export default function SubsidyCalendar() {
                   )}
                   {s.target && (
                     <div
-                      style={{
-                        fontSize: "13px",
-                        color: "var(--color-gray-500)",
-                        marginBottom: "4px",
-                      }}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-gray-500)",
+                          marginBottom: "3px",
+                        }}
                     >
                       👥 대상: {s.target}
                     </div>
                   )}
                   {s.amount && (
                     <div
-                      style={{
-                        fontSize: "13px",
-                        color: "var(--color-primary)",
-                        fontWeight: 600,
-                        marginBottom: "8px",
-                      }}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-primary)",
+                          fontWeight: 600,
+                          marginBottom: "6px",
+                        }}
                     >
                       💰 {s.amount}
                     </div>
@@ -1628,14 +1633,14 @@ export default function SubsidyCalendar() {
                   {/* 설명 */}
                   {s.description && (
                     <div
-                      style={{
-                        fontSize: "13px",
-                        color: "var(--color-gray-700)",
-                        lineHeight: 1.6,
-                        marginBottom: "12px",
-                        paddingTop: "10px",
-                        borderTop: "1px solid var(--color-gray-200)",
-                      }}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-gray-700)",
+                          lineHeight: 1.5,
+                          marginBottom: "10px",
+                          paddingTop: "8px",
+                          borderTop: "1px solid var(--color-gray-200)",
+                        }}
                     >
                       {s.description}
                     </div>
@@ -1646,7 +1651,7 @@ export default function SubsidyCalendar() {
                     style={{
                       display: "flex",
                       gap: "8px",
-                      marginTop: s.description ? "0" : "12px",
+                      marginTop: s.description ? "0" : "10px",
                     }}
                   >
                     {(s.apply_url || s.url) ? (
@@ -1656,12 +1661,12 @@ export default function SubsidyCalendar() {
                         rel="noopener noreferrer"
                         style={{
                           flex: 1,
-                          padding: "12px",
+                          padding: "10px 12px",
                           borderRadius: "10px",
                           textAlign: "center",
                           background: "var(--color-primary)",
                           color: "#fff",
-                          fontSize: "14px",
+                          fontSize: "13px",
                           fontWeight: 700,
                           textDecoration: "none",
                           display: "block",
@@ -1673,12 +1678,12 @@ export default function SubsidyCalendar() {
                       <div
                         style={{
                           flex: 1,
-                          padding: "12px",
+                          padding: "10px 12px",
                           borderRadius: "10px",
                           textAlign: "center",
                           background: "var(--color-gray-100)",
                           color: "var(--color-gray-500)",
-                          fontSize: "13px",
+                          fontSize: "12px",
                         }}
                       >
                         링크 없음
@@ -1697,12 +1702,12 @@ export default function SubsidyCalendar() {
                           else alert(delData.error || "삭제에 실패했습니다");
                         }}
                         style={{
-                          padding: "12px 14px",
+                          padding: "10px 12px",
                           borderRadius: "10px",
                           border: "none",
                           background: "#fff0f0",
                           color: "var(--color-danger)",
-                          fontSize: "13px",
+                          fontSize: "12px",
                           fontWeight: 700,
                           cursor: "pointer",
                         }}
