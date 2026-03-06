@@ -1785,7 +1785,7 @@ export default function SubsidyCalendar() {
               rel="noopener noreferrer"
               style={{
                 display: "flex",
-                alignItems: "flex-start",
+                alignItems: "center",
                 gap: "10px",
                 padding: "12px 14px",
                 borderRadius: "14px",
@@ -1794,12 +1794,34 @@ export default function SubsidyCalendar() {
                 textDecoration: "none",
                 transition: "border-color 0.15s, box-shadow 0.15s",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                minHeight: "86px",
+                boxSizing: "border-box",
               }}
             >
-              <span style={{ fontSize: "22px", lineHeight: 1, flexShrink: 0 }}>
+              <span
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}
+              >
                 {link.icon}
               </span>
-              <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  minHeight: "40px",
+                  flex: 1,
+                }}
+              >
                 <div
                   style={{
                     fontSize: "13px",
@@ -1815,6 +1837,11 @@ export default function SubsidyCalendar() {
                     fontSize: "11px",
                     color: "var(--color-gray-500)",
                     lineHeight: 1.4,
+                    minHeight: "30px",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
                   }}
                 >
                   {link.desc}
