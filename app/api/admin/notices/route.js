@@ -6,17 +6,11 @@ import { NextResponse } from "next/server";
 const ADMIN_DISPLAY_NAME = "\uC5FC\uAD11\uC0AC";
 const ANON_DISPLAY_NAME = "\uC775\uBA85";
 
-function normalizePinSlot(value) {
-  if (value === null) return null;
-  if (value === 1 || value === 2) return value;
-  return undefined;
-}
-
 function normalizeOrder(value) {
   if (value === undefined) return undefined;
   const parsed = Number(value);
   if (!Number.isInteger(parsed)) return undefined;
-  if (parsed < 0 || parsed > 9999) return undefined;
+  if (parsed < 1 || parsed > 4) return undefined;
   return parsed;
 }
 
@@ -32,14 +26,12 @@ export async function GET() {
     const [rows] = await pool.query(
       `SELECT
          p.id, p.title, p.content, p.created_at, p.like_count, p.comment_count,
-         p.notice_visible, p.notice_pin_slot, p.notice_order, u.role
+         p.notice_visible, p.notice_order, u.role
        FROM posts p
        JOIN users u ON p.user_id = u.id
        WHERE p.is_hidden = FALSE
          AND p.is_notice = TRUE
        ORDER BY
-         CASE WHEN p.notice_pin_slot IS NULL THEN 1 ELSE 0 END,
-         p.notice_pin_slot ASC,
          p.notice_order ASC,
          p.created_at DESC`,
     );
@@ -53,8 +45,7 @@ export async function GET() {
       likeCount: row.like_count,
       commentCount: row.comment_count,
       noticeVisible: row.notice_visible === 1,
-      noticePinSlot: row.notice_pin_slot ?? null,
-      noticeOrder: row.notice_order ?? 1000,
+      noticeOrder: row.notice_order ?? 4,
     }));
 
     return NextResponse.json({ posts });
@@ -80,26 +71,16 @@ export async function PATCH(request) {
     }
 
     const hasVisible = typeof body.noticeVisible === "boolean";
-    const normalizedPinSlot = normalizePinSlot(
-      body.noticePinSlot === undefined ? undefined : body.noticePinSlot,
-    );
-    const hasPinSlot = body.noticePinSlot !== undefined;
     const normalizedOrder = normalizeOrder(body.noticeOrder);
     const hasOrder = body.noticeOrder !== undefined;
 
-    if (hasPinSlot && normalizedPinSlot === undefined) {
-      return NextResponse.json(
-        { error: "noticePinSlot must be null, 1, or 2" },
-        { status: 400 },
-      );
-    }
     if (hasOrder && normalizedOrder === undefined) {
       return NextResponse.json(
-        { error: "noticeOrder must be integer 0~9999" },
+        { error: "noticeOrder must be integer 1~4" },
         { status: 400 },
       );
     }
-    if (!hasVisible && !hasPinSlot && !hasOrder) {
+    if (!hasVisible && !hasOrder) {
       return NextResponse.json(
         { error: "No update fields provided" },
         { status: 400 },
@@ -124,28 +105,12 @@ export async function PATCH(request) {
         return NextResponse.json({ error: "Notice not found" }, { status: 404 });
       }
 
-      if (hasPinSlot && (normalizedPinSlot === 1 || normalizedPinSlot === 2)) {
-        await conn.query(
-          `UPDATE posts
-           SET notice_pin_slot = NULL
-           WHERE is_hidden = FALSE
-             AND is_notice = TRUE
-             AND id <> ?
-             AND notice_pin_slot = ?`,
-          [postId, normalizedPinSlot],
-        );
-      }
-
       const fields = [];
       const params = [];
 
       if (hasVisible) {
         fields.push("notice_visible = ?");
         params.push(body.noticeVisible);
-      }
-      if (hasPinSlot) {
-        fields.push("notice_pin_slot = ?");
-        params.push(normalizedPinSlot);
       }
       if (hasOrder) {
         fields.push("notice_order = ?");

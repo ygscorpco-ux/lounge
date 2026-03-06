@@ -23,7 +23,7 @@ export default function NoticePage() {
   function makeOrderDrafts(items) {
     const next = {};
     for (const item of items) {
-      next[item.id] = String(item.noticeOrder ?? 1000);
+      next[item.id] = String(item.noticeOrder ?? 4);
     }
     return next;
   }
@@ -83,14 +83,13 @@ export default function NoticePage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        alert(data.error || "\uC5C5\uB370\uC774\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+        alert(data.error || "업데이트에 실패했습니다.");
         return;
       }
-
       await loadNotices(true);
     } catch (error) {
       console.error(error);
-      alert("\uC5C5\uB370\uC774\uD2B8 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
+      alert("업데이트 중 오류가 발생했습니다.");
     }
     setSavingPostId(null);
   }
@@ -98,8 +97,8 @@ export default function NoticePage() {
   async function applyOrder(postId) {
     const raw = orderDrafts[postId];
     const parsed = Number(raw);
-    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 9999) {
-      alert("\uC21C\uC11C\uB294 0~9999 \uC815\uC218\uB85C \uC785\uB825\uD574\uC8FC\uC138\uC694.");
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 4) {
+      alert("순서는 1~4 정수로 입력해주세요.");
       return;
     }
     await updateNotice(postId, { noticeOrder: parsed });
@@ -124,9 +123,7 @@ export default function NoticePage() {
         <span className="top-bar-title">{"\uACF5\uC9C0\uC0AC\uD56D"}</span>
       </div>
 
-      {loading && (
-        <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>
-      )}
+      {loading && <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>}
 
       {!loading && isAdmin && (
         <div
@@ -141,14 +138,12 @@ export default function NoticePage() {
             color: "#4f5c70",
           }}
         >
-          {"\uACF5\uC9C0 \uAD00\uB9AC: \uACE0\uC815 1\u00B72\uBC88\uC740 \uD648 \uCD5C\uC0C1\uB2E8 \uB178\uCD9C, \uB178\uCD9C OFF \uC2DC \uC0AC\uC6A9\uC790\uC5D0\uAC8C \uC228\uAE40, \uC21C\uC11C \uC22B\uC790\uAC00 \uC791\uC744\uC218\uB85D \uBA3C\uC800 \uBCF4\uC785\uB2C8\uB2E4."}
+          {"\uACF5\uC9C0 \uAD00\uB9AC: \uB178\uCD9C OFF \uC2DC \uC0AC\uC6A9\uC790\uC5D0\uAC8C \uC228\uAE40, \uC21C\uC11C 1~4 \uC22B\uC790\uB85C \uD648 \uACF5\uC9C0 \uC601\uC5ED \uB178\uCD9C \uC6B0\uC120\uC21C\uC704\uB97C \uC815\uD569\uB2C8\uB2E4."}
         </div>
       )}
 
       {!loading && posts.length === 0 && (
-        <div className="empty">
-          {"\uB4F1\uB85D\uB41C \uACF5\uC9C0\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."}
-        </div>
+        <div className="empty">{"\uB4F1\uB85D\uB41C \uACF5\uC9C0\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>
       )}
 
       {!loading &&
@@ -195,35 +190,6 @@ export default function NoticePage() {
                 {"\uC228\uAE40"}
               </span>
             )}
-            {post.noticePinSlot && (
-              <span
-                style={{
-                  marginLeft: 6,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  background: "#ebf2ff",
-                  borderRadius: 999,
-                  width: 18,
-                  height: 18,
-                  justifyContent: "center",
-                }}
-                aria-label="고정 공지"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="11"
-                  height="11"
-                  fill="none"
-                  stroke="#1b4797"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 17v5" />
-                  <path d="M5 4h14l-3 6v3H8v-3L5 4z" />
-                </svg>
-              </span>
-            )}
 
             <div
               style={{
@@ -264,7 +230,7 @@ export default function NoticePage() {
                   borderTop: "1px solid #eef1f5",
                   paddingTop: 10,
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gridTemplateColumns: "1fr 1fr",
                   gap: 8,
                 }}
               >
@@ -292,34 +258,11 @@ export default function NoticePage() {
                   {"\uB178\uCD9C"}
                 </label>
 
-                <select
-                  value={post.noticePinSlot ?? 0}
-                  disabled={savingPostId === post.id}
-                  onChange={(event) => {
-                    const value = Number(event.target.value);
-                    updateNotice(post.id, {
-                      noticePinSlot: value === 0 ? null : value,
-                    });
-                  }}
-                  style={{
-                    border: "1px solid #dfe5ee",
-                    borderRadius: 8,
-                    padding: "6px 8px",
-                    fontSize: 12,
-                    color: "#1f2430",
-                    background: "#fff",
-                  }}
-                >
-                  <option value={0}>{"\uACE0\uC815 \uC5C6\uC74C"}</option>
-                  <option value={1}>{"\uACE0\uC815 1"}</option>
-                  <option value={2}>{"\uACE0\uC815 2"}</option>
-                </select>
-
                 <div style={{ display: "flex", gap: 6 }}>
                   <input
                     type="number"
-                    min={0}
-                    max={9999}
+                    min={1}
+                    max={4}
                     value={orderDrafts[post.id] ?? ""}
                     disabled={savingPostId === post.id}
                     onChange={(event) =>

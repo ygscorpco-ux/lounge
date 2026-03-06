@@ -475,35 +475,6 @@ export default function Home() {
                   >
                     {"\uACF5\uC9C0"}
                   </span>
-                  {post.noticePinSlot && (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "#ebf2ff",
-                        borderRadius: "999px",
-                        width: 18,
-                        height: 18,
-                        flexShrink: 0,
-                      }}
-                      aria-label="고정 공지"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="11"
-                        height="11"
-                        fill="none"
-                        stroke="#1b4797"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 17v5" />
-                        <path d="M5 4h14l-3 6v3H8v-3L5 4z" />
-                      </svg>
-                    </span>
-                  )}
                   <span
                     style={{
                       fontSize: "14px",

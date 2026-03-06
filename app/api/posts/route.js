@@ -39,7 +39,7 @@ export async function GET(request) {
       SELECT
         p.id, p.user_id, p.category, p.title, p.content, p.is_notice,
         p.like_count, p.comment_count, p.created_at, p.images, p.has_poll,
-        p.notice_visible, p.notice_pin_slot, p.notice_order, u.role
+        p.notice_visible, p.notice_order, u.role
       FROM posts p
       JOIN users u ON p.user_id = u.id
       WHERE p.is_hidden = FALSE
@@ -67,8 +67,7 @@ export async function GET(request) {
     }
 
     if (noticeOnly) {
-      query +=
-        " ORDER BY CASE WHEN p.notice_pin_slot IS NULL THEN 1 ELSE 0 END, p.notice_pin_slot ASC, p.notice_order ASC, p.created_at DESC";
+      query += " ORDER BY p.notice_order ASC, p.created_at DESC";
     } else if (sort === "likes") {
       query += " ORDER BY p.is_notice DESC, p.like_count DESC, p.created_at DESC";
     } else if (sort === "comments") {
@@ -106,9 +105,7 @@ export async function GET(request) {
         commentCount: row.comment_count,
         createdAt: row.created_at,
         noticeVisible: !!row.notice_visible,
-        noticePinSlot:
-          row.notice_pin_slot === null ? null : Number(row.notice_pin_slot),
-        noticeOrder: Number(row.notice_order ?? 1000),
+        noticeOrder: Number(row.notice_order ?? 4),
         hasImages: imageList.length > 0,
         thumbnailUrl,
         hasPoll: !!row.has_poll,
