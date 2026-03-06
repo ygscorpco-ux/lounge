@@ -220,9 +220,23 @@ export default function Home() {
     if (typeof window !== "undefined") {
       sessionStorage.setItem(FEED_RETURN_KEY, "1");
       sessionStorage.setItem(FEED_SCROLL_KEY, String(window.scrollY || 0));
+      try {
+        sessionStorage.setItem(
+          FEED_CACHE_KEY,
+          JSON.stringify({
+            posts,
+            page,
+            hasMore,
+            sort,
+            savedAt: Date.now(),
+          }),
+        );
+      } catch (error) {
+        console.error(error);
+      }
     }
-    router.push("/post/" + postId);
-  }, [router]);
+    router.push("/post/" + postId, { scroll: false });
+  }, [router, posts, page, hasMore, sort]);
 
   const fetchPosts = useCallback(async (p, s, reset) => {
     setLoading(true);
@@ -314,6 +328,7 @@ export default function Home() {
       pageRef.current = restoredPage;
       setSort(restoredSort);
       setHasMore(restoredHasMore);
+      setLoading(false);
     } catch (error) {
       console.error(error);
     }
@@ -323,12 +338,27 @@ export default function Home() {
     if (!shouldRestoreScrollRef.current || posts.length === 0) return;
     if (typeof window === "undefined") return;
 
-    const y = Number(sessionStorage.getItem(FEED_SCROLL_KEY) || "0");
-    window.requestAnimationFrame(() => {
-      window.scrollTo({ top: Number.isFinite(y) ? y : 0, behavior: "auto" });
-      shouldRestoreScrollRef.current = false;
-      sessionStorage.removeItem(FEED_RETURN_KEY);
-    });
+    const targetY = Number(sessionStorage.getItem(FEED_SCROLL_KEY) || "0");
+    const safeY = Number.isFinite(targetY) ? targetY : 0;
+    let tries = 0;
+
+    const restore = () => {
+      window.scrollTo({ top: safeY, behavior: "auto" });
+      const maxY = Math.max(document.body.scrollHeight - window.innerHeight, 0);
+      const nearTarget = Math.abs(window.scrollY - safeY) < 2;
+      const cannotReachMore = maxY <= safeY;
+
+      if (nearTarget || cannotReachMore || tries >= 6) {
+        shouldRestoreScrollRef.current = false;
+        sessionStorage.removeItem(FEED_RETURN_KEY);
+        return;
+      }
+
+      tries += 1;
+      window.setTimeout(restore, 50);
+    };
+
+    window.requestAnimationFrame(restore);
   }, [posts]);
 
   useEffect(() => {

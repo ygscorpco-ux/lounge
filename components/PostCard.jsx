@@ -34,7 +34,7 @@ function PostCard({ post, onOpen }) {
       onOpen(post.id);
       return;
     }
-    router.push("/post/" + post.id);
+    router.push("/post/" + post.id, { scroll: false });
   }
 
   return (

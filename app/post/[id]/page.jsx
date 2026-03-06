@@ -299,20 +299,11 @@ export default function PostDetailPage() {
   }
 
   function handleBack() {
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" || window.history.length <= 1) {
       router.push("/");
       return;
     }
-
-    const currentPath = window.location.pathname;
     router.back();
-
-    // If there is no in-app history entry, fall back to home.
-    window.setTimeout(() => {
-      if (window.location.pathname === currentPath) {
-        router.push("/");
-      }
-    }, 120);
   }
 
   if (loading) return <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>;
