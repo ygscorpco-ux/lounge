@@ -128,6 +128,67 @@ function ResultRow({ label, value, color = 'var(--color-gray-900)', strong = fal
   );
 }
 
+function ResultMetricCard({ label, value, note, tone = 'default' }) {
+  const themes = {
+    default: {
+      background: '#f7f9fc',
+      border: '#e6edf5',
+      value: '#0f172a',
+      note: '#64748b',
+    },
+    accent: {
+      background: '#eef4ff',
+      border: '#dbe7fb',
+      value: '#163b82',
+      note: '#5f7398',
+    },
+    warm: {
+      background: '#fff8ee',
+      border: '#f1e2bf',
+      value: '#7c4b0d',
+      note: '#8a6b34',
+    },
+    alert: {
+      background: '#fff4f2',
+      border: '#f2d8d3',
+      value: '#d94841',
+      note: '#9c5d56',
+    },
+  };
+
+  const theme = themes[tone] || themes.default;
+
+  return (
+    <div
+      style={{
+        minWidth: 0,
+        padding: '14px',
+        borderRadius: '20px',
+        border: `1px solid ${theme.border}`,
+        background: theme.background,
+      }}
+    >
+      <div style={{ fontSize: '12px', fontWeight: 800, color: '#5f6c80' }}>{label}</div>
+      <div
+        style={{
+          marginTop: '8px',
+          fontSize: '16px',
+          fontWeight: 900,
+          color: theme.value,
+          lineHeight: 1.2,
+          letterSpacing: '-0.03em',
+          wordBreak: 'keep-all',
+        }}
+      >
+        {value}
+      </div>
+      <div style={{ marginTop: '8px', fontSize: '11px', color: theme.note, lineHeight: 1.45 }}>
+        {note}
+      </div>
+    </div>
+  );
+}
+
 // AI 인건비 절감 제안 섹션
 function LaborAiSection({ calc, hourlyWage, hoursPerDay, selectedDays, employmentType, insuranceOn, numWorkers }) {
   const [loading, setLoading] = useState(false);
@@ -353,17 +414,67 @@ export default function LaborCostCalculator() {
   const step2Done = true; // 고용조건은 기본값 있음
   const resultAmount = calc ? (resultTab === 'worker' ? calc.netWage : calc.bossTotal) : 0;
   const selectedDaysLabel = DAY_LABELS.filter((day) => selectedDays.includes(day)).join(' · ');
-  const quickStats = calc
+  const summaryCards = calc
     ? resultTab === 'worker'
       ? [
-          { label: '기본급', value: `${calc.monthlyBase.toLocaleString()}원` },
-          { label: '주휴수당', value: `${calc.monthlyWeeklyAllowance.toLocaleString()}원` },
-          { label: '총 차감', value: `${(calc.employeeDeduction + calc.tax33Deduction).toLocaleString()}원` },
+          {
+            label: '기본급',
+            value: `${calc.monthlyBase.toLocaleString()}원`,
+            note: '공제 전 기본 급여',
+            tone: 'default',
+          },
+          {
+            label: '주휴수당',
+            value: `${calc.monthlyWeeklyAllowance.toLocaleString()}원`,
+            note:
+              calc.monthlyWeeklyAllowance > 0 ? '주휴수당 반영' : '주휴수당 없음',
+            tone: calc.monthlyWeeklyAllowance > 0 ? 'accent' : 'default',
+          },
+          {
+            label: '총 차감',
+            value: `${(calc.employeeDeduction + calc.tax33Deduction).toLocaleString()}원`,
+            note:
+              calc.employeeDeduction + calc.tax33Deduction > 0
+                ? tax33On
+                  ? '보험·3.3% 차감 반영'
+                  : '보험 공제 반영'
+                : '차감 없음',
+            tone:
+              calc.employeeDeduction + calc.tax33Deduction > 0 ? 'warm' : 'default',
+          },
+          {
+            label: '실수령액',
+            value: `${calc.netWage.toLocaleString()}원`,
+            note: '실제 받는 금액',
+            tone: 'accent',
+          },
         ]
       : [
-          { label: '월 급여', value: `${calc.grossWage.toLocaleString()}원` },
-          { label: '사업주 부담', value: `${calc.employerContribution.toLocaleString()}원` },
-          { label: '직원 수', value: `${numWorkers}명` },
+          {
+            label: '급여 지급액',
+            value: `${calc.grossWage.toLocaleString()}원`,
+            note: '직원에게 지급하는 급여',
+            tone: 'default',
+          },
+          {
+            label: '보험 추가 부담',
+            value: `${calc.employerContribution.toLocaleString()}원`,
+            note:
+              calc.employerContribution > 0 ? '사업주 부담 보험' : '추가 부담 없음',
+            tone: calc.employerContribution > 0 ? 'warm' : 'default',
+          },
+          {
+            label: '1인 총 인건비',
+            value: `${calc.bossTotal.toLocaleString()}원`,
+            note: '직원 1명 기준',
+            tone: 'accent',
+          },
+          {
+            label: `${numWorkers}명 총 인건비`,
+            value: `${(calc.bossTotal * numWorkers).toLocaleString()}원`,
+            note: '현재 인원 기준',
+            tone: 'accent',
+          },
         ]
     : [];
 
@@ -694,24 +805,22 @@ export default function LaborCostCalculator() {
             </div>
           </div>
 
-          {false ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-            {quickStats.map((item) => (
-              <div key={item.label} style={{
-                padding: '14px 10px',
-                borderRadius: '18px',
-                background: '#f8fafc',
-                border: '1px solid #e6edf5',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>{item.value}</div>
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{item.label}</div>
-              </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px', marginBottom: '16px' }}>
+            {summaryCards.map((item) => (
+              <ResultMetricCard
+                key={item.label}
+                label={item.label}
+                value={item.value}
+                note={item.note}
+                tone={item.tone}
+              />
             ))}
           </div>
-          ) : null}
 
           <div style={{ padding: '0 2px', marginBottom: '14px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '8px' }}>
+              세부 내역
+            </div>
             {resultTab === 'worker' ? (
               <>
                 <ResultRow label="기본급" value={`${calc.monthlyBase.toLocaleString()}원`} />
