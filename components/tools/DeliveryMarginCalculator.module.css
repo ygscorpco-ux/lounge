@@ -131,12 +131,14 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 116px;
-  padding: 12px;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  padding: 14px;
   border: 1.5px solid #dfe8f3;
   border-radius: 22px;
   background: #ffffff;
   text-align: left;
+  justify-content: space-between;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -149,21 +151,6 @@
   background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
   box-shadow: 0 14px 26px rgba(27, 71, 151, 0.12);
   transform: translateY(-1px);
-}
-
-.platformCardTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.platformCardBody {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  margin-top: auto;
 }
 
 .platformStatus,
@@ -192,13 +179,34 @@
   color: #57667c;
 }
 
+.platformSelectBadge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(27, 71, 151, 0.1);
+  color: #1b4797;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.platformLogoStage {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+}
+
 .platformLogoBox {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
   background: #f4f7fb;
   border: 1px solid #edf2f7;
   overflow: hidden;
@@ -206,21 +214,21 @@
 }
 
 .platformLogo {
-  width: 24px;
-  height: 24px;
+  width: 46px;
+  height: 46px;
   object-fit: contain;
 }
 
 .platformFallback {
   color: #1b4797;
-  font-size: 17px;
+  font-size: 28px;
   font-weight: 800;
 }
 
-.platformCopy {
+.platformCardMeta {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -237,14 +245,16 @@
   letter-spacing: -0.03em;
 }
 
-.platformCaption {
-  color: #667487;
+.platformFeeText {
+  color: #748195;
   font-size: 11px;
   line-height: 1.4;
+  font-weight: 700;
 }
 
 .platformSkeleton {
-  height: 116px;
+  aspect-ratio: 1 / 1;
+  height: auto;
   border-radius: 22px;
   background: linear-gradient(90deg, #f1f5fb 25%, #f9fbff 50%, #f1f5fb 75%);
   background-size: 220% 100%;
@@ -1496,6 +1506,17 @@
   .compareValues {
     grid-column: 2;
     text-align: left;
+  }
+
+  .platformLogoBox {
+    width: 68px;
+    height: 68px;
+    border-radius: 22px;
+  }
+
+  .platformLogo {
+    width: 40px;
+    height: 40px;
   }
 
   .resultValue {

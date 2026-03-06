@@ -257,18 +257,11 @@ function PlatformCard({ platform, active, displayRate, onSelect }) {
       className={`${styles.platformCard} ${active ? styles.platformCardActive : ""}`}
       onClick={onSelect}
     >
-      <span className={styles.platformCardTop}>
-        <span
-          className={`${styles.platformStatus} ${active ? styles.platformStatusActive : ""}`}
-        >
-          {active ? "선택됨" : "앱 선택"}
-        </span>
-        <span className={styles.platformRateChip}>
-          {displayRate !== null ? `총 ${formatPercent(displayRate)}` : "정보 준비 중"}
-        </span>
-      </span>
+      {active ? (
+        <span className={styles.platformSelectBadge}>선택</span>
+      ) : null}
 
-      <span className={styles.platformCardBody}>
+      <span className={styles.platformLogoStage}>
         <span className={styles.platformLogoBox}>
           {logoSrc ? (
             <img
@@ -282,12 +275,12 @@ function PlatformCard({ platform, active, displayRate, onSelect }) {
             <span className={styles.platformFallback}>{platform.name.slice(0, 1)}</span>
           )}
         </span>
+      </span>
 
-        <span className={styles.platformCopy}>
-          <span className={styles.platformNameRow}>
-            <span className={styles.platformName}>{platform.name}</span>
-          </span>
-          <span className={styles.platformCaption}>기본 수수료 적용</span>
+      <span className={styles.platformCardMeta}>
+        <span className={styles.platformName}>{platform.name}</span>
+        <span className={styles.platformFeeText}>
+          {displayRate !== null ? `총 수수료 ${formatPercent(displayRate)}` : "수수료 정보 준비 중"}
         </span>
       </span>
     </button>
