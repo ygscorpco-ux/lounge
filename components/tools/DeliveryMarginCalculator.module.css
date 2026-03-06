@@ -465,13 +465,29 @@
   gap: 12px;
 }
 
+.tierList {
+  flex-direction: row;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tierList::-webkit-scrollbar {
+  display: none;
+}
+
 .tierCard {
-  width: 100%;
+  width: min(286px, 82vw);
+  min-width: min(286px, 82vw);
+  flex: 0 0 auto;
   padding: 16px;
   border: 1.5px solid #e5ebf4;
   border-radius: 22px;
   background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
   text-align: left;
+  scroll-snap-align: start;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
