@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentMinWage } from '../../lib/constants';
 
@@ -437,6 +437,8 @@ export default function WorkerScheduler() {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [toast, setToast]       = useState('');
+  const workersCacheRef         = useRef(null);
+  const schedulesCacheRef       = useRef(new Map());
 
   // 월/주 네비게이션
   const [year, setYear]   = useState(today.getFullYear());
@@ -456,19 +458,37 @@ export default function WorkerScheduler() {
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(''), 2000); }
 
   // 직원 불러오기
-  const loadWorkers = useCallback(async () => {
+  const loadWorkers = useCallback(async (force = false) => {
+    if (!force && workersCacheRef.current) {
+      setWorkers(workersCacheRef.current);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const r = await fetch('/api/workers');
     const d = await r.json();
-    if (d.success) setWorkers(d.data);
+    if (d.success) {
+      workersCacheRef.current = d.data;
+      setWorkers(d.data);
+    }
     setLoading(false);
   }, []);
 
   // 스케줄 불러오기
-  const loadSchedules = useCallback(async () => {
+  const loadSchedules = useCallback(async (force = false) => {
+    const cacheKey = `${year}-${month}`;
+    if (!force && schedulesCacheRef.current.has(cacheKey)) {
+      setSchedules(schedulesCacheRef.current.get(cacheKey));
+      return;
+    }
+
     const r = await fetch(`/api/schedule?year=${year}&month=${month}`);
     const d = await r.json();
-    if (d.success) setSchedules(d.data);
+    if (d.success) {
+      schedulesCacheRef.current.set(cacheKey, d.data);
+      setSchedules(d.data);
+    }
   }, [year, month]);
 
   useEffect(() => { loadWorkers(); }, [loadWorkers]);
@@ -517,8 +537,9 @@ export default function WorkerScheduler() {
   async function deleteWorker(id) {
     if (!confirm('정말 삭제할까요? 스케줄 기록은 유지됩니다.')) return;
     await fetch(`/api/workers/${id}`, { method: 'DELETE' });
+    workersCacheRef.current = null;
     showToast('직원이 삭제되었습니다');
-    loadWorkers();
+    loadWorkers(true);
   }
 
   // ── 빈 상태 컴포넌트 ──
@@ -596,6 +617,8 @@ export default function WorkerScheduler() {
               boxShadow: '0 10px 24px rgba(15,23,42,0.04)',
               border: '1px solid #e6edf5',
               borderLeft: `4px solid ${accentColor}`,
+              contentVisibility: 'auto',
+              containIntrinsicSize: '120px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Avatar name={w.name} color={w.color} size={44} />
@@ -654,7 +677,8 @@ export default function WorkerScheduler() {
       }
     }
     showToast(`✅ ${count}건 스케줄이 생성됐습니다`);
-    loadSchedules();
+    schedulesCacheRef.current.delete(`${year}-${month}`);
+    loadSchedules(true);
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -782,7 +806,7 @@ export default function WorkerScheduler() {
 
             {/* 주간 상세 */}
             {visibleWorkers.map(w => (
-              <div key={w.id} style={{ background: '#fff', borderRadius: '14px', padding: '14px', marginBottom: '10px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)' }}>
+              <div key={w.id} style={{ background: '#fff', borderRadius: '14px', padding: '14px', marginBottom: '10px', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-gray-200)', contentVisibility: 'auto', containIntrinsicSize: '140px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <Avatar name={w.name} color={w.color} size={30} />
                   <span style={{ fontSize: '14px', fontWeight: 700 }}>{w.name}</span>
@@ -917,15 +941,15 @@ export default function WorkerScheduler() {
         title={editWorker ? '직원 수정' : '직원 추가'}>
         <WorkerForm
           initial={editWorker}
-          onSave={(msg) => { setShowAddWorker(false); setEditWorker(null); loadWorkers(); showToast(msg || '✅ 저장 완료!'); }}
-          onContract={(id) => { setShowAddWorker(false); setEditWorker(null); loadWorkers(); router.push(`/tools/contract?workerId=${id}`); }}
+          onSave={(msg) => { setShowAddWorker(false); setEditWorker(null); workersCacheRef.current = null; loadWorkers(true); showToast(msg || '✅ 저장 완료!'); }}
+          onContract={(id) => { setShowAddWorker(false); setEditWorker(null); workersCacheRef.current = null; loadWorkers(true); router.push(`/tools/contract?workerId=${id}`); }}
         />
       </Sheet>
 
       {/* 출퇴근 기록 시트 */}
       <Sheet open={showAttend} onClose={() => { setShowAttend(false); setAttendWorkerId(''); }} title="출퇴근 기록" height="80dvh">
         <AttendanceForm workers={workers} initialDate={attendDate} initialWorkerId={attendWorkerId}
-          onSave={() => { setShowAttend(false); setAttendWorkerId(''); loadSchedules(); showToast('기록되었습니다'); }} />
+          onSave={() => { setShowAttend(false); setAttendWorkerId(''); schedulesCacheRef.current.delete(`${year}-${month}`); loadSchedules(true); showToast('기록되었습니다'); }} />
       </Sheet>
 
       <Toast msg={toast} />

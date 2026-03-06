@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 // 카테고리 설정
 const CATEGORIES = [
@@ -813,6 +813,7 @@ export default function SubsidyCalendar() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [user, setUser] = useState(null);
+  const subsidyCacheRef = useRef(new Map());
   const [bookmarks, setBookmarks] = useState([]); // 북마크 지원금 ID 배열
   const [showBookmarkOnly, setShowBookmarkOnly] = useState(true);
   const [expandedSubsidyId, setExpandedSubsidyId] = useState(null);
@@ -834,24 +835,54 @@ export default function SubsidyCalendar() {
 
   // 로그인 유저 확인
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d) setUser(d.user);
-      });
+    let active = true;
+    const run = () => {
+      fetch("/api/auth/me")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (active && d) setUser(d.user);
+        })
+        .catch(() => {});
+    };
+
+    const idleId =
+      typeof window !== "undefined" && "requestIdleCallback" in window
+        ? window.requestIdleCallback(run, { timeout: 1200 })
+        : window.setTimeout(run, 600);
+
+    return () => {
+      active = false;
+      if (typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      } else {
+        window.clearTimeout(idleId);
+      }
+    };
   }, []);
 
   // 지원금 데이터 불러오기 — 월 필터 없이 전체 조회 (마감 포함)
-  async function loadSubsidies() {
-    setLoading(true);
+  async function loadSubsidies(force = false) {
+    const cacheKey = category;
+    const cached = subsidyCacheRef.current.get(cacheKey);
+
     setFetchError("");
+    if (!force && cached) {
+      setSubsidies(cached);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     try {
       // year/month 파라미터 제거 → API가 전체 활성 지원금 반환
       const r = await fetch(
         `/api/subsidy/list?category=${encodeURIComponent(category)}`,
       );
       const d = await r.json();
-      if (d.success) setSubsidies(d.data);
+      if (d.success) {
+        subsidyCacheRef.current.set(cacheKey, d.data);
+        setSubsidies(d.data);
+      }
       else setFetchError(d.error || "데이터를 불러오지 못했습니다");
     } catch (e) {
       setFetchError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요");
@@ -1969,6 +2000,8 @@ export default function SubsidyCalendar() {
                     animation:
                       urgent && !expired ? "pulseUrgent 2s infinite" : "none",
                     position: "relative",
+                    contentVisibility: "auto",
+                    containIntrinsicSize: "220px",
                   }}
                 >
                   <div
@@ -2215,7 +2248,10 @@ export default function SubsidyCalendar() {
                               method: "DELETE",
                             });
                             const delData = await delRes.json();
-                            if (delData.success) loadSubsidies();
+                            if (delData.success) {
+                              subsidyCacheRef.current.clear();
+                              loadSubsidies(true);
+                            }
                             else alert(delData.error || "삭제에 실패했습니다");
                           }}
                           style={{
@@ -2416,7 +2452,10 @@ export default function SubsidyCalendar() {
       <BottomSheet
         open={showAdd}
         onClose={() => setShowAdd(false)}
-        onSubmit={loadSubsidies}
+        onSubmit={() => {
+          subsidyCacheRef.current.clear();
+          loadSubsidies(true);
+        }}
       />
 
       <style>{`
