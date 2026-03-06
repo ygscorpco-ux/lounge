@@ -148,6 +148,25 @@ export async function POST(request) {
       Array.isArray(poll.options) &&
       poll.options.filter((option) => option && option.trim()).length >= 2;
 
+    // Guard against accidental double-submit (double tap / network retry).
+    const [dupRows] = await pool.query(
+      `SELECT id
+       FROM posts
+       WHERE user_id = ?
+         AND title = ?
+         AND content = ?
+         AND created_at >= (NOW() - INTERVAL 15 SECOND)
+       ORDER BY id DESC
+       LIMIT 1`,
+      [user.id, title, content],
+    );
+    if (dupRows.length > 0) {
+      return NextResponse.json(
+        { error: "Duplicate submission detected" },
+        { status: 409 },
+      );
+    }
+
     const [result] = await pool.query(
       "INSERT INTO posts (user_id, category, title, content, is_notice, images, has_poll) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [

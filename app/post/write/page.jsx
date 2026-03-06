@@ -1,212 +1,223 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function WritePage() {
+  const router = useRouter();
+  const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const scrollRef = useRef(null);
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isNotice, setIsNotice] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState("");
-
-  // 이미지 첨부 상태
-  const [images, setImages] = useState([]); // 업로드된 이미지 URL 배열
+  const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
-
-  // 투표 상태 — null이면 투표 없음, 객체면 투표 작성 중
+  const [submitting, setSubmitting] = useState(false);
   const [poll, setPoll] = useState(null);
 
-  const textareaRef = useRef(null);
-  const fileInputRef = useRef(null); // 숨겨진 파일 입력 ref
-  const scrollRef = useRef(null);
-  const router = useRouter();
-
-  // iOS Safari pull-to-refresh 방지
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
+    const element = scrollRef.current;
+    if (!element) return undefined;
+
     let startY = 0;
-    const onTouchStart = (e) => {
-      startY = e.touches[0].clientY;
+    const onTouchStart = (event) => {
+      startY = event.touches[0].clientY;
     };
-    const onTouchMove = (e) => {
-      if (el.scrollTop === 0 && e.touches[0].clientY > startY)
-        e.preventDefault();
+    const onTouchMove = (event) => {
+      if (element.scrollTop === 0 && event.touches[0].clientY > startY) {
+        event.preventDefault();
+      }
     };
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
+
+    element.addEventListener("touchstart", onTouchStart, { passive: true });
+    element.addEventListener("touchmove", onTouchMove, { passive: false });
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
+      element.removeEventListener("touchstart", onTouchStart);
+      element.removeEventListener("touchmove", onTouchMove);
     };
   }, []);
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => {
-        // 로그인 안 된 상태면 로그인 페이지로 이동
-        if (!r.ok) {
+      .then((response) => {
+        if (!response.ok) {
           router.replace("/login");
           return null;
         }
-        return r.json();
+        return response.json();
       })
       .then((data) => {
-        if (data && data.user && data.user.role === "admin") setIsAdmin(true);
+        if (data?.user?.role === "admin") setIsAdmin(true);
       });
-  }, []);
+  }, [router]);
 
-  function handleContentChange(e) {
-    setContent(e.target.value);
-    const ta = textareaRef.current;
-    if (ta) {
-      ta.style.height = "auto";
-      ta.style.height = ta.scrollHeight + "px";
-    }
+  function handleContentChange(event) {
+    setContent(event.target.value);
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
   }
 
-  // 업로드 전 클라이언트에서 이미지 압축 — 갤럭시/아이폰 원본(5~15MB)을 약 200~500KB로 줄임
   async function compressImage(file) {
     return new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        const MAX = 1200;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      image.onload = () => {
+        const MAX_SIZE = 1200;
+        let { width, height } = image;
+
+        if (width > MAX_SIZE || height > MAX_SIZE) {
           if (width > height) {
-            height = Math.round((height / width) * MAX);
-            width = MAX;
+            height = Math.round((height / width) * MAX_SIZE);
+            width = MAX_SIZE;
           } else {
-            width = Math.round((width / height) * MAX);
-            height = MAX;
+            width = Math.round((width / height) * MAX_SIZE);
+            height = MAX_SIZE;
           }
         }
+
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
+        canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+        URL.revokeObjectURL(objectUrl);
+
         canvas.toBlob(
-          (blob) =>
-            resolve(new File([blob], "image.jpg", { type: "image/jpeg" })),
+          (blob) => resolve(new File([blob], "image.jpg", { type: "image/jpeg" })),
           "image/jpeg",
-          0.82, // 화질 82% — 육안 차이 거의 없고 용량 대폭 감소
+          0.82,
         );
       };
-      img.src = url;
+
+      image.src = objectUrl;
     });
   }
 
-  // 이미지 파일 선택 → 압축 → Cloudinary 업로드
-  async function handleImageSelect(e) {
-    const file = e.target.files[0];
+  async function handleImageSelect(event) {
+    const file = event.target.files?.[0];
     if (!file) return;
+
     if (images.length >= 4) {
-      setError("이미지는 최대 4장까지 첨부 가능합니다");
+      setError("\uC774\uBBF8\uC9C0\uB294 \uCD5C\uB300 4\uC7A5\uAE4C\uC9C0 \uCCA8\uBD80\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
+      event.target.value = "";
       return;
     }
 
     setUploading(true);
     setError("");
+
     try {
-      const compressed = await compressImage(file); // 압축 먼저 처리
+      const compressed = await compressImage(file);
       const formData = new FormData();
       formData.append("image", compressed);
-      const res = await fetch("/api/upload", {
+
+      const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
-      if (res.ok) {
-        setImages((prev) => [...prev, data.url]);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
       } else {
-        setError(data.error || "이미지 업로드 실패");
+        setImages((prev) => [...prev, data.url]);
       }
-    } catch (e) {
-      setError("이미지 업로드 중 오류가 발생했습니다");
+    } catch (uploadError) {
+      console.error(uploadError);
+      setError("\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
     }
+
     setUploading(false);
-    e.target.value = "";
+    event.target.value = "";
   }
 
-  // 업로드된 이미지 제거
-  function removeImage(idx) {
-    setImages((prev) => prev.filter((_, i) => i !== idx));
+  function removeImage(index) {
+    setImages((prev) => prev.filter((_, i) => i !== index));
   }
 
-  // 투표 항목 텍스트 변경
-  function updatePollOption(idx, value) {
+  function updatePollOption(index, value) {
     setPoll((prev) => {
       const options = [...prev.options];
-      options[idx] = value;
+      options[index] = value;
       return { ...prev, options };
     });
   }
 
-  // 투표 항목 추가 (최대 4개)
   function addPollOption() {
-    if (poll.options.length >= 4) return;
+    if (!poll || poll.options.length >= 4) return;
     setPoll((prev) => ({ ...prev, options: [...prev.options, ""] }));
   }
 
-  // 투표 항목 삭제 (최소 2개 유지)
-  function removePollOption(idx) {
-    if (poll.options.length <= 2) return;
+  function removePollOption(index) {
+    if (!poll || poll.options.length <= 2) return;
     setPoll((prev) => ({
       ...prev,
-      options: prev.options.filter((_, i) => i !== idx),
+      options: prev.options.filter((_, i) => i !== index),
     }));
   }
 
   async function handleSubmit() {
+    if (submitting) return;
     setError("");
+
     if (!title.trim()) {
-      setError("제목을 입력해주세요");
+      setError("\uC81C\uBAA9\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.");
       return;
     }
     if (!content.trim()) {
-      setError("내용을 입력해주세요");
+      setError("\uB0B4\uC6A9\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.");
       return;
     }
 
-    // 투표가 있으면 유효성 검사
     if (poll) {
       if (!poll.question.trim()) {
-        setError("투표 질문을 입력해주세요");
+        setError("\uD22C\uD45C \uC9C8\uBB38\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.");
         return;
       }
-      const validOptions = poll.options.filter((o) => o.trim());
+      const validOptions = poll.options.filter((option) => option.trim());
       if (validOptions.length < 2) {
-        setError("투표 항목을 2개 이상 입력해주세요");
+        setError("\uD22C\uD45C \uD56D\uBAA9\uC740 2\uAC1C \uC774\uC0C1 \uD544\uC694\uD569\uB2C8\uB2E4.");
         return;
       }
     }
 
-    const res = await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        category: "자유",
-        title,
-        content,
-        isNotice: isAdmin ? isNotice : false,
-        images, // 업로드된 이미지 URL 배열
-        poll: poll
-          ? {
-              question: poll.question,
-              options: poll.options.filter((o) => o.trim()),
-            }
-          : null,
-      }),
-    });
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: "\uC790\uC720",
+          title,
+          content,
+          isNotice: isAdmin ? isNotice : false,
+          images,
+          poll: poll
+            ? {
+                question: poll.question,
+                options: poll.options.filter((option) => option.trim()),
+              }
+            : null,
+        }),
+      });
 
-    const data = await res.json();
-    if (res.ok) router.push("/");
-    else setError(data.error || "작성 실패");
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "\uC791\uC131 \uC2E4\uD328");
+      } else {
+        router.push("/");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  const canSubmit = title.trim() && content.trim() && !uploading;
+  const canSubmit = title.trim() && content.trim() && !uploading && !submitting;
 
   return (
     <div
@@ -217,15 +228,13 @@ export default function WritePage() {
         transform: "translateX(-50%)",
         width: "100%",
         maxWidth: "480px",
-        height:
-          "100dvh" /* dvh = 브라우저 바 제외한 실제 보이는 높이 — iOS Safari 대응 */,
+        height: "100dvh",
         display: "flex",
         flexDirection: "column",
         background: "#fff",
         zIndex: 200,
       }}
     >
-      {/* 상단 헤더 */}
       <div
         style={{
           display: "flex",
@@ -237,64 +246,38 @@ export default function WritePage() {
           flexShrink: 0,
         }}
       >
-        <button
-          onClick={() => router.back()}
-          style={{
-            background: "none",
-            border: "none",
-            padding: "4px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="24"
-            height="24"
-            fill="none"
-            stroke="#333"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
+        <button onClick={() => router.back()} style={{ background: "none", border: "none", padding: 4 }}>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
-        <span style={{ fontSize: "17px", fontWeight: 700, color: "#333" }}>
-          글 쓰기
+
+        <span style={{ fontSize: 17, fontWeight: 700, color: "#333" }}>
+          {"\uAE00 \uC4F0\uAE30"}
         </span>
+
         <button
           onClick={handleSubmit}
           disabled={!canSubmit}
           style={{
             background: "none",
             border: "none",
-            fontSize: "15px",
+            fontSize: 15,
             color: canSubmit ? "#1b4797" : "#ccc",
-            fontWeight: 600,
-            cursor: canSubmit ? "pointer" : "default",
+            fontWeight: 700,
           }}
         >
-          완료
+          {submitting ? "\uB4F1\uB85D \uC911..." : "\uC644\uB8CC"}
         </button>
       </div>
 
       {error && (
-        <div
-          style={{
-            padding: "10px 16px",
-            background: "#fff5f5",
-            color: "#e53e3e",
-            fontSize: "13px",
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ padding: "10px 16px", background: "#fff5f5", color: "#e53e3e", fontSize: 13 }}>
           {error}
         </div>
       )}
 
-      {/* 스크롤 영역 */}
       <div
         ref={scrollRef}
         style={{
@@ -305,427 +288,176 @@ export default function WritePage() {
         }}
       >
         {isAdmin && (
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "12px 16px",
-              borderBottom: "1px solid #f0f0f0",
-              fontSize: "14px",
-              color: "#333",
-            }}
-          >
+          <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderBottom: "1px solid #f0f0f0" }}>
             <input
               type="checkbox"
               checked={isNotice}
-              onChange={(e) => setIsNotice(e.target.checked)}
-              style={{ width: "18px", height: "18px", accentColor: "#1b4797" }}
+              onChange={(event) => setIsNotice(event.target.checked)}
+              style={{ width: 18, height: 18, accentColor: "#1b4797" }}
             />
-            공지로 등록
+            <span style={{ fontSize: 14, color: "#333" }}>
+              {"\uACF5\uC9C0\uB85C \uB4F1\uB85D"}
+            </span>
           </label>
         )}
 
-        {/* 제목 */}
         <input
           type="text"
-          placeholder="제목을 입력해주세요."
+          placeholder={"\uC81C\uBAA9\uC744 \uC785\uB825\uD558\uC138\uC694."}
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(event) => setTitle(event.target.value)}
           style={{
-            display: "block",
             width: "100%",
             padding: "18px 16px 14px",
             border: "none",
             borderBottom: "1px solid #f0f0f0",
-            fontSize: "18px",
-            fontWeight: 600,
+            fontSize: 18,
+            fontWeight: 700,
             color: "#1a1a1a",
             outline: "none",
-            background: "transparent",
-            boxSizing: "border-box",
           }}
         />
 
-        {/* 내용 */}
         <textarea
           ref={textareaRef}
-          placeholder={
-            "염광사 회원님들과 자유롭게 얘기해보세요.\n#매출고민 #직원관리 #운영노하우"
-          }
+          placeholder={"\uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694.\n#\uB9E4\uCD9C #\uC9C1\uC6D0\uAD00\uB9AC #\uC6B4\uC601"}
           value={content}
           onChange={handleContentChange}
           style={{
-            display: "block",
             width: "100%",
-            padding: "16px",
+            padding: 16,
             border: "none",
-            fontSize: "15px",
+            fontSize: 15,
             lineHeight: 1.7,
             color: "#333",
             outline: "none",
             resize: "none",
             overflow: "hidden",
-            background: "transparent",
-            minHeight: "200px",
-            boxSizing: "border-box",
+            minHeight: 200,
           }}
         />
 
-        {/* 업로드된 이미지 미리보기 */}
         {images.length > 0 && (
-          <div
-            style={{
-              padding: "0 16px 16px",
-              display: "flex",
-              gap: "8px",
-              flexWrap: "wrap",
-            }}
-          >
-            {images.map((url, idx) => (
-              <div
-                key={idx}
-                style={{
-                  position: "relative",
-                  width: "100px",
-                  height: "100px",
-                }}
-              >
+          <div style={{ padding: "0 16px 16px", display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {images.map((url, index) => (
+              <div key={index} style={{ position: "relative", width: 100, height: 100 }}>
                 <img
                   src={url}
                   alt=""
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                    border: "1px solid #f0f0f0",
-                  }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8, border: "1px solid #f0f0f0" }}
                 />
-                {/* 이미지 삭제 버튼 */}
                 <button
-                  onClick={() => removeImage(idx)}
+                  onClick={() => removeImage(index)}
                   style={{
                     position: "absolute",
-                    top: "4px",
-                    right: "4px",
-                    background: "rgba(0,0,0,0.5)",
-                    border: "none",
+                    top: 4,
+                    right: 4,
+                    width: 22,
+                    height: 22,
                     borderRadius: "50%",
-                    width: "22px",
-                    height: "22px",
+                    border: "none",
+                    background: "rgba(0,0,0,0.5)",
                     color: "#fff",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    fontSize: 12,
                   }}
                 >
-                  ✕
+                  {"\u2715"}
                 </button>
               </div>
             ))}
-            {/* 업로드 중 스피너 */}
-            {uploading && (
-              <div
-                style={{
-                  width: "100px",
-                  height: "100px",
-                  borderRadius: "8px",
-                  background: "#f5f5f5",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "12px",
-                  color: "#999",
-                }}
-              >
-                업로드 중...
-              </div>
-            )}
           </div>
         )}
 
-        {/* 투표 작성 영역 */}
         {poll && (
-          <div
-            style={{
-              margin: "0 16px 16px",
-              borderRadius: "12px",
-              border: "1px solid #e8edf5",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                padding: "12px 16px",
-                background: "#f0f4ff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <span
-                style={{ fontSize: "14px", fontWeight: 700, color: "#1b4797" }}
-              >
-                📊 투표
+          <div style={{ margin: "0 16px 16px", border: "1px solid #e8edf5", borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ padding: "12px 16px", background: "#f0f4ff", display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#1b4797", fontSize: 14, fontWeight: 700 }}>
+                {"\uD22C\uD45C"}
               </span>
-              <button
-                onClick={() => setPoll(null)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#999",
-                  fontSize: "13px",
-                  cursor: "pointer",
-                }}
-              >
-                삭제
+              <button onClick={() => setPoll(null)} style={{ border: "none", background: "none", color: "#999" }}>
+                {"\uC0AD\uC81C"}
               </button>
             </div>
-            <div
-              style={{
-                padding: "12px 16px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
-            >
-              {/* 투표 질문 */}
+
+            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
               <input
                 type="text"
-                placeholder="투표 질문을 입력하세요"
+                placeholder={"\uD22C\uD45C \uC9C8\uBB38"}
                 value={poll.question}
-                onChange={(e) =>
-                  setPoll((prev) => ({ ...prev, question: e.target.value }))
-                }
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
+                onChange={(event) => setPoll((prev) => ({ ...prev, question: event.target.value }))}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 14, outline: "none" }}
               />
-              {/* 투표 항목들 */}
-              {poll.options.map((opt, idx) => (
-                <div
-                  key={idx}
-                  style={{ display: "flex", gap: "8px", alignItems: "center" }}
-                >
-                  <span
-                    style={{
-                      fontSize: "13px",
-                      color: "#999",
-                      width: "20px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {idx + 1}
-                  </span>
+
+              {poll.options.map((option, index) => (
+                <div key={index} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 20, fontSize: 13, color: "#999" }}>{index + 1}</span>
                   <input
                     type="text"
-                    placeholder={`항목 ${idx + 1}`}
-                    value={opt}
-                    onChange={(e) => updatePollOption(idx, e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: "9px 12px",
-                      border: "1px solid #e0e0e0",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
+                    placeholder={`\uD56D\uBAA9 ${index + 1}`}
+                    value={option}
+                    onChange={(event) => updatePollOption(index, event.target.value)}
+                    style={{ flex: 1, padding: "9px 12px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 14, outline: "none" }}
                   />
                   {poll.options.length > 2 && (
-                    <button
-                      onClick={() => removePollOption(idx)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#ccc",
-                        fontSize: "18px",
-                        cursor: "pointer",
-                        padding: "0 4px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      ×
+                    <button onClick={() => removePollOption(index)} style={{ border: "none", background: "none", color: "#bbb" }}>
+                      {"\u2715"}
                     </button>
                   )}
                 </div>
               ))}
-              {/* 항목 추가 버튼 (최대 4개) */}
+
               {poll.options.length < 4 && (
                 <button
                   onClick={addPollOption}
-                  style={{
-                    padding: "9px",
-                    border: "1px dashed #c0cde0",
-                    borderRadius: "8px",
-                    background: "none",
-                    fontSize: "13px",
-                    color: "#1b4797",
-                    cursor: "pointer",
-                  }}
+                  style={{ border: "1px dashed #c0cde0", background: "none", borderRadius: 8, padding: 9, color: "#1b4797", fontSize: 13 }}
                 >
-                  + 항목 추가
+                  {"+ \uD56D\uBAA9 \uCD94\uAC00"}
                 </button>
               )}
             </div>
           </div>
         )}
-
-        {/* 이용규칙 안내 */}
-        <div style={{ padding: "12px 16px 32px" }}>
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px" }}>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#bbb",
-                lineHeight: 1.8,
-                marginBottom: "10px",
-              }}
-            >
-              라운지 이용규칙에 의해 정해진 게시물 게재 제한을 위반할 경우,
-              게시물이 삭제되고 서비스 이용이 일정 기간 제한될 수 있습니다.
-            </p>
-            <p style={{ fontSize: "11px", color: "#ccc", lineHeight: 1.7 }}>
-              · 광고/홍보 목적의 게시물 작성 금지
-              <br />
-              · 정치·사회적 의견, 주장을 드러내는 행위 금지
-              <br />
-              · 욕설, 비하, 차별, 혐오, 음란물 등 불쾌감을 주는 행위 금지
-              <br />
-              · 타인의 권리를 침해하는 행위 금지
-              <br />· 불법촬영물 유통 시 관련 법률에 의거 처벌
-            </p>
-            <button
-              onClick={() => router.push("/rules")}
-              style={{
-                background: "none",
-                border: "none",
-                padding: "0",
-                fontSize: "11px",
-                color: "#bbb",
-                cursor: "pointer",
-                marginTop: "8px",
-                textDecoration: "underline",
-              }}
-            >
-              라운지 이용규칙 전체 보기
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* 하단 툴바 — 이미지 첨부 / 투표 추가 버튼 */}
       <div
         style={{
-          flexShrink: 0,
           borderTop: "1px solid #f0f0f0",
           padding: "10px 16px",
-          paddingBottom:
-            "max(10px, env(safe-area-inset-bottom))" /* 홈 인디케이터 영역 확보 */,
+          paddingBottom: "max(10px, env(safe-area-inset-bottom))",
           display: "flex",
           alignItems: "center",
-          gap: "16px",
+          gap: 14,
           background: "#fff",
         }}
       >
-        {/* 숨겨진 파일 입력 — 버튼 클릭 시 열림 */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageSelect}
-          style={{ display: "none" }}
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} style={{ display: "none" }} />
 
-        {/* 이미지 첨부 버튼 */}
         <button
-          onClick={() =>
-            !uploading && images.length < 4 && fileInputRef.current.click()
-          }
-          style={{
-            background: "none",
-            border: "none",
-            padding: "6px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            color: images.length >= 4 ? "#ccc" : "#555",
+          onClick={() => {
+            if (!uploading && images.length < 4) fileInputRef.current?.click();
           }}
-          title="이미지 첨부 (최대 4장)"
+          style={{ border: "none", background: "none", color: images.length >= 4 ? "#ccc" : "#555", display: "flex", alignItems: "center", gap: 4 }}
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <polyline points="21 15 16 10 5 21" />
           </svg>
-          {images.length > 0 && (
-            <span
-              style={{ fontSize: "12px", color: "#1b4797", fontWeight: 600 }}
-            >
-              {images.length}/4
-            </span>
-          )}
+          {images.length > 0 && <span style={{ color: "#1b4797", fontSize: 12, fontWeight: 700 }}>{`${images.length}/4`}</span>}
         </button>
 
-        {/* 투표 추가 버튼 — 투표용지/체크리스트 아이콘 */}
         <button
           onClick={() => !poll && setPoll({ question: "", options: ["", ""] })}
-          style={{
-            background: "none",
-            border: "none",
-            padding: "6px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            color: poll ? "#1b4797" : "#555",
-          }}
-          title="투표 추가"
+          style={{ border: "none", background: "none", color: poll ? "#1b4797" : "#555", display: "flex", alignItems: "center", gap: 4 }}
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="24"
-            height="24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 11l3 3L22 4" />
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
           </svg>
-          {poll && (
-            <span
-              style={{ fontSize: "12px", color: "#1b4797", fontWeight: 600 }}
-            >
-              투표
-            </span>
-          )}
+          {poll && <span style={{ color: "#1b4797", fontSize: 12, fontWeight: 700 }}>{"\uD22C\uD45C"}</span>}
         </button>
 
-        {uploading && (
-          <span style={{ fontSize: "12px", color: "#999", marginLeft: "4px" }}>
-            업로드 중...
-          </span>
-        )}
+        {uploading && <span style={{ fontSize: 12, color: "#999" }}>{"\uC5C5\uB85C\uB4DC \uC911..."}</span>}
       </div>
     </div>
   );

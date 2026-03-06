@@ -172,8 +172,22 @@ export default function Home() {
       const url = "/api/posts?page=" + p + "&sort=" + s + "&t=" + Date.now();
       const res = await fetch(url);
       const data = await res.json();
-      if (reset) setPosts(data.posts || []);
-      else setPosts((prev) => [...prev, ...(data.posts || [])]);
+      if (reset) {
+        setPosts(data.posts || []);
+      } else {
+        setPosts((prev) => {
+          const incoming = data.posts || [];
+          const merged = [...prev, ...incoming];
+          const deduped = [];
+          const seen = new Set();
+          for (const item of merged) {
+            if (!item || seen.has(item.id)) continue;
+            seen.add(item.id);
+            deduped.push(item);
+          }
+          return deduped;
+        });
+      }
       setHasMore((data.posts || []).length >= data.pageSize);
     } catch (err) {
       console.error(err);

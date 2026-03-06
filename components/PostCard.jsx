@@ -17,7 +17,7 @@ function timeAgo(dateString) {
 }
 
 const CommentIcon = ({ color = "#42bcc4" }) => (
-  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </svg>
 );
@@ -33,7 +33,7 @@ export default function PostCard({ post }) {
       style={{
         borderBottom: "1px solid #ececec",
         background: "#fff",
-        padding: "16px",
+        padding: "14px 16px",
         cursor: "pointer",
       }}
     >
@@ -64,12 +64,12 @@ export default function PostCard({ post }) {
 
           <div
             style={{
-              fontSize: "22px",
-              lineHeight: 1.28,
+              fontSize: "16px",
+              lineHeight: 1.3,
               fontWeight: 800,
               color: "#2b2f36",
-              marginBottom: "6px",
-              letterSpacing: "-0.2px",
+              marginBottom: "4px",
+              letterSpacing: "-0.1px",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -80,14 +80,14 @@ export default function PostCard({ post }) {
 
           <div
             style={{
-              fontSize: "18px",
-              lineHeight: 1.35,
+              fontSize: "13px",
+              lineHeight: 1.4,
               color: "#3f434b",
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
-              marginBottom: "10px",
+              marginBottom: "8px",
               wordBreak: "break-word",
             }}
           >
@@ -98,9 +98,9 @@ export default function PostCard({ post }) {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
               color: "#b0b0b0",
-              fontSize: "16px",
+              fontSize: "12px",
               fontWeight: 500,
             }}
           >
@@ -110,7 +110,7 @@ export default function PostCard({ post }) {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "5px",
+                    gap: "4px",
                     color: "#42bcc4",
                     fontWeight: 600,
                   }}
@@ -132,9 +132,9 @@ export default function PostCard({ post }) {
             src={post.thumbnailUrl}
             alt=""
             style={{
-              width: "96px",
-              height: "96px",
-              borderRadius: "10px",
+              width: "84px",
+              height: "84px",
+              borderRadius: "9px",
               objectFit: "cover",
               border: "1px solid #ebeef2",
               flexShrink: 0,
