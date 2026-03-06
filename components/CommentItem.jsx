@@ -65,6 +65,8 @@ export default function CommentItem({
   const [hydrated, setHydrated] = useState(false);
   const isAdmin = comment.author === ADMIN_NAME;
   const author = isAdmin ? ADMIN_NAME : ANON_NAME;
+  const interactionDisabled = !!comment.pending;
+  const likeDisabled = !!comment.pending || !!comment.pendingLike;
 
   useEffect(() => {
     setHydrated(true);
@@ -77,6 +79,7 @@ export default function CommentItem({
         background: comment.parentId ? "#fbfcff" : "#fff",
         borderBottom: "1px solid #f2f3f5",
         position: "relative",
+        opacity: comment.pending ? 0.72 : 1,
       }}
     >
       <div style={{ display: "flex", gap: 10 }}>
@@ -104,7 +107,11 @@ export default function CommentItem({
                 {comment.content}
               </div>
               <div style={{ fontSize: 12, color: "#9aa0aa" }}>
-                {hydrated ? formatCommentTime(comment.createdAt) : formatStableCommentTime(comment.createdAt)}
+                {comment.pending
+                  ? "\uC804\uC1A1 \uC911..."
+                  : hydrated
+                    ? formatCommentTime(comment.createdAt)
+                    : formatStableCommentTime(comment.createdAt)}
               </div>
             </div>
 
@@ -124,6 +131,7 @@ export default function CommentItem({
                 {!comment.parentId && (
                   <button
                     onClick={() => onReply(comment.id)}
+                    disabled={interactionDisabled}
                     style={{ border: "none", background: "none", display: "flex", padding: 0 }}
                     title="\uB2F5\uAE00"
                   >
@@ -132,6 +140,7 @@ export default function CommentItem({
                 )}
                 <button
                   onClick={() => onLike(comment.id)}
+                  disabled={likeDisabled}
                   style={{ border: "none", background: "none", display: "flex", padding: 0 }}
                   title="\uC88B\uC544\uC694"
                 >
@@ -139,6 +148,7 @@ export default function CommentItem({
                 </button>
                 <button
                   onClick={() => setShowMenu((prev) => !prev)}
+                  disabled={interactionDisabled}
                   style={{
                     border: "none",
                     background: "none",
@@ -193,6 +203,7 @@ export default function CommentItem({
 
           <div style={{ marginTop: 6, fontSize: 12, color: comment.alreadyLiked ? "#1b4797" : "#a4acb8", fontWeight: 600 }}>
             {`\uC88B\uC544\uC694 ${comment.likeCount || 0}`}
+            {comment.pendingLike ? " \u00B7 \uCC98\uB9AC \uC911" : ""}
           </div>
         </div>
       </div>

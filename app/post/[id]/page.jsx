@@ -97,6 +97,8 @@ export default function PostDetailPage() {
   const commentsAnchorRef = useRef(null);
   const commentIdempotencyKeyRef = useRef("");
   const initialSeedRef = useRef(getSeededPost(id));
+  const postLikePendingRef = useRef(false);
+  const commentLikePendingRef = useRef(new Set());
 
   const [post, setPost] = useState(initialSeedRef.current);
   const [comments, setComments] = useState([]);
@@ -120,6 +122,34 @@ export default function PostDetailPage() {
 
   function invalidateCommentKey() {
     commentIdempotencyKeyRef.current = "";
+  }
+
+  function updatePost(nextOrUpdater) {
+    setPost((prev) => {
+      const next =
+        typeof nextOrUpdater === "function" ? nextOrUpdater(prev) : nextOrUpdater;
+      if (next) {
+        savePostSeed(next);
+      }
+      return next;
+    });
+  }
+
+  function createOptimisticComment(content, parentId) {
+    return {
+      id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      postId: parseInt(id, 10),
+      userId: null,
+      parentId,
+      content,
+      author: ANON_NAME,
+      likeCount: 0,
+      alreadyLiked: false,
+      isAuthor: true,
+      isAdmin: false,
+      createdAt: new Date().toISOString(),
+      pending: true,
+    };
   }
 
   async function fetchPost({ keepVisible = false } = {}) {
@@ -188,18 +218,57 @@ export default function PostDetailPage() {
   }, [id]);
 
   async function handleLikePost() {
-    const response = await fetch("/api/posts/" + id + "/like", { method: "POST" });
-    if (!response.ok) return;
-    const data = await response.json();
-    setPost((prev) =>
+    if (!post || postLikePendingRef.current) return;
+
+    postLikePendingRef.current = true;
+    const prevLiked = !!post.alreadyLiked;
+    const prevLikeCount = Number(post.likeCount || 0);
+    const nextLiked = !prevLiked;
+    const optimisticLikeCount = Math.max(prevLikeCount + (nextLiked ? 1 : -1), 0);
+
+    updatePost((prev) =>
       prev
         ? {
             ...prev,
-            alreadyLiked: data.liked,
-            likeCount: data.likeCount,
+            alreadyLiked: nextLiked,
+            likeCount: optimisticLikeCount,
           }
         : prev,
     );
+
+    try {
+      const response = await fetch("/api/posts/" + id + "/like", { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "좋아요 처리에 실패했습니다.");
+      }
+
+      updatePost((prev) =>
+        prev
+          ? {
+              ...prev,
+              alreadyLiked: !!data.liked,
+              likeCount: Number.isFinite(Number(data.likeCount))
+                ? Number(data.likeCount)
+                : optimisticLikeCount,
+            }
+          : prev,
+      );
+    } catch (error) {
+      updatePost((prev) =>
+        prev
+          ? {
+              ...prev,
+              alreadyLiked: prevLiked,
+              likeCount: prevLikeCount,
+            }
+          : prev,
+      );
+      alert(error.message || "좋아요 처리 중 오류가 발생했습니다.");
+    } finally {
+      postLikePendingRef.current = false;
+    }
   }
 
   async function handleDeletePost() {
@@ -258,6 +327,23 @@ export default function PostDetailPage() {
     const normalizedComment = commentText.trim();
     if (!normalizedComment || commentSubmitting) return;
 
+    const parentCommentId = replyTo;
+    const optimisticComment = createOptimisticComment(
+      normalizedComment,
+      parentCommentId,
+    );
+
+    setComments((prev) => [...prev, optimisticComment]);
+    updatePost((prev) =>
+      prev
+        ? {
+            ...prev,
+            commentCount: Number(prev.commentCount || 0) + 1,
+          }
+        : prev,
+    );
+    setCommentText("");
+    setReplyTo(null);
     setCommentSubmitting(true);
     try {
       const idempotencyKey =
@@ -272,7 +358,7 @@ export default function PostDetailPage() {
         },
         body: JSON.stringify({
           postId: parseInt(id, 10),
-          parentId: replyTo,
+          parentId: parentCommentId,
           content: normalizedComment,
         }),
       });
@@ -282,23 +368,49 @@ export default function PostDetailPage() {
         if (response.status < 500) {
           invalidateCommentKey();
         }
+        setComments((prev) =>
+          prev.filter((comment) => comment.id !== optimisticComment.id),
+        );
+        updatePost((prev) =>
+          prev
+            ? {
+                ...prev,
+                commentCount: Math.max(Number(prev.commentCount || 0) - 1, 0),
+              }
+            : prev,
+        );
+        setCommentText(normalizedComment);
+        setReplyTo(parentCommentId);
         alert(data.error || "\uB313\uAE00 \uC791\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
         return;
       }
 
       invalidateCommentKey();
-      setCommentText("");
-      setReplyTo(null);
-      fetchComments();
-      setPost((prev) =>
+      setComments((prev) =>
+        prev.map((comment) =>
+          comment.id === optimisticComment.id
+            ? {
+                ...comment,
+                id: data.commentId || comment.id,
+                pending: false,
+              }
+            : comment,
+        ),
+      );
+    } catch (error) {
+      setComments((prev) =>
+        prev.filter((comment) => comment.id !== optimisticComment.id),
+      );
+      updatePost((prev) =>
         prev
           ? {
               ...prev,
-              commentCount: prev.commentCount + 1,
+              commentCount: Math.max(Number(prev.commentCount || 0) - 1, 0),
             }
           : prev,
       );
-    } catch (error) {
+      setCommentText(normalizedComment);
+      setReplyTo(parentCommentId);
       console.error(error);
       alert("\uB313\uAE00 \uC791\uC131 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
     } finally {
@@ -307,8 +419,73 @@ export default function PostDetailPage() {
   }
 
   async function handleCommentLike(commentId) {
-    const response = await fetch("/api/comments/" + commentId + "/like", { method: "POST" });
-    if (response.ok) fetchComments();
+    const targetComment = comments.find(
+      (comment) => String(comment.id) === String(commentId),
+    );
+    if (!targetComment || commentLikePendingRef.current.has(commentId)) return;
+
+    commentLikePendingRef.current.add(commentId);
+    const prevLiked = !!targetComment.alreadyLiked;
+    const prevLikeCount = Number(targetComment.likeCount || 0);
+    const nextLiked = !prevLiked;
+    const optimisticLikeCount = Math.max(
+      prevLikeCount + (nextLiked ? 1 : -1),
+      0,
+    );
+
+    setComments((prev) =>
+      prev.map((comment) =>
+        String(comment.id) === String(commentId)
+          ? {
+              ...comment,
+              alreadyLiked: nextLiked,
+              likeCount: optimisticLikeCount,
+              pendingLike: true,
+            }
+          : comment,
+      ),
+    );
+
+    try {
+      const response = await fetch("/api/comments/" + commentId + "/like", {
+        method: "POST",
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "좋아요 처리에 실패했습니다.");
+      }
+
+      setComments((prev) =>
+        prev.map((comment) =>
+          String(comment.id) === String(commentId)
+            ? {
+                ...comment,
+                alreadyLiked: !!data.liked,
+                likeCount:
+                  data.liked === nextLiked ? optimisticLikeCount : prevLikeCount,
+                pendingLike: false,
+              }
+            : comment,
+        ),
+      );
+    } catch (error) {
+      setComments((prev) =>
+        prev.map((comment) =>
+          String(comment.id) === String(commentId)
+            ? {
+                ...comment,
+                alreadyLiked: prevLiked,
+                likeCount: prevLikeCount,
+                pendingLike: false,
+              }
+            : comment,
+        ),
+      );
+      alert(error.message || "좋아요 처리 중 오류가 발생했습니다.");
+    } finally {
+      commentLikePendingRef.current.delete(commentId);
+    }
   }
 
   async function handleCommentReport(commentId) {
@@ -324,12 +501,26 @@ export default function PostDetailPage() {
     if (!confirm("\uB313\uAE00\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694?")) return;
     const response = await fetch("/api/comments?id=" + commentId, { method: "DELETE" });
     if (!response.ok) return;
-    fetchComments();
-    setPost((prev) =>
+    setComments((prev) =>
+      prev.filter(
+        (comment) =>
+          String(comment.id) !== String(commentId) &&
+          String(comment.parentId) !== String(commentId),
+      ),
+    );
+    updatePost((prev) =>
       prev
         ? {
             ...prev,
-            commentCount: Math.max(prev.commentCount - 1, 0),
+            commentCount: Math.max(
+              Number(prev.commentCount || 0) -
+                comments.filter(
+                  (comment) =>
+                    String(comment.id) === String(commentId) ||
+                    String(comment.parentId) === String(commentId),
+                ).length,
+              0,
+            ),
           }
         : prev,
     );
