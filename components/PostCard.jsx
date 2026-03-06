@@ -1,7 +1,8 @@
 "use client";
-import { memo, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildThumbnailUrl } from "../lib/image.js";
+import { savePostSeed } from "../lib/post-seed.js";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
 const ANON_NAME = "\uC775\uBA85";
@@ -27,13 +28,39 @@ const CommentIcon = ({ color = "#42bcc4" }) => (
 function PostCard({ post, onOpen }) {
   const router = useRouter();
   const [pressed, setPressed] = useState(false);
+  const warmedRef = useRef(false);
   const displayAuthor = post.author === ADMIN_NAME ? ADMIN_NAME : ANON_NAME;
   const hasComments = !post.isNotice && (post.commentCount || 0) > 0;
   const thumbnailUrl = post.thumbnailUrl
     ? buildThumbnailUrl(post.thumbnailUrl, 220, 220)
     : null;
 
+  const warmPostDetail = useCallback(() => {
+    if (warmedRef.current) return;
+    warmedRef.current = true;
+
+    savePostSeed(post);
+    router.prefetch("/post/" + post.id);
+
+    fetch("/api/posts/" + post.id, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((data) => {
+        if (data?.post) {
+          savePostSeed(data.post);
+        }
+      })
+      .catch(() => null);
+  }, [post, router]);
+
   function openPost() {
+    savePostSeed(post);
     if (typeof onOpen === "function") {
       onOpen(post.id);
       return;
@@ -46,7 +73,11 @@ function PostCard({ post, onOpen }) {
       data-testid="feed-post-card"
       data-post-id={post.id}
       onClick={openPost}
-      onPointerDown={() => setPressed(true)}
+      onPointerDown={() => {
+        setPressed(true);
+        warmPostDetail();
+      }}
+      onMouseEnter={warmPostDetail}
       onPointerUp={() => setPressed(false)}
       onPointerCancel={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}

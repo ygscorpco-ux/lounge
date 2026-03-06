@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import CommentItem from "../../../components/CommentItem.jsx";
 import { buildCloudinaryOptimizedUrl } from "../../../lib/image.js";
+import { readPostSeed, savePostSeed } from "../../../lib/post-seed.js";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
 const ANON_NAME = "\uC775\uBA85";
@@ -78,69 +79,15 @@ const BookmarkIcon = ({ active }) => (
   </svg>
 );
 
-function PostDetailSkeleton() {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "100%",
-        maxWidth: "480px",
-        height: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-        background: "#fff",
-        zIndex: 100,
-      }}
-    >
-      <div className="top-bar" style={{ flexShrink: 0, justifyContent: "space-between" }}>
-        <div className="detail-skeleton-box" style={{ width: 24, height: 24, borderRadius: 6 }} />
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-          <div className="detail-skeleton-box" style={{ width: 96, height: 16, borderRadius: 6 }} />
-          <div className="detail-skeleton-box" style={{ width: 72, height: 12, borderRadius: 6 }} />
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <div className="detail-skeleton-box" style={{ width: 24, height: 24, borderRadius: 6 }} />
-          <div className="detail-skeleton-box" style={{ width: 24, height: 24, borderRadius: 6 }} />
-        </div>
-      </div>
+function getSeededPost(postId) {
+  const seeded = readPostSeed(postId);
+  if (!seeded) return null;
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "18px 16px 120px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <div className="detail-skeleton-box" style={{ width: 46, height: 46, borderRadius: 12 }} />
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-            <div className="detail-skeleton-box" style={{ width: 78, height: 14, borderRadius: 6 }} />
-            <div className="detail-skeleton-box" style={{ width: 98, height: 12, borderRadius: 6 }} />
-          </div>
-        </div>
-
-        <div className="detail-skeleton-box" style={{ width: "56%", height: 26, borderRadius: 8, marginBottom: 10 }} />
-        <div className="detail-skeleton-box" style={{ width: "100%", height: 16, borderRadius: 6, marginBottom: 7 }} />
-        <div className="detail-skeleton-box" style={{ width: "89%", height: 16, borderRadius: 6, marginBottom: 7 }} />
-        <div className="detail-skeleton-box" style={{ width: "71%", height: 16, borderRadius: 6, marginBottom: 18 }} />
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: 8,
-            marginBottom: 18,
-          }}
-        >
-          <div className="detail-skeleton-box" style={{ height: 42, borderRadius: 10 }} />
-          <div className="detail-skeleton-box" style={{ height: 42, borderRadius: 10 }} />
-          <div className="detail-skeleton-box" style={{ height: 42, borderRadius: 10 }} />
-        </div>
-
-        <div className="detail-skeleton-box" style={{ width: "100%", height: 90, borderRadius: 12, marginBottom: 16 }} />
-        <div className="detail-skeleton-box" style={{ width: "48%", height: 15, borderRadius: 6, marginBottom: 8 }} />
-        <div className="detail-skeleton-box" style={{ width: "82%", height: 14, borderRadius: 6, marginBottom: 6 }} />
-        <div className="detail-skeleton-box" style={{ width: "68%", height: 14, borderRadius: 6 }} />
-      </div>
-    </div>
-  );
+  return {
+    ...seeded,
+    images: Array.isArray(seeded.images) ? seeded.images : [],
+    poll: seeded.poll || null,
+  };
 }
 
 export default function PostDetailPage() {
@@ -149,18 +96,20 @@ export default function PostDetailPage() {
   const searchParams = useSearchParams();
   const commentsAnchorRef = useRef(null);
   const commentIdempotencyKeyRef = useRef("");
+  const initialSeedRef = useRef(getSeededPost(id));
 
-  const [post, setPost] = useState(null);
+  const [post, setPost] = useState(initialSeedRef.current);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [replyTo, setReplyTo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialSeedRef.current);
   const [bookmarked, setBookmarked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [poll, setPoll] = useState(null);
+  const [poll, setPoll] = useState(initialSeedRef.current?.poll || null);
   const [voting, setVoting] = useState(false);
   const [adImageError, setAdImageError] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [entered, setEntered] = useState(false);
 
   function createIdempotencyKey() {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -173,7 +122,11 @@ export default function PostDetailPage() {
     commentIdempotencyKeyRef.current = "";
   }
 
-  async function fetchPost() {
+  async function fetchPost({ keepVisible = false } = {}) {
+    if (!keepVisible) {
+      setLoading(true);
+    }
+
     const response = await fetch("/api/posts/" + id);
     if (!response.ok) {
       setLoading(false);
@@ -182,6 +135,7 @@ export default function PostDetailPage() {
 
     const data = await response.json();
     setPost(data.post);
+    savePostSeed(data.post);
     setPoll(data.post?.poll || null);
     if (data.post?.isNotice) {
       setComments([]);
@@ -210,10 +164,27 @@ export default function PostDetailPage() {
   }
 
   useEffect(() => {
+    const seededPost = getSeededPost(id);
+    if (seededPost) {
+      setPost(seededPost);
+      setPoll(seededPost.poll || null);
+      setLoading(false);
+    } else {
+      setPost(null);
+      setPoll(null);
+      setLoading(true);
+    }
+
     invalidateCommentKey();
     setCommentSubmitting(false);
-    fetchPost();
+    fetchPost({ keepVisible: !!seededPost });
     checkBookmark();
+  }, [id]);
+
+  useEffect(() => {
+    setEntered(false);
+    const timer = window.requestAnimationFrame(() => setEntered(true));
+    return () => window.cancelAnimationFrame(timer);
   }, [id]);
 
   async function handleLikePost() {
@@ -424,7 +395,23 @@ export default function PostDetailPage() {
     router.back();
   }
 
-  if (loading) return <PostDetailSkeleton />;
+  if (loading && !post) {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "100%",
+          maxWidth: "480px",
+          height: "100dvh",
+          background: "#fff",
+          zIndex: 100,
+        }}
+      />
+    );
+  }
   if (!post) return <div className="empty">{"\uAC8C\uC2DC\uAE00\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>;
 
   const parentComments = comments.filter((comment) => !comment.parentId);
@@ -439,7 +426,7 @@ export default function PostDetailPage() {
         position: "fixed",
         top: 0,
         left: "50%",
-        transform: "translateX(-50%)",
+        transform: entered ? "translateX(-50%)" : "translateX(calc(-50% + 44px))",
         width: "100%",
         maxWidth: "480px",
         height: "100dvh",
@@ -447,6 +434,9 @@ export default function PostDetailPage() {
         flexDirection: "column",
         background: "#fff",
         zIndex: 100,
+        opacity: entered ? 1 : 0.98,
+        transition: "transform 230ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease",
+        willChange: "transform",
       }}
     >
       <div className="top-bar" style={{ flexShrink: 0, justifyContent: "space-between" }}>

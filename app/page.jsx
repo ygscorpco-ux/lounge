@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Header from "../components/Header.jsx";
 import PostCard from "../components/PostCard.jsx";
 import WriteButton from "../components/WriteButton.jsx";
+import { savePostSeed } from "../lib/post-seed.js";
 
 function QuickIcon({ type, accent }) {
   const stroke = accent || "#1b4797";
@@ -271,6 +272,15 @@ export default function Home() {
         console.error(error);
       }
     }
+
+    const sourcePost =
+      posts.find((item) => Number(item?.id) === Number(postId))
+      || noticePosts.find((item) => Number(item?.id) === Number(postId))
+      || bestPosts.find((item) => Number(item?.id) === Number(postId));
+    if (sourcePost) {
+      savePostSeed(sourcePost);
+    }
+
     router.push("/post/" + postId + "?from=home", { scroll: false });
   }, [router, posts, noticePosts, bestPosts, nextCursor, hasMore, sort]);
 
