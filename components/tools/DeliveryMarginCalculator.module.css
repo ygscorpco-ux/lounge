@@ -1101,7 +1101,7 @@
 }
 
 .compareSummaryPill,
-.compareBest,
+.compareRecommended,
 .compareCurrent,
 .analysisCached {
   display: inline-flex;
@@ -1114,11 +1114,15 @@
 }
 
 .compareSummaryPill,
-.compareBest,
 .compareCurrent,
 .analysisCached {
   background: rgba(27, 71, 151, 0.08);
   color: #1b4797;
+}
+
+.compareRecommended {
+  background: rgba(16, 185, 129, 0.12);
+  color: #0f9f6e;
 }
 
 .compareRow {
@@ -1129,6 +1133,11 @@
   padding: 12px;
   border-radius: 18px;
   border: 1px solid #e4ebf4;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
 }
 
 .compareRowBest {
@@ -1137,7 +1146,10 @@
 }
 
 .compareRowCurrent {
-  background: #fbfcfe;
+  background: linear-gradient(180deg, #f7fbff 0%, #eef5ff 100%);
+  border-color: rgba(27, 71, 151, 0.32);
+  box-shadow: 0 12px 22px rgba(27, 71, 151, 0.1);
+  transform: translateY(-2px);
 }
 
 .compareRowDefault {

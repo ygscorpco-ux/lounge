@@ -1098,9 +1098,6 @@ export default function DeliveryMarginCalculator() {
                       <div className={styles.compareTitle}>앱별 비교</div>
                       <div className={styles.compareDescription}>{compareHeadline}</div>
                     </div>
-                    {bestComparison ? (
-                      <span className={styles.compareSummaryPill}>최고 {bestComparison.name}</span>
-                    ) : null}
                   </div>
 
                   <div className={styles.compareList}>
@@ -1115,11 +1112,7 @@ export default function DeliveryMarginCalculator() {
                         <div
                           key={item.platformId}
                           className={`${styles.compareRow} ${
-                            index === 0
-                              ? styles.compareRowBest
-                              : active
-                                ? styles.compareRowCurrent
-                                : styles.compareRowDefault
+                            active ? styles.compareRowCurrent : styles.compareRowDefault
                           }`}
                         >
                           <div className={styles.compareRank}>{index + 1}</div>
@@ -1129,7 +1122,7 @@ export default function DeliveryMarginCalculator() {
                               <div className={styles.compareName}>{item.name}</div>
                               <div className={styles.compareStatusRow}>
                                 {index === 0 ? (
-                                  <span className={styles.compareBest}>가장 유리</span>
+                                  <span className={styles.compareRecommended}>추천</span>
                                 ) : null}
                                 {active ? (
                                   <span className={styles.compareCurrent}>현재 선택</span>
