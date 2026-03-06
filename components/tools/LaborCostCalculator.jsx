@@ -343,7 +343,7 @@ export default function LaborCostCalculator() {
   const [selectedDays, setSelectedDays] = useState(['월', '화', '수', '목', '금']);
   const [employmentType, setEmploymentType] = useState('regular');
   const [insuranceOn, setInsuranceOn] = useState(true);
-  const [tax33On, setTax33On] = useState(false); // 단기·일용직 3.3% 원천징수
+  const [tax33On, setTax33On] = useState(false); // 3.3% 원천징수
   const [wageWarn, setWageWarn] = useState(false);
   const [wageShake, setWageShake] = useState(false);
   const [resultTab, setResultTab] = useState('worker'); // 'worker' | 'boss'
@@ -352,7 +352,7 @@ export default function LaborCostCalculator() {
   const wage = parseFloat(String(hourlyWage).replace(/,/g, '')) || 0;
   const weeklyHours = hoursPerDay * selectedDays.length;
   const hasWeeklyAllowance = weeklyHours >= 15;
-  const tax33Disabled = employmentType !== 'regular' || insuranceOn;
+  const tax33Disabled = insuranceOn;
 
   // 주휴시간: 주 소정근로시간 / 40 × 8 (최대 8시간)
   const weeklyAllowanceHours = hasWeeklyAllowance
@@ -403,6 +403,13 @@ export default function LaborCostCalculator() {
     setSelectedDays(prev =>
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     );
+  }
+
+  function handleInsuranceToggle(nextValue) {
+    setInsuranceOn(nextValue);
+    if (nextValue) {
+      setTax33On(false);
+    }
   }
 
   useEffect(() => {
@@ -670,7 +677,7 @@ export default function LaborCostCalculator() {
         <div style={{ marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-gray-700)' }}>4대보험 적용</span>
-            <Toggle on={insuranceOn} onChange={setInsuranceOn} />
+            <Toggle on={insuranceOn} onChange={handleInsuranceToggle} />
           </div>
           {insuranceOn && (
             <div style={{
