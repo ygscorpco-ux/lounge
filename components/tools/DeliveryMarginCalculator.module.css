@@ -904,63 +904,6 @@
   letter-spacing: -0.03em;
 }
 
-.resultSignalBar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.resultSignalBadge,
-.resultSignalPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 0 11px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(218, 228, 240, 0.94);
-  color: #516075;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.resultSignalIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.75);
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.resultSignalPositive .resultSignalBadge {
-  background: rgba(27, 71, 151, 0.1);
-  border-color: rgba(27, 71, 151, 0.12);
-  color: #1b4797;
-}
-
-.resultSignalNeutral .resultSignalBadge {
-  background: #f4f6fa;
-  border-color: #e4eaf2;
-  color: #536277;
-}
-
-.resultSignalCaution .resultSignalBadge {
-  background: #fff7ea;
-  border-color: rgba(231, 188, 94, 0.24);
-  color: #9a630f;
-}
-
-.resultSignalWarning .resultSignalBadge {
-  background: #fff1ef;
-  border-color: rgba(217, 85, 77, 0.16);
-  color: #b74b3f;
-}
-
 .summaryPanel {
   margin-top: 12px;
 }

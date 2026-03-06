@@ -1022,14 +1022,6 @@ export default function DeliveryMarginCalculator() {
                   </div>
                 </div>
 
-                <div className={`${styles.resultSignalBar} ${resultTone?.signalClass || ""}`}>
-                  <span className={styles.resultSignalBadge}>
-                    <span className={styles.resultSignalIcon}>{resultTone?.icon}</span>
-                    {resultTone?.label}
-                  </span>
-                  <span className={styles.resultSignalPill}>{selectedPlatformName}</span>
-                  <span className={styles.resultSignalPill}>총 수수료 {formatPercent(totalFeeRate)}</span>
-                </div>
               </div>
 
               <div className={styles.summaryPanel}>
