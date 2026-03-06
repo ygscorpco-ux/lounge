@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Header from "../components/Header.jsx";
@@ -84,7 +84,7 @@ export default function Home() {
     <div>
       <Header />
 
-      {/* ??ш끽維뽳쭩????嫄?*/}
+      {/* ????썹땟戮녹?????椰?*/}
       <div
         className="banner-scroll"
         style={{
@@ -116,15 +116,15 @@ export default function Home() {
               fontWeight: 500,
             }}
           >
-            ?????곷쿀?????
+            ?????怨룹??????
           </div>
           <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.3 }}>
-            ??嚥싲갭큔?琉븐쭍??노돗???????????ㅻ쿋????β뼯援????
+            ???μ떜媛?걫?筌뚮툙彛???몃룛????????????살퓢????棺堉?뤃????
             <br />
-            ????蹂κ텠??㉱??癲ル슢?????
+            ????癰궽블뀪???굿???꿔꺂??????
           </div>
           <div style={{ fontSize: "11px", opacity: 0.6, marginTop: "10px" }}>
-            ??????棺堉?댆???????거?????????욱룕?????????
+            ??????汝뷴젆?????????嫄??????????깅짆?????????
           </div>
         </div>
         <div
@@ -147,16 +147,16 @@ export default function Home() {
           >
             ??????          </div>
           <div style={{ fontSize: "16px", fontWeight: 700, lineHeight: 1.3 }}>
-            ?嶺??影袁る젺????????맜? ??壤굿??딇???
+            ?癲??壤굿熬곥굥?????????留? ??鶯ㅺ동???????
             <br />
-            ???????濾????????
+            ???????癲????????
           </div>
           <div style={{ fontSize: "11px", opacity: 0.6, marginTop: "10px" }}>
-            ?轅붽틓???????????살퓢癲??1??μ떜媛?걫????ル쐞????癲ル슢캉?????          </div>
+            ?饔낅떽?????????????댄뱼???1??關?쒎첎?嫄?????レ맄?????꿔꺂??틝?????          </div>
         </div>
       </div>
 
-      {/* ?熬곣뫖利??濚욌꼬?녹럶嶺??????????????熬곣뫗逾???嚥▲꺂???????썹땟?㈑??*/}
+      {/* ??ш끽維뽳쭩??嚥싳쉶瑗??밸윾癲???????????????ш끽維쀩????β뼯爰????????밸븶??뫢??*/}
       <div style={{ padding: "6px 12px 16px" }}>
         <div
           style={{
@@ -164,7 +164,7 @@ export default function Home() {
             borderRadius: "18px",
             border: "1px solid #e9ecef",
             padding: "14px 10px 12px",
-            boxShadow: "0 4px 14px rgba(27,71,151,0.10)",
+            boxShadow: "0 4px 14px rgba(27,71,151,0.08)",
           }}
         >
           <div
@@ -176,39 +176,44 @@ export default function Home() {
           >
             {[
               {
-                label: "YG Home",
-                url: "http://www.염광사.com",
+                label: "\uC5FC\uAD11\uC0AC \uD648",
+                url: "http://www.?쇨킅??com",
                 external: true,
                 emoji: "\uD83C\uDFE0",
-                bg: "linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%)",
+                bg: "#eef3ff",
+                icon: "#ef4444",
               },
               {
-                label: "Margin",
+                label: "\uB9C8\uC9C4\uACC4\uC0B0\uAE30",
                 url: "/tools/delivery-margin",
                 external: false,
                 emoji: "\uD83D\uDEF5",
-                bg: "linear-gradient(135deg,#fee2e2 0%,#fecaca 100%)",
+                bg: "#fff3ea",
+                icon: "#f97316",
               },
               {
-                label: "Labor",
+                label: "\uC778\uAC74\uBE44\uACC4\uC0B0",
                 url: "/tools/labor-cost",
                 external: false,
                 emoji: "\uD83D\uDCBC",
-                bg: "linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%)",
+                bg: "#eefbf2",
+                icon: "#10b981",
               },
               {
-                label: "Subsidy",
+                label: "\uC9C0\uC6D0\uAE08\uC77C\uC815",
                 url: "/tools/subsidy-calendar",
                 external: false,
                 emoji: "\uD83D\uDCC5",
-                bg: "linear-gradient(135deg,#fef3c7 0%,#fde68a 100%)",
+                bg: "#fff8e8",
+                icon: "#eab308",
               },
               {
-                label: "Scheduler",
+                label: "\uC54C\uBC14\uAD00\uB9AC",
                 url: "/tools/worker-scheduler",
                 external: false,
                 emoji: "\uD83D\uDCCB",
-                bg: "linear-gradient(135deg,#ede9fe 0%,#ddd6fe 100%)",
+                bg: "#f3f0ff",
+                icon: "#8b5cf6",
               },
             ].map((item, i) => (
               <a
@@ -229,28 +234,34 @@ export default function Home() {
                   style={{
                     width: "54px",
                     height: "54px",
-                    borderRadius: "16px",
+                    borderRadius: "50%",
                     background: item.bg,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.22)",
-                    border: "2px solid rgba(27,71,151,0.65)",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.12)",
+                    border: "1px solid #d9e1f1",
                     position: "relative",
                   }}
                 >
-                  <span style={{ fontSize: "24px", lineHeight: 1 }}>
+                  <span
+                    style={{
+                      fontSize: "24px",
+                      lineHeight: 1,
+                      filter: "saturate(1.15)",
+                    }}
+                  >
                     {item.emoji}
                   </span>
                   <span
                     style={{
                       position: "absolute",
-                      right: "-2px",
-                      bottom: "-2px",
-                      width: "12px",
-                      height: "12px",
+                      right: "1px",
+                      bottom: "1px",
+                      width: "10px",
+                      height: "10px",
                       borderRadius: "50%",
-                      background: "#1b4797",
+                      background: item.icon,
                       border: "2px solid #fff",
                     }}
                   />
@@ -273,7 +284,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ?嶺??影袁る젺???*/}
+      {/* ?癲??壤굿熬곥굥????*/}
       {bestPosts.length > 0 && (
         <>
           <div className="section-divider" />
@@ -286,7 +297,7 @@ export default function Home() {
                 marginBottom: "12px",
               }}
             >
-              ????????ㅻ쿋?????꿔꺂??恝????????맜?
+              ?????????살퓢?????轅붽틓???????????留?
             </div>
             <div
               className="best-scroll"
@@ -355,7 +366,7 @@ export default function Home() {
 
       <div className="section-divider" />
 
-      {/* ??꿔꺂???影??*/}
+      {/* ??轅붽틓???壤굿??*/}
       <div
         style={{
           display: "flex",
@@ -366,30 +377,31 @@ export default function Home() {
         }}
       >
         <span style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a1a" }}>
-          寃뚯떆湲
+          野껊슣?녷묾?
         </span>
         <select
           className="sort-select"
           value={sort}
           onChange={(e) => setSort(e.target.value)}
         >
-          <option value="latest">최신순</option>
-          <option value="likes">추천순</option>
-          <option value="comments">댓글순</option>
+          <option value="latest">Latest</option>
+          <option value="likes">Most Liked</option>
+          <option value="comments">Most Commented</option>
         </select>
       </div>
 
-      {/* ?????맜? ?轅붽틓??熬곥끇釉띄춯誘좊???*/}
+      {/* ?????留? ?饔낅떽????ш낄?뉔뇡?꾩땡沃섏쥓???*/}
       <div>
         {posts.map((post) => (
           <PostCard key={post.id} post={post} />
         ))}
-        {loading && <div className="loading">?黎??筌??裕ㅒ???..</div>}
+        {loading && <div className="loading">?癲??嶺??獒뺛뀙????..</div>}
         {!loading && posts.length === 0 && (
-          <div className="empty">?????밸븶??볧돯??????맜????????욱룏???????낆젵</div>
+          <div className="empty">?????諛몃마??蹂㏓룾??????留?????????깅즽????????놁졄</div>
         )}
       </div>
       <WriteButton />
     </div>
   );
 }
+
