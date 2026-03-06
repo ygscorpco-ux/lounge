@@ -99,8 +99,10 @@ function getTierTotalRate(tier) {
 
 function getTierInfoItems(tier) {
   if (!tier) return [];
+  const badge = getTierBadge(tier);
 
   return [
+    ...(badge ? [{ label: "적용 조건", value: badge }] : []),
     { label: "중개 수수료", value: formatPercent(Number(tier.fee_rate || 0)) },
     { label: "결제 수수료", value: formatPercent(Number(tier.payment_fee_rate || 0)) },
     { label: "부가세", value: tier.vat_included ? "포함" : "별도" },
@@ -838,7 +840,6 @@ export default function DeliveryMarginCalculator() {
             <div className={styles.tierList}>
               {(selectedPlatform.tiers || []).map((tier) => {
                 const active = String(tier.id) === String(selectedTierId);
-                const badge = getTierBadge(tier);
                 const infoOpen = openTierInfoId === String(tier.id);
 
                 return (
@@ -849,17 +850,12 @@ export default function DeliveryMarginCalculator() {
                       onClick={() => setSelectedTierId(String(tier.id))}
                     >
                       <div className={styles.tierTop}>
-                        <div className={styles.tierHeadCompact}>
-                          <div className={styles.tierTitle}>{getTierTitle(tier)}</div>
-                          {badge ? <span className={styles.tierBadge}>{badge}</span> : null}
-                        </div>
-
+                        <div className={styles.tierTitle}>{getTierTitle(tier)}</div>
                         <div className={styles.tierPrimaryMeta}>
-                          총 수수료 {formatPercent(getTierTotalRate(tier))}
-                        </div>
-
-                        <div className={styles.tierSecondaryMeta}>
-                          {tier.vat_included ? "부가세 포함" : "부가세 별도"}
+                          <span className={styles.tierPrimaryLabel}>총 수수료</span>
+                          <strong className={styles.tierPrimaryValue}>
+                            {formatPercent(getTierTotalRate(tier))}
+                          </strong>
                         </div>
                       </div>
                     </button>
@@ -877,7 +873,7 @@ export default function DeliveryMarginCalculator() {
                         );
                       }}
                     >
-                      !
+                      i
                     </button>
 
                     {infoOpen ? (
