@@ -71,15 +71,15 @@ function DdayBadge({ endDate, small = false }) {
 function getApplyStatus(subsidy) {
   const dday = getDday(subsidy.end_date);
 
-  if (dday < 0) {
-    return { label: "마감됨", color: "#64748b", bg: "#f1f5f9" };
-  }
-
   if (subsidy.apply_url || subsidy.url) {
-    return { label: "바로 신청 가능", color: "#1b4797", bg: "#eef5ff" };
+    return null;
   }
 
-  return { label: "공고 확인 필요", color: "#b45309", bg: "#fff7ed" };
+  if (dday < 0) {
+    return null;
+  }
+
+  return { label: "바로 신청 안됨", color: "#b45309", bg: "#fff7ed" };
 }
 
 // 달력 그리드 생성 (일~토 기준)
@@ -1729,18 +1729,20 @@ export default function SubsidyCalendar() {
                       >
                         {s.category}
                       </span>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          color: applyStatus.color,
-                          background: applyStatus.bg,
-                          padding: "3px 8px",
-                          borderRadius: "999px",
-                        }}
-                      >
-                        {applyStatus.label}
-                      </span>
+                      {applyStatus ? (
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            color: applyStatus.color,
+                            background: applyStatus.bg,
+                            padding: "3px 8px",
+                            borderRadius: "999px",
+                          }}
+                        >
+                          {applyStatus.label}
+                        </span>
+                      ) : null}
                     </div>
                     <div
                       style={{
@@ -1805,26 +1807,6 @@ export default function SubsidyCalendar() {
                     >
                       {s.target || "대상 조건은 공고문에서 확인하세요"}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedSubsidyId((prev) => (prev === s.id ? null : s.id))
-                      }
-                      style={{
-                        flexShrink: 0,
-                        height: "28px",
-                        padding: "0 10px",
-                        borderRadius: "999px",
-                        border: "1px solid #dbe5f1",
-                        background: "#fff",
-                        color: "#475569",
-                        cursor: "pointer",
-                        fontSize: "11px",
-                        fontWeight: 800,
-                      }}
-                    >
-                      {expanded ? "접기" : "상세보기"}
-                    </button>
                   </div>
 
                   {s.amount && (
@@ -1891,71 +1873,97 @@ export default function SubsidyCalendar() {
                   <div
                     style={{
                       display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
                       gap: "8px",
                       marginTop: expanded ? "10px" : "9px",
                     }}
                   >
-                    {canApply ? (
-                      <a
-                        href={s.apply_url || s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          flex: 1,
-                          padding: "9px 12px",
-                          borderRadius: "10px",
-                          textAlign: "center",
-                          background: "var(--color-primary)",
-                          color: "#fff",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          textDecoration: "none",
-                          display: "block",
-                        }}
-                      >
-                        신청하기 ↗
-                      </a>
-                    ) : (
-                      <div
-                        style={{
-                          flex: 1,
-                          padding: "9px 12px",
-                          borderRadius: "10px",
-                          textAlign: "center",
-                          background: "var(--color-gray-100)",
-                          color: "var(--color-gray-500)",
-                          fontSize: "12px",
-                        }}
-                      >
-                        링크 없음
-                      </div>
-                    )}
-                    {/* 관리자 삭제 */}
-                    {user?.role === "admin" && (
-                      <button
-                        onClick={async () => {
-                          if (!confirm("삭제하시겠습니까?")) return;
-                          const delRes = await fetch(`/api/subsidy/${s.id}`, {
-                            method: "DELETE",
-                          });
-                          const delData = await delRes.json();
-                          if (delData.success) loadSubsidies();
-                          else alert(delData.error || "삭제에 실패했습니다");
-                        }}
-                        style={{
-                          padding: "9px 10px",
-                          borderRadius: "10px",
-                          border: "none",
-                          background: "#fff0f0",
-                          color: "var(--color-danger)",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        삭제
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedSubsidyId((prev) => (prev === s.id ? null : s.id))
+                      }
+                      style={{
+                        flexShrink: 0,
+                        height: "34px",
+                        padding: "0 12px",
+                        borderRadius: "10px",
+                        border: "1px solid #dbe5f1",
+                        background: "#fff",
+                        color: "#475569",
+                        cursor: "pointer",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                      }}
+                    >
+                      {expanded ? "접기" : "상세보기"}
+                    </button>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        gap: "8px",
+                        flex: 1,
+                      }}
+                    >
+                      {canApply ? (
+                        <a
+                          href={s.apply_url || s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            minWidth: "96px",
+                            height: "34px",
+                            padding: "0 14px",
+                            borderRadius: "10px",
+                            textAlign: "center",
+                            background: "var(--color-primary)",
+                            color: "#fff",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            textDecoration: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          신청하기 ↗
+                        </a>
+                      ) : null}
+
+                      {/* 관리자 삭제 */}
+                      {user?.role === "admin" && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm("삭제하시겠습니까?")) return;
+                            const delRes = await fetch(`/api/subsidy/${s.id}`, {
+                              method: "DELETE",
+                            });
+                            const delData = await delRes.json();
+                            if (delData.success) loadSubsidies();
+                            else alert(delData.error || "삭제에 실패했습니다");
+                          }}
+                          style={{
+                            height: "34px",
+                            padding: "0 10px",
+                            borderRadius: "10px",
+                            border: "none",
+                            background: "#fff0f0",
+                            color: "var(--color-danger)",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
