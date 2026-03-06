@@ -1,8 +1,17 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import DeliveryMarginCalculator from "../../../components/tools/DeliveryMarginCalculator.jsx";
+import ToolPageLoading from "../components/ToolPageLoading.jsx";
 import ToolHeader from "../../../components/tools/ToolHeader.jsx";
+
+const DeliveryMarginCalculator = dynamic(
+  () => import("../../../components/tools/DeliveryMarginCalculator.jsx"),
+  {
+    ssr: false,
+    loading: () => <ToolPageLoading />,
+  },
+);
 
 export default function DeliveryMarginPage() {
   const router = useRouter();

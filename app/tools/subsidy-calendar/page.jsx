@@ -1,7 +1,16 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import SubsidyCalendar from '../../../components/tools/SubsidyCalendar';
+import ToolPageLoading from '../components/ToolPageLoading.jsx';
 import ToolHeader from '../../../components/tools/ToolHeader.jsx';
+
+const SubsidyCalendar = dynamic(
+  () => import('../../../components/tools/SubsidyCalendar'),
+  {
+    ssr: false,
+    loading: () => <ToolPageLoading />,
+  },
+);
 
 export default function SubsidyCalendarPage() {
   const router = useRouter();

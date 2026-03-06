@@ -1,7 +1,16 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import WorkerScheduler from '../../../components/tools/WorkerScheduler';
+import ToolPageLoading from '../components/ToolPageLoading.jsx';
 import ToolHeader from '../../../components/tools/ToolHeader.jsx';
+
+const WorkerScheduler = dynamic(
+  () => import('../../../components/tools/WorkerScheduler'),
+  {
+    ssr: false,
+    loading: () => <ToolPageLoading />,
+  },
+);
 
 export default function WorkerSchedulerPage() {
   const router = useRouter();

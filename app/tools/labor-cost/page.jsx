@@ -1,7 +1,16 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import LaborCostCalculator from '../../../components/tools/LaborCostCalculator.jsx';
+import ToolPageLoading from '../components/ToolPageLoading.jsx';
 import ToolHeader from '../../../components/tools/ToolHeader.jsx';
+
+const LaborCostCalculator = dynamic(
+  () => import('../../../components/tools/LaborCostCalculator.jsx'),
+  {
+    ssr: false,
+    loading: () => <ToolPageLoading />,
+  },
+);
 
 export default function LaborCostPage() {
   const router = useRouter();
