@@ -694,6 +694,7 @@ export default function LaborCostCalculator() {
             </div>
           </div>
 
+          {false ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
             {quickStats.map((item) => (
               <div key={item.label} style={{
@@ -708,6 +709,7 @@ export default function LaborCostCalculator() {
               </div>
             ))}
           </div>
+          ) : null}
 
           <div style={{ padding: '0 2px', marginBottom: '14px' }}>
             {resultTab === 'worker' ? (
