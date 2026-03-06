@@ -1113,7 +1113,12 @@ export default function DeliveryMarginCalculator() {
             <div>
               <div className={styles.detailsTitle}>운영 시뮬레이션</div>
               <div className={styles.detailsDescription}>
-                주문 수를 넣으면 하루, 일주일, 한 달 예상 마진과 고정비 회수 주문 수를 볼 수 있습니다.
+                <span className={styles.detailsDescriptionLine}>
+                  주문 수를 넣으면 하루, 일주일, 한 달 예상 마진을 바로 볼 수 있고
+                </span>
+                <span className={styles.detailsDescriptionLine}>
+                  고정비를 회수하려면 몇 건이 필요한지도 함께 확인할 수 있습니다.
+                </span>
               </div>
             </div>
             <span className={styles.summaryChevron}>
