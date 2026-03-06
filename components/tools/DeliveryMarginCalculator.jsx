@@ -284,23 +284,20 @@ function CustomPlatformCard({ active, onSelect }) {
       type="button"
       className={`${styles.platformWideCard} ${active ? styles.platformWideCardActive : ""}`}
       onClick={onSelect}
+      aria-pressed={active}
+      aria-label="직접 입력"
+      title="직접 입력"
     >
       <span className={styles.platformWideMain}>
         <span className={styles.platformWideIcon}>
           <span className={styles.platformFallback}>%</span>
         </span>
-        <span className={styles.platformWideCopy}>
-          <span className={styles.platformWideTitleRow}>
-            <span className={styles.platformName}>직접 입력</span>
-            <span className={styles.platformWideBadge}>수수료 직접 입력</span>
-          </span>
-          <span className={styles.platformWideCaption}>
-            운영 중인 수수료를 직접 넣고 계산합니다.
+        <span className={styles.platformWideLabel}>
+          <span>직접입력</span>
+          <span className={styles.platformWideAccent} aria-hidden="true">
+            ✏️
           </span>
         </span>
-      </span>
-      <span className={`${styles.platformStatus} ${active ? styles.platformStatusActive : ""}`}>
-        {active ? "선택됨" : "직접 설정"}
       </span>
     </button>
   );
