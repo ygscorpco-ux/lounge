@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
 const ANON_NAME = "\uC775\uBA85";
@@ -12,6 +12,15 @@ function formatCommentTime(dateString) {
   if (diff < 3600) return `${Math.floor(diff / 60)}\uBD84 \uC804`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}\uC2DC\uAC04 \uC804`;
   if (diff < 172800) return "\uC5B4\uC81C";
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mi = String(date.getMinutes()).padStart(2, "0");
+  return `${mm}/${dd} ${hh}:${mi}`;
+}
+
+function formatStableCommentTime(dateString) {
+  const date = new Date(dateString);
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   const hh = String(date.getHours()).padStart(2, "0");
@@ -53,8 +62,13 @@ export default function CommentItem({
   onBlock,
 }) {
   const [showMenu, setShowMenu] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const isAdmin = comment.author === ADMIN_NAME;
   const author = isAdmin ? ADMIN_NAME : ANON_NAME;
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   return (
     <div
@@ -89,7 +103,9 @@ export default function CommentItem({
               <div style={{ fontSize: 16, color: "#2f3238", lineHeight: 1.45, marginBottom: 8 }}>
                 {comment.content}
               </div>
-              <div style={{ fontSize: 12, color: "#9aa0aa" }}>{formatCommentTime(comment.createdAt)}</div>
+              <div style={{ fontSize: 12, color: "#9aa0aa" }}>
+                {hydrated ? formatCommentTime(comment.createdAt) : formatStableCommentTime(comment.createdAt)}
+              </div>
             </div>
 
             <div style={{ position: "relative" }}>

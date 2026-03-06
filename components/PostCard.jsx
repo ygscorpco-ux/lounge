@@ -1,5 +1,5 @@
 "use client";
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildThumbnailUrl } from "../lib/image.js";
 import { savePostSeed } from "../lib/post-seed.js";
@@ -19,6 +19,15 @@ function timeAgo(dateString) {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
+function formatStableDate(dateString) {
+  const date = new Date(dateString);
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mi = String(date.getMinutes()).padStart(2, "0");
+  return `${mm}/${dd} ${hh}:${mi}`;
+}
+
 const CommentIcon = ({ color = "#42bcc4" }) => (
   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -28,12 +37,17 @@ const CommentIcon = ({ color = "#42bcc4" }) => (
 function PostCard({ post, onOpen }) {
   const router = useRouter();
   const [pressed, setPressed] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const warmedRef = useRef(false);
   const displayAuthor = post.author === ADMIN_NAME ? ADMIN_NAME : ANON_NAME;
   const hasComments = !post.isNotice && (post.commentCount || 0) > 0;
   const thumbnailUrl = post.thumbnailUrl
     ? buildThumbnailUrl(post.thumbnailUrl, 220, 220)
     : null;
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const warmPostDetail = useCallback(() => {
     if (warmedRef.current) return;
@@ -176,7 +190,7 @@ function PostCard({ post, onOpen }) {
                 <span style={{ color: "#d2d2d2" }}>|</span>
               </>
             )}
-            <span>{timeAgo(post.createdAt)}</span>
+            <span>{hydrated ? timeAgo(post.createdAt) : formatStableDate(post.createdAt)}</span>
             <span style={{ color: "#d2d2d2" }}>|</span>
             <span>{displayAuthor}</span>
           </div>
