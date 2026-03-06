@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Header from "../components/Header.jsx";
 import PostCard from "../components/PostCard.jsx";
 import WriteButton from "../components/WriteButton.jsx";
@@ -163,6 +163,11 @@ const BestCommentIcon = () => (
   </svg>
 );
 
+const FEED_CACHE_KEY = "lounge-home-feed-cache-v1";
+const FEED_RETURN_KEY = "lounge-home-feed-return-v1";
+const FEED_SCROLL_KEY = "lounge-home-feed-scroll-v1";
+const FEED_CACHE_TTL_MS = 1000 * 60 * 30;
+
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [noticePosts, setNoticePosts] = useState([]);
@@ -171,9 +176,12 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
   const router = useRouter();
-  const pathname = usePathname();
+  const loadMoreTriggerRef = useRef(null);
+  const feedHydratedRef = useRef(false);
+  const shouldRestoreScrollRef = useRef(false);
+  const pageRef = useRef(1);
+  const loadingNextPageRef = useRef(false);
 
   const quickMenus = [
     {
@@ -208,7 +216,15 @@ export default function Home() {
     },
   ];
 
-  const fetchPosts = useCallback(async (p, cat, s, reset) => {
+  const openPostDetail = useCallback((postId) => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(FEED_RETURN_KEY, "1");
+      sessionStorage.setItem(FEED_SCROLL_KEY, String(window.scrollY || 0));
+    }
+    router.push("/post/" + postId);
+  }, [router]);
+
+  const fetchPosts = useCallback(async (p, s, reset) => {
     setLoading(true);
     try {
       const url =
@@ -237,10 +253,13 @@ export default function Home() {
         });
       }
       setHasMore((data.posts || []).length >= data.pageSize);
+      return data;
     } catch (err) {
       console.error(err);
+      return { posts: [], pageSize: 0 };
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const fetchNotices = useCallback(async () => {
@@ -270,46 +289,118 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setPage(1);
-    fetchPosts(1, null, sort, true);
-    fetchNotices();
-    fetchBest();
-  }, [sort, refreshKey, fetchPosts, fetchNotices, fetchBest]);
+    pageRef.current = page;
+  }, [page]);
 
   useEffect(() => {
-    const h = () => setRefreshKey((p) => p + 1);
-    window.addEventListener("focus", h);
-    window.addEventListener("pageshow", h);
-    return () => {
-      window.removeEventListener("focus", h);
-      window.removeEventListener("pageshow", h);
-    };
+    if (typeof window === "undefined") return;
+    try {
+      const shouldRestore = sessionStorage.getItem(FEED_RETURN_KEY) === "1";
+      const cachedRaw = sessionStorage.getItem(FEED_CACHE_KEY);
+      if (!shouldRestore || !cachedRaw) return;
+
+      const cached = JSON.parse(cachedRaw);
+      const isFresh = Date.now() - Number(cached.savedAt || 0) <= FEED_CACHE_TTL_MS;
+      if (!isFresh || !Array.isArray(cached.posts) || cached.posts.length === 0) return;
+
+      const restoredPage = Math.max(Number(cached.page || 1), 1);
+      const restoredSort = typeof cached.sort === "string" ? cached.sort : "latest";
+      const restoredHasMore = Boolean(cached.hasMore);
+
+      feedHydratedRef.current = true;
+      shouldRestoreScrollRef.current = true;
+      setPosts(cached.posts);
+      setPage(restoredPage);
+      pageRef.current = restoredPage;
+      setSort(restoredSort);
+      setHasMore(restoredHasMore);
+    } catch (error) {
+      console.error(error);
+    }
   }, []);
 
   useEffect(() => {
-    setRefreshKey((p) => p + 1);
-  }, [pathname]);
+    if (!shouldRestoreScrollRef.current || posts.length === 0) return;
+    if (typeof window === "undefined") return;
 
-  function loadMore() {
-    const n = page + 1;
-    setPage(n);
-    fetchPosts(n, null, sort, false);
-  }
+    const y = Number(sessionStorage.getItem(FEED_SCROLL_KEY) || "0");
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: Number.isFinite(y) ? y : 0, behavior: "auto" });
+      shouldRestoreScrollRef.current = false;
+      sessionStorage.removeItem(FEED_RETURN_KEY);
+    });
+  }, [posts]);
 
   useEffect(() => {
-    const h = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-          document.body.offsetHeight - 200 &&
-        !loading &&
-        hasMore
-      ) {
-        loadMore();
-      }
-    };
-    window.addEventListener("scroll", h);
-    return () => window.removeEventListener("scroll", h);
-  }, [loading, hasMore, page, sort]);
+    if (typeof window === "undefined" || posts.length === 0) return;
+    try {
+      sessionStorage.setItem(
+        FEED_CACHE_KEY,
+        JSON.stringify({
+          posts,
+          page,
+          hasMore,
+          sort,
+          savedAt: Date.now(),
+        }),
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }, [posts, page, hasMore, sort]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!loading) {
+      sessionStorage.removeItem(FEED_RETURN_KEY);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (feedHydratedRef.current) {
+      feedHydratedRef.current = false;
+      fetchNotices();
+      fetchBest();
+      return;
+    }
+
+    setPage(1);
+    pageRef.current = 1;
+    fetchPosts(1, sort, true);
+    fetchNotices();
+    fetchBest();
+  }, [sort, fetchPosts, fetchNotices, fetchBest]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingNextPageRef.current || loading || !hasMore) return;
+    loadingNextPageRef.current = true;
+
+    const nextPage = pageRef.current + 1;
+    pageRef.current = nextPage;
+    setPage(nextPage);
+
+    try {
+      await fetchPosts(nextPage, sort, false);
+    } finally {
+      loadingNextPageRef.current = false;
+    }
+  }, [loading, hasMore, sort, fetchPosts]);
+
+  useEffect(() => {
+    if (!loadMoreTriggerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMore();
+        }
+      },
+      { root: null, rootMargin: "260px 0px", threshold: 0 },
+    );
+
+    observer.observe(loadMoreTriggerRef.current);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   return (
     <div>
@@ -487,7 +578,7 @@ export default function Home() {
             noticePosts.map((post, index) => (
               <button
                 key={post.id}
-                onClick={() => router.push("/post/" + post.id)}
+                onClick={() => openPostDetail(post.id)}
                 style={{
                   width: "100%",
                   border: "none",
@@ -571,7 +662,7 @@ export default function Home() {
               {bestPosts.slice(0, 2).map((post) => (
                 <article
                   key={post.id}
-                  onClick={() => router.push("/post/" + post.id)}
+                  onClick={() => openPostDetail(post.id)}
                   style={{
                     background: "#ffffff",
                     borderRadius: "20px",
@@ -685,8 +776,9 @@ export default function Home() {
 
       <div>
         {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
+          <PostCard key={post.id} post={post} onOpen={openPostDetail} />
         ))}
+        <div ref={loadMoreTriggerRef} style={{ height: 1 }} />
         {loading && <div className="loading">{"\uBD88\uB7EC\uC624\uB294 \uC911..."}</div>}
         {!loading && posts.length === 0 && (
           <div className="empty">{"\uC544\uC9C1 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>

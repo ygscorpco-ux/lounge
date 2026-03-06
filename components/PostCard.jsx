@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const ADMIN_NAME = "\uC5FC\uAD11\uC0AC";
@@ -23,13 +23,17 @@ const CommentIcon = ({ color = "#42bcc4" }) => (
   </svg>
 );
 
-export default function PostCard({ post }) {
+function PostCard({ post, onOpen }) {
   const router = useRouter();
   const [pressed, setPressed] = useState(false);
   const displayAuthor = post.author === ADMIN_NAME ? ADMIN_NAME : ANON_NAME;
   const hasComments = !post.isNotice && (post.commentCount || 0) > 0;
 
   function openPost() {
+    if (typeof onOpen === "function") {
+      onOpen(post.id);
+      return;
+    }
     router.push("/post/" + post.id);
   }
 
@@ -158,3 +162,5 @@ export default function PostCard({ post }) {
     </article>
   );
 }
+
+export default memo(PostCard);
