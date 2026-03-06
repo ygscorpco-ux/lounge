@@ -137,7 +137,7 @@ const BestUserAvatar = () => (
       width: 34,
       height: 34,
       borderRadius: 10,
-      background: "#eef1f4",
+      background: "#f1f4f8",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -545,7 +545,14 @@ export default function Home() {
       {bestPosts.length > 0 && (
         <>
           <div className="section-divider" />
-          <div style={{ padding: "16px 16px 12px" }}>
+          <div
+            style={{
+              padding: "16px 16px 12px",
+              background: "#f4f7fc",
+              borderTop: "1px solid #edf1f7",
+              borderBottom: "1px solid #edf1f7",
+            }}
+          >
             <div
               style={{
                 fontSize: "18px",
@@ -568,11 +575,12 @@ export default function Home() {
                   key={post.id}
                   onClick={() => router.push("/post/" + post.id)}
                   style={{
-                    background: "#f7f8fa",
+                    background: "#ffffff",
                     borderRadius: "20px",
                     padding: "14px 14px 13px",
                     cursor: "pointer",
-                    border: "1px solid #eceff3",
+                    border: "1px solid #e5ebf5",
+                    boxShadow: "0 1px 2px rgba(27,71,151,0.04)",
                   }}
                 >
                   <div
@@ -612,7 +620,7 @@ export default function Home() {
                   <div
                     style={{
                       fontSize: "16px",
-                      color: "#3d4048",
+                      color: "#39404a",
                       lineHeight: 1.4,
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
@@ -631,7 +639,7 @@ export default function Home() {
                       marginTop: "10px",
                     }}
                   >
-                    <span style={{ fontSize: "13px", color: "#a6acb4" }}>
+                    <span style={{ fontSize: "13px", color: "#8f9aa8" }}>
                       {"\uC790\uC720\uAC8C\uC2DC\uD310"}
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
