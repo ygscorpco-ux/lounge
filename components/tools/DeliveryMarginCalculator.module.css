@@ -1507,22 +1507,26 @@
 }
 
 .chipRow {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
 .industryChip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   height: 34px;
-  padding: 0 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 0 8px;
   border: 1px solid #dfe7f2;
   border-radius: 999px;
   background: #ffffff;
   color: #64748b;
   font-size: 12px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .industryChipActive {
