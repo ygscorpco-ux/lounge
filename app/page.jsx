@@ -230,9 +230,9 @@ function FeedPostSkeleton() {
   );
 }
 
-const FEED_CACHE_KEY = "lounge-home-feed-cache-v4";
-const FEED_RETURN_KEY = "lounge-home-feed-return-v3";
-const FEED_SCROLL_KEY = "lounge-home-feed-scroll-v3";
+const FEED_CACHE_KEY = "lounge-home-feed-cache-v5";
+const FEED_RETURN_KEY = "lounge-home-feed-return-v4";
+const FEED_SCROLL_KEY = "lounge-home-feed-scroll-v4";
 const FEED_CACHE_TTL_MS = 1000 * 60 * 30;
 const APP_SCROLL_CONTAINER_SELECTOR = '[data-app-scroll-container="1"]';
 const POST_ROW_ESTIMATE_PX = 144;
